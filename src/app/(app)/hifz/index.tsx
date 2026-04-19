@@ -82,17 +82,25 @@ export default function Hifz() {
         <ScreenContent>
           <View className="flex-row items-center justify-between mb-4">
             <View>
-              <Text className="text-gray-400 uppercase tracking-[2px] text-[10px]">MINI</Text>
+              <Text className="text-gray-400 uppercase tracking-[2px] text-[10px]">
+                HIFZI
+              </Text>
               <Text className="text-2xl text-slate-900">Hifz</Text>
             </View>
             <Pressable
               onPress={() => router.push("/(app)/notifications" as never)}
               className="w-11 h-11 rounded-full bg-white border border-slate-200 items-center justify-center"
             >
-              <Ionicons name="notifications-outline" size={20} color="#0f172a" />
+              <Ionicons
+                name="notifications-outline"
+                size={20}
+                color="#0f172a"
+              />
               {unreadCount > 0 && (
                 <View className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 items-center justify-center">
-                  <Text className="text-white text-[10px]">{unreadCount > 9 ? "9+" : unreadCount}</Text>
+                  <Text className="text-white text-[10px]">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </Text>
                 </View>
               )}
             </Pressable>
@@ -168,7 +176,9 @@ export default function Hifz() {
             <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
               Review
             </Text>
-            <Text className="text-xl text-gray-900 mb-4">📚 Review for Today</Text>
+            <Text className="text-xl text-gray-900 mb-4">
+              📚 Review for Today
+            </Text>
             {suggestions.length > 0 ?
               <View className="gap-y-3">
                 {suggestions.slice(0, 5).map((item) => {
@@ -189,22 +199,28 @@ export default function Hifz() {
                             item.startSurah
                           : `${item.startSurah} - ${item.endSurah}`}
                         </Text>
-                        <View className={`px-2 py-1 rounded-full ${color.badge}`}>
-                          <Text className={`text-[10px] uppercase tracking-wide ${color.text}`}>
+                        <View
+                          className={`px-2 py-1 rounded-full ${color.badge}`}
+                        >
+                          <Text
+                            className={`text-[10px] uppercase tracking-wide ${color.text}`}
+                          >
                             {item.priority}
                           </Text>
                         </View>
                       </View>
                       <Text className="text-slate-600 text-xs">
-                        Pages {item.startPage}-{item.endPage} · Cycle {item.cycleDay} · Due{" "}
-                        {item.dueDate}
+                        Pages {item.startPage}-{item.endPage} · Cycle{" "}
+                        {item.cycleDay} · Due {item.dueDate}
                       </Text>
                     </Pressable>
                   );
                 })}
               </View>
             : <View className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-                <Text className="text-emerald-700 text-sm">You&apos;re all caught up 🎉</Text>
+                <Text className="text-emerald-700 text-sm">
+                  You&apos;re all caught up 🎉
+                </Text>
               </View>
             }
           </View>
@@ -226,7 +242,9 @@ export default function Hifz() {
               onPress={handleSendTestNotification}
               className="mt-6 rounded-2xl border border-violet-200 bg-violet-50 p-4"
             >
-              <Text className="text-violet-700 text-sm">Send Test Notification</Text>
+              <Text className="text-violet-700 text-sm">
+                Send Test Notification
+              </Text>
             </Pressable>
           )}
           <View className="mt-10 mb-2 px-1">

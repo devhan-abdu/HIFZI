@@ -15,7 +15,7 @@ export function AppLoadingScreen() {
           resizeMode="contain"
         />
         <Text className="text-4xl  text-white tracking-tighter uppercase">
-          MINI
+          HIFZI
         </Text>
         <View className="mt-1 ">
           <Text className="text-[10px]   text-white/80 uppercase tracking-[4px]">

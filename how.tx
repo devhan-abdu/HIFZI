@@ -1,0 +1,206 @@
+how plan work 
+
+1, we need daly monitering for health 
+2, the decision is after the week end 
+
+🧠 1️⃣ Daily = Health Monitoring (Light Reaction)
+
+This is what your triggers already do:
+
+Update consistency_score
+
+Update readiness_level
+
+Show user feedback
+
+Daily reaction should be:
+
+Soft warnings
+
+Gentle suggestions
+
+Micro catch-up
+
+UI nudges
+
+Example:
+
+If user misses 2 days in a row:
+
+Show banner:
+
+“You’re slightly behind. Consider reviewing 1 extra page tomorrow.”
+
+NOT:
+
+Rebuild entire weekly plan
+
+Change weekly structure
+
+Reduce goal permanently
+
+Daily = micro adjustment
+Weekly = structural adjustment
+
+🧠 2️⃣ Weekly = Structural Plan Adjustment (Major Decisions)
+
+At week end, you evaluate:
+
+Completion ratio
+
+Total missed days
+
+Average performance
+
+Test result (if any)
+
+Then you decide:
+
+Enter recovery mode
+
+Reduce daily load
+
+Increase daily load
+
+Pause Hifz
+
+Repeat week
+
+Generate new test
+
+This is big logic.
+It should not run daily.
+
+
+3, lets  make after the week complete i give adjustion after the test ( week prerformance + test result make to decide about the next decision) // complition ratio (need to be based on planned page // completed page )
+4, If you have thousands of users, you may need to batch RPC calls to avoid long-running Edge Functions.
+5, how to create cron jobs 
+5 based when it do the muraja and how new ssedule muraja
+6, we need to have one performance table for one user or need other
+
+
+
+the main problem not classifing the app in chunk 
+not knowing what to do 
+how to connect 
+
+
+////////////////
+/////////////////
+
+hifz plan create 
+then daily log
+the app show statstics
+
+but what make it diffenrent from manulal
+only related to the plan 
+
+i need to have catch up
+target one 
+1, the user need to complete the quran with qality so 
+   the app record the user progress and other stats like how it 
+   before memorization and after memoriaion tip 
+     first muteshabhat,
+     if the user missed this week so i need to set up catch up till this week finshed(any page which is less for this week )
+     after the week finshed we need test so the user need to take and score so abouve value so to memorize new page next week 
+     even the user plan by its own first based on week completion rate and also the test the next week plan decided by the rule like the app sujjest the user may accept or not 
+     but i think their must be conparision what the user plan and what is now happeing 
+
+
+     how to approch 
+
+     1, i need one page separate or in hifz dashbored showing today surah and page and also muteshabihat or any thig the user used 
+     2, the user log performacne --- for this version i am not sure how much the quality of memorized page 
+     but based on what actualy log like is it completed , partial , missed or abouve and some note the user may enter
+     3, the user must see about the week performance , and some analytics like completed, remaing , missed , accuracy and conparision what the user plan and what is now happeing
+     4, after the week finshed we need to ask user when the user create plan intialy which day is for weekly test
+      we always have test after the surah finshed or after the week finshed 
+      5, even the user create plan manully but we sugest like based on completion rate and also the test reult we plan next week 
+      6 , and one more for this week if the user missed so we need to prepare catch up so we need logic like how must the user daily rate and also rest days or may so the user log catch up 
+      7, one more my hifz rule is before menorizing new the user must revice the prev 5 page which is already memorized
+
+
+priority and approch 
+1, adding page or section (the best fit)
+  for today hifz target or it may be same with log page 
+  here the user see what he need to do today 
+  see mutehsabihat
+  the user log like the app ask if he reviced the prev 5 page and also today log
+  2, catch up if the user miseed 
+  3, then the test prepaaration
+  4, the deccision about the next plan 
+
+
+
+next step sync 
+then the cach up logic 
+catch up week based 
+info needed 
+rest day 
+daily rate 
+and also how much missed 
+
+
+try to add 
+
+
+muraja 
+what is the value why u need it?
+1, i need to know my daily plan and log what i planned (Not always we complee)
+2, for each muraja exam 
+3, cachup and also how to know about next task i need to select the form with test day for the week
+4, based on weekly test and performance sugest new plan
+what is the use of review and also history page 
+which page is needed which one is not 
+
+
+so next step  decide on page and functnality 
+ the main muraja page 
+1, about user weekly plan (like how much it is finshed , remaning )
+2, daily task ( it may be the day goal , cach up)
+3, the next task showing 
+4 , about user performacne of this week 
+
+
+is this plan page is needed 
+why it is need this page is this the user need to see  about past days of the week and also about upcoming 
+i need some decision 
+and also is this log page requeired 
+where to show the test buttun for the user to take test for each day muraja
+so for the week the user take test we save it 
+
+
+so next
+
+1, doing the cach up logic 
+2,decide how weekly track 
+3, then the page and ui decide 
+
+// local storage or sqlite is best for weekly plan and also performance related store 
+// 
+
+
+currunt
+1, the plan create wekly days all this is not good for flexeble user log and also cach up logic 
+2, but i create static days bc i will show the user which day is missed and whch day is upcomming 
+you can show still for user what is upcomming by caluclating
+what is missed days still important bc we need to create habit 
+still still you can show , even if the full day missed or if user do only some part of dayily target 
+by log table of the week 
+
+so you just need one weekly plan table and log for user actual performance 
+but if this is true so i need to update week table toknow which days is the week days theuser planned
+but here how to apply queue here or just see the log  and based on log calulate the daily task 
+or just async your local to check what is your final end page in the local storage for fast 
+
+this is how i do
+
+
+after we show the localy database data 
+
+
+
+// cretae local database for hifz that is what you need 
+
+next 
+

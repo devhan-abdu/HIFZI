@@ -42,7 +42,7 @@ export const Header = ({ title }: { title: string }) => {
       <View className="flex-row justify-between items-center">
         <View>
           <Text className="text-primary text-[16px]   tracking-[2px]">
-            MINI
+            HIFZI
           </Text>
           <Text className="text-2xl  text-slate-900 tracking-tight">
             {title}
@@ -57,7 +57,9 @@ export const Header = ({ title }: { title: string }) => {
             <Ionicons name="notifications-outline" size={20} color="#0f172a" />
             {unreadCount > 0 && (
               <View className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 items-center justify-center">
-                <Text className="text-white text-[10px]">{unreadCount > 9 ? "9+" : unreadCount}</Text>
+                <Text className="text-white text-[10px]">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </Text>
               </View>
             )}
           </Pressable>

@@ -1,0 +1,23 @@
+1, after register and login where to go
+2, the dahsbored hero card shown only when the muraj exist  or  not hifz also 
+
+muraja
+1, muraa form 
+2, the card style any easy way to display the currunt as well the upcoming card
+3, is this realy needed back button when to go back 
+
+
+
+//
+find type for  both todayTask and weeklyPlan for dashbored
+
+second way to use one componet for the dashboerd and also for the  muraja page
+problem is wit the day status 
+
+need to clean up the type for muraja
+but still it show spinner is this normal to local database or need some optimization
+and also form the card status update is not correct
+
+
+
+muraja if not plan and user need to log or to do 

@@ -3,7 +3,7 @@ import { View } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import * as AuthSession from "expo-auth-session";
 import { useAuthRequest } from "expo-auth-session";
-import { Text,Button } from "./common/ui/Text";
+import { Text, Button } from "./common/ui/Text";
 import { supabase } from "../lib/supabase";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -12,8 +12,8 @@ const CLIENT_ID = process.env.EXPO_PUBLIC_QF_CLIENT_ID!;
 const BACKEND = process.env.EXPO_PUBLIC_BACKEND_URL!;
 
 const REDIRECT_URI = AuthSession.makeRedirectUri({
-  scheme: "mini",
-  path:"login"
+  scheme: "HIFZI",
+  path: "login",
 });
 
 const authBaseUrl = "https://prelive-oauth2.quran.foundation";
@@ -23,7 +23,6 @@ const discovery = {
   tokenEndpoint: `${authBaseUrl}/oauth2/token`,
 };
 
-
 export default function LoginButton() {
   const [request, response, promptAsync] = useAuthRequest(
     {
@@ -32,9 +31,9 @@ export default function LoginButton() {
         "openid",
         "offline_access",
         "user",
-        "bookmark", 
-        "collection", 
-        "content", 
+        "bookmark",
+        "collection",
+        "content",
       ],
       redirectUri: REDIRECT_URI,
       usePKCE: true,
@@ -52,11 +51,10 @@ export default function LoginButton() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             code: response.params.code,
-            codeVerifier: request?.codeVerifier, 
+            codeVerifier: request?.codeVerifier,
             redirectUri: REDIRECT_URI,
           }),
         });
-
 
         const data = await res.json();
         if (res.ok && data.access_token) {
@@ -64,7 +62,6 @@ export default function LoginButton() {
             access_token: data.access_token,
             refresh_token: data.refresh_token,
           });
-
         }
       } catch (err) {
         console.error("Login exchange failed", err);
@@ -75,23 +72,16 @@ export default function LoginButton() {
   }, [response]);
 
   return (
-    <View >
+    <View>
       <Button
         disabled={!request}
         onPress={() => promptAsync()}
         className="bg-white p-4 rounded-xl my-8"
       >
-          <Text className="text-primary  text-xl uppercase tracking-widest">
-            Get Started
-          </Text>     
+        <Text className="text-primary  text-xl uppercase tracking-widest">
+          Get Started
+        </Text>
       </Button>
-    
-      </View>
-
-      
-      
-      
+    </View>
   );
 }
-
-

@@ -1,0 +1,108 @@
+1, ke reading gar yala expirance  (mushaf , and also the reciter and also audio)
+2, work on gamification and engagment 
+3, and add normal reader tracker 
+
+
+where to use this one 
+prefetchPages
+jump to page feature
+
+
+step when the user go to quran read tab
+1, ask to dowload reaquired file ()
+  yes: so we download the image file to file sytem 
+  and then (choose best component flatList or flashlist)
+  then smoth and book like scroll
+
+  no so we fetch when the user ask the page  so we make smottttt as posible
+
+
+
+  next step change how quran data stored and then add audio and also bookmark , translation functinlaity then go to the gamification and habit module 
+
+  for each page get page data 
+
+
+  to display the data with hizb for each page together to image 
+  and correct width and height display for 
+  select and then add to book mark , translation and also audio this is the biggest requiremnt of them 
+
+
+  1, build the page with the inffromation 
+  2, then add bookmark, translation and then audio  
+  3, 
+
+  access token able to talk with quran api (i will use user centeric ) gartend to access the api ract native ,,supabse and then 
+  function to get the tefsir and also the audio then store in filsytem 
+  based on ayah when the user tap
+
+  build the ui for translation, audio and also 
+then aya bookmark and then add it 
+
+
+add gamification and habit 
+for norml user 
+
+ai itegrate ask ai chat box
+
+
+⚡ 7. BONUS: SMART IMPROVEMENT (optional upgrade)
+
+You can later add:
+
+🧠 caching layer inside proxy
+reduce API calls
+offline-first reading
+🔁 retry system
+auto retry failed QF calls
+📊 analytics hooks
+track ayah interactions
+
+
+1, make the defult for the qaria list then solve the drawer need to cover from bottom not stop and not grow more than content (we need to select defult qaria so we show one then when the user start play so we dowload it we lass ify the card dowloaded and not dowloaded)
+
+
+muraj when the user update the muraj like changing the plan or logging not triiger date to change 
+
+
+
+quran lay remove reflaction but implement the bookmark , tefsir and also the translation
+and make sure the reader quranic data loading and other thing to be correct
+
+
+the habit is not chnage the ui
+how analytics displayed 
+
+suggestion in modal form 
+
+correcting the quran reader problem 
+implement the api correctly and add bookmark and performance 
+
+then the normal reading module 
+
+
+before all commit all in HIFZI then add 
+
+then prepare the demo video , documntaion , change the name 
+add notfication system for daily activity
+
+this file src/features/hifz/services/reviewScheduler
+
+
+how habit loop work and also implement reviewScheduler
+
+for hifz page 
+fix the navigation errro
+
+
+
+streak calulation 
+the audio it show real error 
+it say session expired so the refresh is not working 
+reflection  lay make it  
+it is difficult for user to refelect and must use their api and ync with loacal databse 
+
+top header not display usefull information 
+streak calculation untill this day pass 
+if possible ask user when it click
+ayah selction is mandatory but other option 
