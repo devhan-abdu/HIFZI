@@ -2,6 +2,7 @@ import { useSession } from "@/src/hooks/useSession"
 import { useQuery } from "@tanstack/react-query";
 import { hifzServices } from "../services/hifz";
 import { useSQLiteContext } from "expo-sqlite";
+;
 
 export const useGetHifzPlan = () => {
     const { user } = useSession()

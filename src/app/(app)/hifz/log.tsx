@@ -19,6 +19,7 @@ import { Alert } from "@/src/components/common/Alert";
 import { LogProgressSkeleton } from "@/src/features/hifz/components/skeleton";
 import { Switch } from "@/src/features/hifz/components/Switch";
 import { getTodayTask } from "@/src/features/hifz/utils/quran-logic";
+import { QualityCounter } from "@/src/components/common/QualityCounter";
 
 export default function LogProgress() {
   const router = useRouter();
@@ -42,6 +43,8 @@ export default function LogProgress() {
     "completed",
   );
   const [notes, setNotes] = useState("");
+  const [mistakes, setMistakes] = useState(0);
+  const [hesitations, setHesitations] = useState(0);
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [reviewed, setReviewed] = useState(false);
@@ -149,6 +152,8 @@ export default function LogProgress() {
         date: today.toISOString().slice(0, 10),
         log_day: logDay,
         notes: notes.trim(),
+        mistakes_count: mistakes,
+        hesitation_count: hesitations,
       };
 
       await addLog({ todayLog: payload, userId: user?.id });
@@ -282,6 +287,27 @@ export default function LogProgress() {
               onPress={() => handleStatusSelection("missed")}
             />
           </View>
+
+          {status !== "missed" && (
+            <View className="mb-8 gap-y-4">
+              <QualityCounter
+                label="Mistakes"
+                description="Incorrect words or tajweed"
+                value={mistakes}
+                onValueChange={setMistakes}
+                icon="alert-circle"
+                color="#ef4444"
+              />
+              <QualityCounter
+                label="Hesitations"
+                description="Long pauses or unsureness"
+                value={hesitations}
+                onValueChange={setHesitations}
+                icon="timer"
+                color="#f59e0b"
+              />
+            </View>
+          )}
 
           <View className="bg-gray-50 p-6 rounded-[28px] border border-gray-100 flex-row items-center justify-between mb-8">
             <View>

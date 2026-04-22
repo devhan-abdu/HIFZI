@@ -1,4 +1,5 @@
-import { useSQLiteContext } from "expo-sqlite"
+import { useSQLiteContext } from "expo-sqlite";
+
 import { useEffect, useState } from "react";
 import { HifzQuestion } from "../types";
 import { generateHifzTest } from "../services/test";

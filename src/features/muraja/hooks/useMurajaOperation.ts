@@ -2,6 +2,7 @@ import { useSession } from "@/src/hooks/useSession";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { localMurajaService } from "../services/localMurajaService";
 import { useSQLiteContext } from "expo-sqlite";
+;
 import { IDailyMurajaLog } from "../types";
 import { murajaServices } from "../services/murajaServices";
 import { insertHabitProgressLog } from "@/src/features/habits/services/habitProgressService";

@@ -30,6 +30,7 @@ import { useAlert } from "@/src/hooks/useAlert";
 import { Alert } from "@/src/components/common/Alert";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { Text } from "@/src/components/common/ui/Text";
+import { formatErrorMessage } from "@/src/utils/error-utils";
 
 export default function CreateHifzPlan() {
   const router = useRouter();
@@ -103,7 +104,7 @@ export default function CreateHifzPlan() {
         () => router.back(),
       );
     } catch (error: any) {
-      showError("Error", error.message);
+      showError("Error", formatErrorMessage(error));
     }
   };
 

@@ -17,6 +17,7 @@ import Screen from "@/src/components/screen/Screen";
 import { StatusTab } from "@/src/features/hifz/components/StatusTab";
 import { useAlert } from "@/src/hooks/useAlert";
 import { Alert } from "@/src/components/common/Alert";
+import { QualityCounter } from "@/src/components/common/QualityCounter";
 
 type StatusType = "pending" | "completed" | "partial" | "missed";
 
@@ -31,6 +32,8 @@ export default function LogPage() {
   const [pages, setPages] = useState(weeklyPlan?.planned_pages_per_day || 1);
   const [min, setMin] = useState("");
   const [note, setNote] = useState("");
+  const [mistakes, setMistakes] = useState(0);
+  const [hesitations, setHesitations] = useState(0);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -83,6 +86,8 @@ export default function LogPage() {
         is_catchup: todayTask.isCatchup ? 1 : 0,
         sync_status: 0,
         remote_id: null,
+        mistakes_count: mistakes,
+        hesitation_count: hesitations,
       });
 
       const title = todayTask.isCatchup ? "Caught Up!" : "Progress Saved";
@@ -189,6 +194,27 @@ export default function LogPage() {
               }}
             />
           </View>
+
+          {showDetails && (
+            <View className="mb-8 gap-y-4">
+              <QualityCounter
+                label="Mistakes"
+                description="Incorrect words or tajweed"
+                value={mistakes}
+                onValueChange={setMistakes}
+                icon="alert-circle"
+                color="#ef4444"
+              />
+              <QualityCounter
+                label="Hesitations"
+                description="Long pauses or unsureness"
+                value={hesitations}
+                onValueChange={setHesitations}
+                icon="timer"
+                color="#f59e0b"
+              />
+            </View>
+          )}
 
           <View className="mb-12 gap-6">
             <View className="bg-gray-50 p-6 rounded-[28px] border border-gray-100 flex-row items-center justify-between">

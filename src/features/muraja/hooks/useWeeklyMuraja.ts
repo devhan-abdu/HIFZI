@@ -5,8 +5,9 @@ import { getJuzByPage, getSurahByPage } from "../utils/quranMapping";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { localMurajaService } from "../services/localMurajaService";
 import { murajaServices } from "../services/murajaServices";
-import { useSQLiteContext } from "expo-sqlite";
+;
 import { calculateExpectedPages, generateWeeklyProgress, getPerformanceStatus } from "../utils/murajaAnalytics";
+import { useSQLiteContext } from "expo-sqlite";
 
 
 export const useWeeklyMuraja = () => {
