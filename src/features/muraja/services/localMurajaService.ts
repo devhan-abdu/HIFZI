@@ -1,5 +1,7 @@
 import { SQLiteDatabase } from "expo-sqlite";
 import { IDailyMurajaLog, IMurajaDashboardData, IWeeklyMurajaPLan } from "../types";
+import { PerformanceService } from "@/src/services/PerformanceService";
+import { GamificationService } from "@/src/services/GamificationService";
 
 export type LocalMurajaLogWriteResult = {
   localLogId: number | null;
@@ -39,6 +41,9 @@ export async function ensureMurajaTables(db: SQLiteDatabase) {
       is_catchup BOOLEAN DEFAULT 0,
       sync_status INTEGER DEFAULT 0,
       start_page INTEGER,
+      mistakes_count INTEGER NOT NULL DEFAULT 0,
+      hesitation_count INTEGER NOT NULL DEFAULT 0,
+      quality_score INTEGER,
       FOREIGN KEY(plan_id) REFERENCES weekly_muraja_plan(id)
     );
 
@@ -163,9 +168,12 @@ export const localMurajaService = {
         actual_time_min: number;
         is_catchup: number;
         start_page: number;
+        mistakes_count: number;
+        hesitation_count: number;
+        quality_score: number | null;
       }>(
         `
-          SELECT id, completed_pages, status, actual_time_min, is_catchup, start_page
+          SELECT id, completed_pages, status, actual_time_min, is_catchup, start_page, mistakes_count, hesitation_count, quality_score
           FROM daily_muraja_logs
           WHERE date = ? AND plan_id = ?
           LIMIT 1
@@ -214,7 +222,10 @@ export const localMurajaService = {
         existing.status === log.status &&
         Number(existing.actual_time_min ?? 0) === Number(log.actual_time_min ?? 0) &&
         Number(existing.is_catchup ?? 0) === Number(log.is_catchup ?? 0) &&
-        Number(existing.start_page ?? 0) === Number(log.start_page ?? 0);
+        Number(existing.start_page ?? 0) === Number(log.start_page ?? 0) &&
+        Number(existing.mistakes_count ?? 0) === Number(log.mistakes_count ?? 0) &&
+        Number(existing.hesitation_count ?? 0) === Number(log.hesitation_count ?? 0) &&
+        existing.quality_score === (log.quality_score ?? null);
 
       if (sameAsExisting) {
         localLogId = existing.id;
@@ -231,6 +242,9 @@ export const localMurajaService = {
                 actual_time_min = ?,
                 is_catchup = ?,
                 start_page = ?,
+                mistakes_count = ?,
+                hesitation_count = ?,
+                quality_score = ?,
                 sync_status = ?,
                 remote_id = NULL
             WHERE id = ?
@@ -241,6 +255,9 @@ export const localMurajaService = {
             log.actual_time_min,
             log.is_catchup,
             log.start_page,
+            log.mistakes_count,
+            log.hesitation_count,
+            log.quality_score ?? null,
             0,
             existing.id,
           ],
@@ -252,8 +269,9 @@ export const localMurajaService = {
           `
             INSERT INTO daily_muraja_logs (
               date, plan_id, start_page, completed_pages,
-              sync_status, is_catchup, actual_time_min, status, remote_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+              sync_status, is_catchup, actual_time_min, status,
+              mistakes_count, hesitation_count, quality_score, remote_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
           [
             log.date,
@@ -264,6 +282,9 @@ export const localMurajaService = {
             log.is_catchup,
             log.actual_time_min,
             log.status,
+            log.mistakes_count,
+            log.hesitation_count,
+            log.quality_score ?? null,
             null,
           ],
         );
@@ -283,6 +304,29 @@ export const localMurajaService = {
         `,
         [userId, log.start_page + log.completed_pages - 1],
       );
+
+      // Update Page Performance
+      if (log.completed_pages > 0) {
+        const quality = log.quality_score ?? PerformanceService.deriveQualityScore(log.mistakes_count, log.hesitation_count);
+        await PerformanceService.updateRangePerformance(
+          db,
+          log.start_page,
+          log.start_page + log.completed_pages - 1,
+          quality
+        );
+
+        // Gamification: Award XP and Rewards
+        const stats = await db.getFirstAsync<{ muraja_current_streak: number }>(
+          "SELECT muraja_current_streak FROM user_stats WHERE user_id = ?",
+          [userId]
+        );
+        await GamificationService.processSessionCompletion(
+          db,
+          userId,
+          quality,
+          stats?.muraja_current_streak ?? 0
+        );
+      }
     });
 
     return {

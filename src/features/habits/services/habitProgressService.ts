@@ -269,6 +269,7 @@ export async function insertHabitProgressLog(
     recordedAt?: string;
   },
 ) {
+  await initHabitProgressTables(db);
   const activityType = normalizeActivityType(
     payload.activityType ?? payload.habitType ?? "NORMAL_READING",
   );
@@ -329,6 +330,7 @@ export async function upsertActivityPlan(
     localRefId?: number | null;
   },
 ) {
+  await initHabitProgressTables(db);
   await db.runAsync(
     `
       UPDATE quran_activity_plans

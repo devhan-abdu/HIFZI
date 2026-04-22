@@ -5,6 +5,8 @@ import {
   insertHabitProgressLog,
   upsertActivityPlan,
 } from "@/src/features/habits/services/habitProgressService";
+import { PerformanceService } from "@/src/services/PerformanceService";
+import { GamificationService } from "@/src/services/GamificationService";
 
 type ICreate = {
   db: SQLiteDatabase;
@@ -16,7 +18,7 @@ type UpdatePlanPayload = {
   newPlanData: Omit<IHifzPlan, "hifz_daily_logs" | "id">;
 };
 
-async function ensureHifzTables(db: SQLiteDatabase) {
+export async function ensureHifzTables(db: SQLiteDatabase) {
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS hifz_plans_local (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,6 +53,9 @@ async function ensureHifzTables(db: SQLiteDatabase) {
       log_day INTEGER NOT NULL,
       status TEXT NOT NULL,
       notes TEXT,
+      mistakes_count INTEGER NOT NULL DEFAULT 0,
+      hesitation_count INTEGER NOT NULL DEFAULT 0,
+      quality_score INTEGER,
       sync_status INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -273,9 +278,12 @@ export const hifzServices = {
         log_day: number;
         status: IHifzLog["status"];
         notes: string | null;
+        mistakes_count: number;
+        hesitation_count: number;
+        quality_score: number | null;
       }>(
         `
-          SELECT id, actual_start_page, actual_end_page, actual_pages_completed, log_day, status, notes
+          SELECT id, actual_start_page, actual_end_page, actual_pages_completed, log_day, status, notes, mistakes_count, hesitation_count, quality_score
           FROM hifz_logs_local
           WHERE user_id = ? AND hifz_plan_id = ? AND date = ?
           LIMIT 1
@@ -291,7 +299,10 @@ export const hifzServices = {
         Number(existing.actual_pages_completed ?? 0) === Number(todayLog.actual_pages_completed ?? 0) &&
         Number(existing.log_day ?? 0) === Number(todayLog.log_day ?? 0) &&
         existing.status === todayLog.status &&
-        (existing.notes ?? null) === (todayLog.notes ?? null);
+        (existing.notes ?? null) === (todayLog.notes ?? null) &&
+        Number(existing.mistakes_count ?? 0) === Number(todayLog.mistakes_count ?? 0) &&
+        Number(existing.hesitation_count ?? 0) === Number(todayLog.hesitation_count ?? 0) &&
+        existing.quality_score === (todayLog.quality_score ?? null);
 
       if (sameAsExisting) {
         localId = existing.id;
@@ -302,8 +313,8 @@ export const hifzServices = {
         `
         INSERT INTO hifz_logs_local (
           remote_id, user_id, hifz_plan_id, actual_start_page, actual_end_page, actual_pages_completed,
-          date, log_day, status, notes, sync_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+          date, log_day, status, notes, mistakes_count, hesitation_count, quality_score, sync_status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
         ON CONFLICT(user_id, hifz_plan_id, date) DO UPDATE SET
           actual_start_page = excluded.actual_start_page,
           actual_end_page = excluded.actual_end_page,
@@ -311,6 +322,9 @@ export const hifzServices = {
           log_day = excluded.log_day,
           status = excluded.status,
           notes = excluded.notes,
+          mistakes_count = excluded.mistakes_count,
+          hesitation_count = excluded.hesitation_count,
+          quality_score = excluded.quality_score,
           sync_status = 0,
           updated_at = CURRENT_TIMESTAMP
         `,
@@ -325,6 +339,9 @@ export const hifzServices = {
           todayLog.log_day,
           todayLog.status,
           todayLog.notes ?? null,
+          todayLog.mistakes_count,
+          todayLog.hesitation_count,
+          todayLog.quality_score ?? null,
         ],
       );
       const persisted = await db.getFirstAsync<{ id: number }>(
@@ -352,6 +369,29 @@ export const hifzServices = {
         localRefId: localId,
         eventType: isMissed ? "TASK_MISSED" : "HIFZ_COMPLETED",
       });
+
+      // Update Page Performance
+      if (!isMissed && todayLog.actual_pages_completed > 0) {
+        const quality = todayLog.quality_score ?? PerformanceService.deriveQualityScore(todayLog.mistakes_count, todayLog.hesitation_count);
+        await PerformanceService.updateRangePerformance(
+          db,
+          todayLog.actual_start_page,
+          todayLog.actual_end_page,
+          quality
+        );
+
+        // Gamification: Award XP and Rewards
+        const stats = await db.getFirstAsync<{ current_streak: number }>(
+          "SELECT current_streak FROM user_stats WHERE user_id = ?",
+          [userId]
+        );
+        await GamificationService.processSessionCompletion(
+          db,
+          userId,
+          quality,
+          stats?.current_streak ?? 0
+        );
+      }
     });
     if (changed) {
       void runHifzSync(db, userId);

@@ -10,6 +10,9 @@ export interface IHifzLog {
     log_day: number;
     status: "completed" | "partial" | "missed",
     notes?: string;
+    mistakes_count: number;
+    hesitation_count: number;
+    quality_score?: number;
 };
 
 
