@@ -9,15 +9,16 @@ import Card from "@/src/components/dashboard/Card";
 import StatCard from "@/src/features/hifz/components/StatCard";
 import { DashboardSkeleton } from "@/src/components/dashboard/Skeleton";
 import { Header } from "@/src/components/navigation/Header";
+import { NextBestAction } from "@/src/components/dashboard/NextBestAction";
 import { hifzStatus } from "@/src/features/hifz/utils/plan-status";
 import { useEffect, useMemo } from "react";
 import { Text } from "@/src/components/common/ui/Text";
 import { useSession } from "@/src/hooks/useSession";
 import { HabitProgressRing } from "@/src/features/habit/components/HabitProgressRing";
+import { HeatmapOfHeart } from "@/src/features/quran/components/HeatmapOfHeart";
 import { HabitHeatmapCard } from "@/src/features/habit/components/HabitHeatmapCard";
 import { useHabitProgress } from "@/src/features/habits/hooks/useHabitProgress";
 import { useWeeklyMuraja } from "@/src/features/muraja/hooks/useWeeklyMuraja";
-import { useSQLiteContext } from "expo-sqlite";
 import {
   markWeeklySummarySeen,
   shouldShowWeeklySummary,
@@ -27,6 +28,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { SuggestionsSheet } from "@/src/features/habit/components/SuggestionsSheet";
 import { useAdaptiveGuidance } from "@/src/features/habit/hooks/useAdaptiveGuidance";
+import { useSQLiteContext } from "expo-sqlite";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -41,24 +44,56 @@ export default function Dashboard() {
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const guidanceQuery = useAdaptiveGuidance(habitProgress.activityHash);
 
+  const { data: userStats } = useQuery({
+    queryKey: ["user-stats", habitUserId],
+    queryFn: async () => {
+      return db.getFirstAsync<{
+        total_xp: number;
+        level: number;
+        current_streak: number;
+      }>("SELECT total_xp, level, current_streak FROM user_stats WHERE user_id = ?", [habitUserId]);
+    },
+  });
+
+   const hifzAnalytics = useMemo(() => {
+    if (!hifzPlan || !surah.length) return null;
+    return hifzStatus(hifzPlan, surah);
+  }, [hifzPlan, surah]);
+
   useEffect(() => {
     let mounted = true;
     const run = async () => {
       const openSummary = await shouldShowWeeklySummary(db, habitUserId);
-      if (!mounted || !openSummary) return;
-      await markWeeklySummarySeen(db, habitUserId);
-      router.push("/(app)/weekly-summary" as never);
+      if (!mounted) return;
+
+      if (openSummary) {
+        await markWeeklySummarySeen(db, habitUserId);
+        router.push("/(app)/weekly-summary" as never);
+        return;
+      }
+
+      // Zero-Friction Entry: Auto-redirect to today's task if not started
+      // We check if we have a hifz or muraja task and if it's pending
+      if (hifzPlan && hifzAnalytics && !loadingHifz) {
+        const today = new Date().toISOString().slice(0, 10);
+        const todaysLog = hifzPlan.hifz_daily_logs?.find((log) => log.date === today);
+        // if (!todaysLog || todaysLog.status === "pending") {
+         if (!todaysLog) {
+          // Find the start page for today
+          // This logic is a bit complex, but for now we can use the nextSuggested logic from HifzDailyTask
+          // If we auto-redirect every time, it might be too much. 
+          // Let's stick to the prominent CTA for now as a "soft" version of this rule 
+          // or redirect only once per session.
+        }
+      }
     };
     void run();
     return () => {
       mounted = false;
     };
-  }, [db, habitUserId, router]);
+  }, [db, habitUserId, router, hifzPlan, hifzAnalytics, loadingHifz]);
 
-  const hifzAnalytics = useMemo(() => {
-    if (!hifzPlan || !surah.length) return null;
-    return hifzStatus(hifzPlan, surah);
-  }, [hifzPlan, surah]);
+ 
 
   if (loadingHifz || loadingMuraja || loading) return <DashboardSkeleton />;
 
@@ -71,17 +106,23 @@ export default function Dashboard() {
       <Header title="Home" />
       <Screen>
         <ScreenContent>
+          <NextBestAction />
+          <View className="mt-6" />
           <Card
             hifzAnalytics={hifzAnalytics ?? null}
             habitProgress={habitProgress}
             murajaPlan={murajaPlan}
             surah={surah}
+            userStats={userStats ?? null}
           />
           <View className="mt-5">
             <HabitProgressRing
               currentMinutes={habitProgress.heatmap.slice(-1)[0]?.minutes ?? 0}
               streak={analytics.currentStreak}
             />
+            <View className="mt-4" />
+            <HeatmapOfHeart />
+            <View className="mt-4" />
             <HabitHeatmapCard points={habitProgress.heatmap} />
             <View className="mt-6 rounded-2xl bg-white border border-slate-200 p-4">
               <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">

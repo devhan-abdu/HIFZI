@@ -34,6 +34,7 @@ type Cardprops = {
     analytics: { longestStreak: number };
   };
   surah: ISurah[];
+  userStats: { total_xp: number; level: number; current_streak: number } | null;
 };
 
 function safeFormat(date?: string) {
@@ -47,6 +48,7 @@ export default function Card({
   hifzAnalytics,
   habitProgress,
   murajaPlan,
+  userStats,
 }: Cardprops) {
   // 🚫 If nothing exists, render nothing
   if (!murajaPlan && !hifzAnalytics) return null;
@@ -70,13 +72,35 @@ export default function Card({
 
       {/* Header */}
       <View className="flex-row justify-between items-end mb-6">
-        <View>
-          <Text className="text-white/60 uppercase tracking-[2px] text-[10px] mb-1">
-            {format(new Date(), "EEEE, MMM dd")}
-          </Text>
+        <View className="flex-1">
+          <View className="flex-row items-center mb-1">
+            <Text className="text-white/60 uppercase tracking-[2px] text-[10px]">
+              {format(new Date(), "EEEE, MMM dd")}
+            </Text>
+            {userStats && (
+              <View className="ml-3 bg-white/20 px-2 py-0.5 rounded-full flex-row items-center">
+                <Ionicons name="star" size={8} color="#fbbf24" />
+                <Text className="text-white text-[9px] font-bold ml-1">LVL {userStats.level}</Text>
+              </View>
+            )}
+          </View>
           <Text className="text-white text-3xl tracking-tighter">
             Hifz <Text className="text-white/50">&</Text> Muraja
           </Text>
+          
+          {userStats && (
+            <View className="mt-2 w-32">
+              <View className="h-1 bg-white/10 rounded-full overflow-hidden">
+                <View 
+                  className="h-full bg-amber-400" 
+                  style={{ width: `${(userStats.total_xp % 1000) / 10}%` }} 
+                />
+              </View>
+              <Text className="text-[8px] text-white/40 mt-1 uppercase tracking-widest">
+                {userStats.total_xp % 1000} / 1000 XP
+              </Text>
+            </View>
+          )}
         </View>
 
         {hifzAnalytics && (
