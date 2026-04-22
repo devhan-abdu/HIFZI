@@ -1,14 +1,14 @@
 import { PropsWithChildren, useEffect, useState } from "react";
-import { useSQLiteContext } from "expo-sqlite";
 
 import { AppLoadingScreen } from "@/src/components/common/AppLoadingScreen";
-import { useQuranStateDb } from "@/src/lib/db/QuranStateDatabaseProvider";
 
 import { getJuz, getSurah } from "../services";
 import { ensureQuranStorageDirectories } from "../storage/quranStorage";
 import { useBookmarkStore } from "../store/bookmarkStore";
 import { useCatalogStore } from "../store/catalogStore";
 import { useDownloadStore } from "../store/downloadStore";
+import { useSQLiteContext } from "expo-sqlite";
+import { useQuranStateDb } from "@/src/lib/db/QuranStateDatabaseProvider";
 
 type DownloadJobRow = {
   jobId: string;

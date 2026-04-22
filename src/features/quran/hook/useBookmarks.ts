@@ -1,8 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import * as Crypto from "expo-crypto";
-import { useSQLiteContext } from "expo-sqlite";
 import { useSession } from "@/src/hooks/useSession";
-import { useQuranStateDb } from "@/src/lib/db/QuranStateDatabaseProvider";
 import { useBookmarkStore } from "../store/bookmarkStore";
 import {
   createRemoteBookmark,
@@ -11,6 +9,8 @@ import {
   listAllRemoteBookmarks,
   parseVerseKey,
 } from "../services/bookmarkApi";
+import { useQuranStateDb } from "@/src/lib/db/QuranStateDatabaseProvider";
+import { useSQLiteContext } from "expo-sqlite";
 
 export const useBookmarks = () => {
   const stateDb = useQuranStateDb();

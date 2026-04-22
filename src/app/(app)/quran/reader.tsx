@@ -8,7 +8,7 @@ import {
 } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
-import { QuranPage } from "@/src/features/quran/components/QuranPage";
+import { MushafPage } from "@/src/features/mushaf/components/MushafPage";
 import { TranslationPage } from "@/src/features/quran/components/TranslationPage";
 import { ReaderBottomSheet } from "@/src/features/quran/components/ReaderBottomSheet";
 import ReaderHeader from "@/src/features/quran/components/ReaderHeader";
@@ -19,16 +19,14 @@ import { useFullscreenSystemUI } from "@/src/hooks/useFullscreenSystemUI";
 import {
   getAyahPage,
   getPageData,
-  getPageImage,
-  prefetchPages,
 } from "@/src/features/quran/services";
 import { parseVerseKey } from "@/src/features/quran/services/bookmarkApi";
 
 import { PageData } from "@/src/features/quran/type";
-import { useSQLiteContext } from "expo-sqlite";
 import { useSession } from "@/src/hooks/useSession";
-import { useQuranStateDb } from "@/src/lib/db/QuranStateDatabaseProvider";
 import { processDailyActivity } from "@/src/features/habit/services/habitService";
+import { useSQLiteContext } from "expo-sqlite";
+import { useQuranStateDb } from "@/src/lib/db/QuranStateDatabaseProvider";
 
 const ALL_PAGES = Array.from({ length: 604 }, (_, i) => i + 1);
 
@@ -43,8 +41,6 @@ export default function QuranReaderScreen() {
 
   // Core State
   const [currentPage, setCurrentPage] = useState(Number(initialPage) || 1);
-  const [images, setImages] = useState<Record<number, string>>({});
-  const cache = useRef<Map<number, string>>(new Map());
   const [pageMeta, setPageMeta] = useState<Record<number, PageData>>({});
 
   const sessionStartRef = useRef(Date.now());
@@ -90,46 +86,32 @@ export default function QuranReaderScreen() {
     openReaderSession(currentPage);
   }, [currentPage, openReaderSession]);
 
-  // 3. Asset and Meta Management (Range-based preloading)
+  // 3. Metadata Management (Range-based preloading)
   const RANGE = 3;
   useEffect(() => {
     let isMounted = true;
-    const loadAssets = async () => {
+    const loadMeta = async () => {
       const start = Math.max(1, currentPage - RANGE);
       const end = Math.min(604, currentPage + RANGE);
-      const updates: Record<number, string> = {};
       const metaUpdates: Record<number, PageData> = {};
 
       await Promise.all(
         Array.from({ length: end - start + 1 }, (_, i) => start + i).map(
           async (p) => {
-            // Meta Data
             if (!pageMeta[p]) {
               const data = await getPageData(coreDb, p);
               if (data) metaUpdates[p] = data;
-            }
-            // Page Images
-            if (cache.current.has(p)) {
-              updates[p] = cache.current.get(p)!;
-            } else {
-              const uri = await getPageImage(p);
-              if (uri) {
-                cache.current.set(p, uri);
-                updates[p] = uri;
-              }
             }
           },
         ),
       );
 
-      if (isMounted) {
-        setImages((prev) => ({ ...prev, ...updates }));
+      if (isMounted && Object.keys(metaUpdates).length > 0) {
         setPageMeta((prev) => ({ ...prev, ...metaUpdates }));
-        prefetchPages(currentPage + 1);
       }
     };
 
-    loadAssets();
+    loadMeta();
     return () => {
       isMounted = false;
     };
@@ -176,11 +158,6 @@ export default function QuranReaderScreen() {
     [width, currentPage, selectedAyah, resetSelection],
   );
 
- 
-
-  
-
-
   const renderItem = useCallback(
     ({ item }: { item: number }) => {
       if (viewMode === "translation") {
@@ -191,16 +168,12 @@ export default function QuranReaderScreen() {
         );
       }
       return (
-        <QuranPage
-          pageNumber={item}
-          uri={images[item]}
-          pageWidth={width}
-          pageHeight={height}
-          meta={pageMeta[item]}
-        />
+        <View style={{ width, height }}>
+          <MushafPage pageNumber={item} />
+        </View>
       );
     },
-    [height, images, pageMeta, width, viewMode],
+    [height, width, viewMode],
   );
 
   return (
@@ -209,28 +182,26 @@ export default function QuranReaderScreen() {
 
       <ReaderHeader pageData={pageMeta[currentPage]} />
 
-      <Pressable onPress={toggleUI} style={{ flex: 1 }}>
-        <FlatList
-          ref={listRef}
-          data={ALL_PAGES}
-          horizontal
-          pagingEnabled
-          inverted
-          showsHorizontalScrollIndicator={false}
-          initialScrollIndex={currentPage - 1}
-          getItemLayout={(_, index) => ({
-            length: width,
-            offset: width * index,
-            index,
-          })}
-          onMomentumScrollEnd={onScrollEnd}
-          keyExtractor={(item) => item.toString()}
-          renderItem={renderItem}
-          windowSize={3}
-          maxToRenderPerBatch={2}
-          removeClippedSubviews
-        />
-      </Pressable>
+      <FlatList
+        ref={listRef}
+        data={ALL_PAGES}
+        horizontal
+        pagingEnabled
+        inverted
+        showsHorizontalScrollIndicator={false}
+        initialScrollIndex={currentPage - 1}
+        getItemLayout={(_, index) => ({
+          length: width,
+          offset: width * index,
+          index,
+        })}
+        onMomentumScrollEnd={onScrollEnd}
+        keyExtractor={(item) => item.toString()}
+        renderItem={renderItem}
+        windowSize={3}
+        maxToRenderPerBatch={2}
+        removeClippedSubviews
+      />
 
       <ReaderBottomSheet
         chapterId={pageMeta[currentPage]?.number ?? 1}
