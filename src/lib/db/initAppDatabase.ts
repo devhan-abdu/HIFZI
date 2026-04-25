@@ -11,9 +11,19 @@ async function ensureColumn(
   column: string,
   definition: string,
 ) {
-  const columns = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${table})`);
-  if (!columns.some((item) => item.name === column)) {
-    await db.execAsync(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  try {
+    const columns = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${table})`);
+    const exists = columns.some((item) => item.name === column);
+    
+    if (!exists) {
+      console.log(`[DB] Migration: Adding ${column} to ${table}...`);
+      await db.execAsync(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+      console.log(`[DB] Migration: ${column} added to ${table} successfully.`);
+    } else {
+      // console.log(`[DB] Migration: ${column} already exists in ${table}.`);
+    }
+  } catch (err) {
+    console.error(`[DB] Migration Error on ${table}.${column}:`, err);
   }
 }
 

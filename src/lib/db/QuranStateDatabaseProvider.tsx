@@ -6,10 +6,12 @@ import { AppLoadingScreen } from "@/src/components/common/AppLoadingScreen";
 import { QURAN_STATE_DB_NAME } from "./constants";
 import { initAppDatabase } from "./initAppDatabase";
 
+type DbStatus = "loading" | "ready" | "error";
 const QuranStateDatabaseContext = createContext<SQLiteDatabase | null>(null);
 
 export function QuranStateDatabaseProvider({ children }: PropsWithChildren) {
   const [database, setDatabase] = useState<SQLiteDatabase | null>(null);
+  const [status, setStatus] = useState<DbStatus>("loading");
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
@@ -26,6 +28,7 @@ export function QuranStateDatabaseProvider({ children }: PropsWithChildren) {
         }
 
         setDatabase(db);
+        setStatus("ready");
       } catch (loadError) {
         if (!cancelled) {
           setError(
@@ -33,7 +36,9 @@ export function QuranStateDatabaseProvider({ children }: PropsWithChildren) {
               loadError
             : new Error("Failed to open Quran state database."),
           );
+          setStatus("error");
         }
+
       }
     };
 
@@ -44,19 +49,19 @@ export function QuranStateDatabaseProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
-  if (error) {
-    throw error;
-  }
+if (status === "loading") {
+  return <AppLoadingScreen />;
+}
 
-  if (!database) {
-    return <AppLoadingScreen />;
-  }
+if (status === "error") {
+  throw error;
+}
 
-  return (
-    <QuranStateDatabaseContext.Provider value={database}>
-      {children}
-    </QuranStateDatabaseContext.Provider>
-  );
+return (
+  <QuranStateDatabaseContext.Provider value={database}>
+    {children}
+  </QuranStateDatabaseContext.Provider>
+);
 }
 
 export function useQuranStateDb() {
