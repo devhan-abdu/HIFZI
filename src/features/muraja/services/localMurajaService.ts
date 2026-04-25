@@ -50,6 +50,22 @@ export async function ensureMurajaTables(db: SQLiteDatabase) {
     CREATE INDEX IF NOT EXISTS idx_daily_muraja_logs_plan_date
       ON daily_muraja_logs(plan_id, date);
   `);
+
+  // JIT Column Check (Self-Healing)
+  const columns = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(daily_muraja_logs)`);
+  const hasMistakes = columns.some((c) => c.name === "mistakes_count");
+  if (!hasMistakes) {
+    try {
+      await db.execAsync(`
+        ALTER TABLE daily_muraja_logs ADD COLUMN mistakes_count INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE daily_muraja_logs ADD COLUMN hesitation_count INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE daily_muraja_logs ADD COLUMN quality_score INTEGER;
+      `);
+      console.log("[DB] JIT Migration: daily_muraja_logs columns added.");
+    } catch (e) {
+      // Might already be added by main init script
+    }
+  }
 }
 
 export const localMurajaService = {
@@ -242,8 +258,8 @@ export const localMurajaService = {
                 actual_time_min = ?,
                 is_catchup = ?,
                 start_page = ?,
-                mistakes_count = ?,
-                hesitation_count = ?,
+                mistakes_count = COALESCE(?, 0),
+                hesitation_count = COALESCE(?, 0),
                 quality_score = ?,
                 sync_status = ?,
                 remote_id = NULL
@@ -255,8 +271,8 @@ export const localMurajaService = {
             log.actual_time_min,
             log.is_catchup,
             log.start_page,
-            log.mistakes_count,
-            log.hesitation_count,
+            log.mistakes_count ?? 0,
+            log.hesitation_count ?? 0,
             log.quality_score ?? null,
             0,
             existing.id,
@@ -271,7 +287,7 @@ export const localMurajaService = {
               date, plan_id, start_page, completed_pages,
               sync_status, is_catchup, actual_time_min, status,
               mistakes_count, hesitation_count, quality_score, remote_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, 0), COALESCE(?, 0), ?, ?)
           `,
           [
             log.date,
@@ -282,8 +298,8 @@ export const localMurajaService = {
             log.is_catchup,
             log.actual_time_min,
             log.status,
-            log.mistakes_count,
-            log.hesitation_count,
+            log.mistakes_count ?? 0,
+            log.hesitation_count ?? 0,
             log.quality_score ?? null,
             null,
           ],
@@ -307,7 +323,7 @@ export const localMurajaService = {
 
       // Update Page Performance
       if (log.completed_pages > 0) {
-        const quality = log.quality_score ?? PerformanceService.deriveQualityScore(log.mistakes_count, log.hesitation_count);
+        const quality = log.quality_score ?? PerformanceService.deriveQualityScore(log.mistakes_count ?? 0, log.hesitation_count ?? 0);
         await PerformanceService.updateRangePerformance(
           db,
           log.start_page,

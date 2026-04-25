@@ -10,6 +10,20 @@ export type PagePerformance = {
 };
 
 export const PerformanceService = {
+  async ensurePerformanceTables(db: SQLiteDatabase) {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS page_performance (
+        page_number INTEGER PRIMARY KEY NOT NULL,
+        strength REAL NOT NULL DEFAULT 0.0,
+        last_reviewed_at TEXT,
+        next_review_at TEXT,
+        stability REAL NOT NULL DEFAULT 1.0,
+        difficulty REAL NOT NULL DEFAULT 1.0,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+  },
+
   /**
    * Derives a 0-5 quality score from mistakes and hesitations.
    */
@@ -69,6 +83,7 @@ export const PerformanceService = {
   },
 
   async getPagePerformance(db: SQLiteDatabase, pageNumber: number): Promise<PagePerformance> {
+    await this.ensurePerformanceTables(db);
     const row = await db.getFirstAsync<PagePerformance>(
       "SELECT * FROM page_performance WHERE page_number = ?",
       [pageNumber]
@@ -92,6 +107,7 @@ export const PerformanceService = {
     pageNumber: number,
     qualityScore: number
   ) {
+    await this.ensurePerformanceTables(db);
     const current = await this.getPagePerformance(db, pageNumber);
     const next = this.calculateNextState(current, qualityScore);
 

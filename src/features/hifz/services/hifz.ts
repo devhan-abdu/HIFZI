@@ -53,15 +53,28 @@ export async function ensureHifzTables(db: SQLiteDatabase) {
       log_day INTEGER NOT NULL,
       status TEXT NOT NULL,
       notes TEXT,
-      mistakes_count INTEGER NOT NULL DEFAULT 0,
-      hesitation_count INTEGER NOT NULL DEFAULT 0,
-      quality_score INTEGER,
       sync_status INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(user_id, hifz_plan_id, date)
     );
   `);
+
+  // JIT Column Check (Self-Healing)
+  const columns = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(hifz_logs_local)`);
+  const hasMistakes = columns.some((c) => c.name === "mistakes_count");
+  if (!hasMistakes) {
+    try {
+      await db.execAsync(`
+        ALTER TABLE hifz_logs_local ADD COLUMN mistakes_count INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE hifz_logs_local ADD COLUMN hesitation_count INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE hifz_logs_local ADD COLUMN quality_score INTEGER;
+      `);
+      console.log("[DB] JIT Migration: hifz_logs_local columns added.");
+    } catch (e) {
+      // Might already be added by main init script
+    }
+  }
 }
 
 async function syncPendingPlans(db: SQLiteDatabase, userId: string) {
@@ -126,6 +139,9 @@ async function syncPendingLogs(db: SQLiteDatabase, userId: string) {
           log_day: log.log_day,
           status: log.status,
           notes: log.notes,
+          mistakes_count: log.mistakes_count,
+          hesitation_count: log.hesitation_count,
+          quality_score: log.quality_score,
           local_id: log.id,
         },
         { onConflict: "user_id,hifz_plan_id,date" },
@@ -227,7 +243,10 @@ export const hifzServices = {
         date,
         log_day,
         status,
-        notes
+        notes,
+        mistakes_count,
+        hesitation_count,
+        quality_score
       FROM hifz_logs_local
       WHERE user_id = ? AND hifz_plan_id = ?
       ORDER BY date ASC
@@ -304,6 +323,19 @@ export const hifzServices = {
         Number(existing.hesitation_count ?? 0) === Number(todayLog.hesitation_count ?? 0) &&
         existing.quality_score === (todayLog.quality_score ?? null);
 
+      const mCount = todayLog.mistakes_count ?? 0;
+      const hCount = todayLog.hesitation_count ?? 0;
+
+      if (!todayLog.quality_score && (mCount > 0 || hCount > 0)) {
+        // Deriving score: 5 is best, 1 is worst
+        let score = 5;
+        if (mCount >= 4) score = 1;
+        else if (mCount >= 2) score = 2;
+        else if (mCount >= 1 || hCount >= 3) score = 3;
+        else if (hCount >= 1) score = 4;
+        todayLog.quality_score = score;
+      }
+
       if (sameAsExisting) {
         localId = existing.id;
         return;
@@ -314,7 +346,7 @@ export const hifzServices = {
         INSERT INTO hifz_logs_local (
           remote_id, user_id, hifz_plan_id, actual_start_page, actual_end_page, actual_pages_completed,
           date, log_day, status, notes, mistakes_count, hesitation_count, quality_score, sync_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, 0), COALESCE(?, 0), ?, 0)
         ON CONFLICT(user_id, hifz_plan_id, date) DO UPDATE SET
           actual_start_page = excluded.actual_start_page,
           actual_end_page = excluded.actual_end_page,
@@ -322,8 +354,8 @@ export const hifzServices = {
           log_day = excluded.log_day,
           status = excluded.status,
           notes = excluded.notes,
-          mistakes_count = excluded.mistakes_count,
-          hesitation_count = excluded.hesitation_count,
+          mistakes_count = COALESCE(excluded.mistakes_count, 0),
+          hesitation_count = COALESCE(excluded.hesitation_count, 0),
           quality_score = excluded.quality_score,
           sync_status = 0,
           updated_at = CURRENT_TIMESTAMP
@@ -339,8 +371,8 @@ export const hifzServices = {
           todayLog.log_day,
           todayLog.status,
           todayLog.notes ?? null,
-          todayLog.mistakes_count,
-          todayLog.hesitation_count,
+          todayLog.mistakes_count ?? 0,
+          todayLog.hesitation_count ?? 0,
           todayLog.quality_score ?? null,
         ],
       );
@@ -372,7 +404,7 @@ export const hifzServices = {
 
       // Update Page Performance
       if (!isMissed && todayLog.actual_pages_completed > 0) {
-        const quality = todayLog.quality_score ?? PerformanceService.deriveQualityScore(todayLog.mistakes_count, todayLog.hesitation_count);
+        const quality = todayLog.quality_score ?? PerformanceService.deriveQualityScore(todayLog.mistakes_count ?? 0, todayLog.hesitation_count ?? 0);
         await PerformanceService.updateRangePerformance(
           db,
           todayLog.actual_start_page,

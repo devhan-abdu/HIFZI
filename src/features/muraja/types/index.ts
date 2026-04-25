@@ -47,8 +47,8 @@ export interface IDailyMurajaLog {
     is_catchup: number; 
     sync_status: number; 
 
-    mistakes_count: number;
-    hesitation_count: number;
+    mistakes_count?: number;
+    hesitation_count?: number;
     quality_score?: number;
 }
 
