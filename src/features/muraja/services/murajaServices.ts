@@ -145,6 +145,17 @@ export const murajaServices = {
       completed_pages: Math.max(0, Number(logData.completed_pages ?? 0)),
       actual_time_min: Math.max(0, Number(logData.actual_time_min ?? 0)),
       status: logData.status,
+      mistakes_count: logData.mistakes_count,
+      hesitation_count: logData.hesitation_count,
+      quality_score: (() => {
+        const mCount = logData.mistakes_count ?? 0;
+        const hCount = logData.hesitation_count ?? 0;
+        if (mCount >= 4) return 1;
+        if (mCount >= 2) return 2;
+        if (mCount >= 1 || hCount >= 3) return 3;
+        if (hCount >= 1) return 4;
+        return 5;
+      })(),
     };
 
     const { data, error } = await supabase
@@ -166,7 +177,7 @@ export const murajaServices = {
       }
     >(
       `
-        SELECT id, remote_id, plan_id, date, start_page, completed_pages, actual_time_min, status, is_catchup, sync_status
+        SELECT id, remote_id, plan_id, date, start_page, completed_pages, actual_time_min, status, is_catchup, sync_status, mistakes_count, hesitation_count, quality_score
         FROM daily_muraja_logs
         WHERE sync_status = 0
           AND plan_id IN (SELECT id FROM weekly_muraja_plan WHERE user_id = ?)
@@ -195,6 +206,9 @@ export const murajaServices = {
               completed_pages: Math.max(0, Number(log.completed_pages ?? 0)),
               actual_time_min: Math.max(0, Number(log.actual_time_min ?? 0)),
               status: log.status,
+              mistakes_count: log.mistakes_count,
+              hesitation_count: log.hesitation_count,
+              quality_score: log.quality_score,
             },
             { onConflict: "user_id,weekly_plan_day_id,date" },
           )

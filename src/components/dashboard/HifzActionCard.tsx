@@ -52,7 +52,7 @@ export const HifzActionCard = ({
       await addLog({ todayLog: payload, userId: user?.id });
     } catch (err) {
       setErrorMessage(
-        "Could not save your progress. Please check your connection.",
+        "Could not save your progress. Please check your connection.", 
       );
       setErrorVisible(true);
     }
