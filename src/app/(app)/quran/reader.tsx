@@ -15,6 +15,7 @@ import ReaderHeader from "@/src/features/quran/components/ReaderHeader";
 import { useReaderStore } from "@/src/features/quran/hook/useReaderStore";
 import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
 import { useFullscreenSystemUI } from "@/src/hooks/useFullscreenSystemUI";
+import { TallyCounter } from "@/src/features/quran/components/TallyCounter";
 
 import {
   getAyahPage,
@@ -49,6 +50,7 @@ export default function QuranReaderScreen() {
   const { user } = useSession();
 
   const openReaderSession = useReaderSessionStore((s) => s.openSession);
+  const updateSessionTally = useReaderSessionStore((s) => s.updateTally);
   const {
     selectedAyah,
     resetSelection,
@@ -58,7 +60,14 @@ export default function QuranReaderScreen() {
     viewMode,
     setReaderActive,
     setSelectedAyah,
+    tallyMode,
   } = useReaderStore();
+
+  const [tallyCounts, setTallyCounts] = useState({ mistakes: 0, hesitations: 0 });
+  
+  useEffect(() => {
+    updateSessionTally(tallyCounts);
+  }, [tallyCounts, updateSessionTally]);
 
   const habitUserId = user?.id ?? "local-user";
 
@@ -205,6 +214,11 @@ export default function QuranReaderScreen() {
 
       <ReaderBottomSheet
         chapterId={pageMeta[currentPage]?.number ?? 1}
+      />
+
+      <TallyCounter 
+        visible={tallyMode} 
+        onCountsChange={setTallyCounts} 
       />
     </GestureHandlerRootView>
   );

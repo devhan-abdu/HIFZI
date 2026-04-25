@@ -20,6 +20,7 @@ import { LogProgressSkeleton } from "@/src/features/hifz/components/skeleton";
 import { Switch } from "@/src/features/hifz/components/Switch";
 import { getTodayTask } from "@/src/features/hifz/utils/quran-logic";
 import { QualityCounter } from "@/src/components/common/QualityCounter";
+import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
 
 export default function LogProgress() {
   const router = useRouter();
@@ -51,6 +52,19 @@ export default function LogProgress() {
   const reviewStartPage = Number(params.reviewStartPage ?? 0);
   const reviewEndPage = Number(params.reviewEndPage ?? 0);
   const hasReviewPrefill = Number.isFinite(reviewStartPage) && reviewStartPage > 0;
+
+  const sessionMistakes = useReaderSessionStore((s) => s.mistakes);
+  const sessionHesitations = useReaderSessionStore((s) => s.hesitations);
+  const resetSessionTally = useReaderSessionStore((s) => s.resetTally);
+
+  useEffect(() => {
+    if (sessionMistakes > 0) setMistakes(sessionMistakes);
+    if (sessionHesitations > 0) setHesitations(sessionHesitations);
+    
+    if (sessionMistakes > 0 || sessionHesitations > 0) {
+      resetSessionTally();
+    }
+  }, [sessionMistakes, sessionHesitations, resetSessionTally]);
 
   useEffect(() => {
     if (hasReviewPrefill && reviewEndPage >= reviewStartPage) {

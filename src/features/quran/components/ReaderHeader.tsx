@@ -22,6 +22,8 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
     setViewMode,
     toggleUI,
     uiVisible,
+    tallyMode,
+    toggleTallyMode,
   } = useReaderStore();
 
   const {
@@ -120,6 +122,18 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
               name={viewMode === "mushaf" ? "language" : "book"}
               size={20}
               color="#0d9488"
+            />
+          </TouchableOpacity>
+
+          {/* Tally Mode Toggle */}
+          <TouchableOpacity
+            onPress={toggleTallyMode}
+            className={`p-2 rounded-full ${tallyMode ? "bg-teal-500" : "bg-slate-50"}`}
+          >
+            <Ionicons
+              name="analytics"
+              size={20}
+              color={tallyMode ? "#fff" : "#0d9488"}
             />
           </TouchableOpacity>
 
