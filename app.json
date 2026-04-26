@@ -3,69 +3,8 @@
     "name": "Hifzi",
     "slug": "hifzi",
     "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/images/hifzilogo.png",
-    "scheme": "hifzi",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/images/hifzilogo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#276359"
-    },
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.devhananabdu.hifzi"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/hifzilogo.png",
-        "backgroundImage": "./assets/images/hifzilogo.png",
-        "monochromeImage": "./assets/images/hifzilogo.png"
-      },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.devhananabdu.hifzi"
-    },
-    "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png",
-      "bundler": "metro"
-    },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/hifzilogo.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#276359",
-          "dark": {
-            "backgroundColor": "#1e293b"
-          }
-        }
-      ],
-      "expo-sqlite",
-      "expo-notifications",
-      "expo-web-browser",
-      "@react-native-community/datetimepicker"
-    ],
-    "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
-    },
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "886f0dc1-bf5a-4a08-a916-c5aa4bd80362"
-      }
-    },
-    "owner": "devhan-abdu",
-    "updates": {},
-    "runtimeVersion": {
-      "policy": "appVersion"
-    }
+    "assetBundlePatterns": [
+      "**/*"
+    ]
   }
 }
