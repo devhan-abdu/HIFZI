@@ -1,15 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSQLiteContext } from "expo-sqlite";
-;
 import { useSession } from "@/src/hooks/useSession";
-import {
-  getNotifications,
-  markAllNotificationsAsRead,
-  markNotificationAsRead,
-} from "@/src/services/notificationService";
+import { notificationRepository } from "../features/notifications/services/notificationRepository";
 
 export function useNotifications() {
-  const db = useSQLiteContext();
   const queryClient = useQueryClient();
   const { user } = useSession();
   const userId = user?.id;
@@ -19,34 +12,26 @@ export function useNotifications() {
   const notificationsQuery = useQuery({
     queryKey: notificationsKey,
     enabled: !!userId,
-    queryFn: () => getNotifications(db, userId!),
+    queryFn: () => notificationRepository.getNotifications(userId!),
     refetchInterval: 15000,
   });
 
-  const unreadNotifications = (notificationsQuery.data ?? []).filter((item) => item.is_read === 0);
+  const unreadNotifications = (notificationsQuery.data ?? []).filter((item) => item.isRead === 0);
   const unreadCount = unreadNotifications.length;
 
   const markAsReadMutation = useMutation({
     mutationFn: async (id: number) => {
       if (!userId) return;
-      await markNotificationAsRead(db, userId, id);
+      await notificationRepository.markAsRead(userId, id);
     },
     onMutate: async (id: number) => {
       await queryClient.cancelQueries({ queryKey: notificationsKey });
-      const previous = queryClient.getQueryData<{
-        id: number;
-        user_id: string;
-        title: string;
-        message: string;
-        type: "xp" | "warning" | "milestone";
-        is_read: number;
-        created_at: string;
-      }[]>(notificationsKey);
+      const previous = queryClient.getQueryData<any[]>(notificationsKey);
 
       queryClient.setQueryData(
         notificationsKey,
-        (current: typeof previous = []) =>
-          current.map((item) => item.id === id ? { ...item, is_read: 1 } : item),
+        (current: any[] = []) =>
+          current.map((item) => item.id === id ? { ...item, isRead: 1 } : item),
       );
 
       return { previous };
@@ -65,24 +50,16 @@ export function useNotifications() {
   const markAllMutation = useMutation({
     mutationFn: async () => {
       if (!userId) return;
-      await markAllNotificationsAsRead(db, userId);
+      await notificationRepository.markAllAsRead(userId);
     },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: notificationsKey });
-      const previous = queryClient.getQueryData<{
-        id: number;
-        user_id: string;
-        title: string;
-        message: string;
-        type: "xp" | "warning" | "milestone";
-        is_read: number;
-        created_at: string;
-      }[]>(notificationsKey);
+      const previous = queryClient.getQueryData<any[]>(notificationsKey);
 
       queryClient.setQueryData(
         notificationsKey,
-        (current: typeof previous = []) =>
-          current.map((item) => ({ ...item, is_read: 1 })),
+        (current: any[] = []) =>
+          current.map((item) => ({ ...item, isRead: 1 })),
       );
 
       return { previous };

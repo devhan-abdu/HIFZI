@@ -1,32 +1,18 @@
-import { SQLiteDatabase } from "expo-sqlite";
+import { db as drizzleDb } from "@/src/lib/db/local-client";
+import { pagePerformance } from "@/src/features/user/database/userSchema";
+import { eq, and, sql, lte } from "drizzle-orm";
 
 export type PagePerformance = {
   page_number: number;
-  strength: number; // 0.0 to 1.0
+  strength: number; 
   last_reviewed_at: string | null;
   next_review_at: string | null;
-  stability: number; // Interval in days
-  difficulty: number; // Easiness factor
+  stability: number; 
+  difficulty: number; 
 };
 
 export const PerformanceService = {
-  async ensurePerformanceTables(db: SQLiteDatabase) {
-    await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS page_performance (
-        page_number INTEGER PRIMARY KEY NOT NULL,
-        strength REAL NOT NULL DEFAULT 0.0,
-        last_reviewed_at TEXT,
-        next_review_at TEXT,
-        stability REAL NOT NULL DEFAULT 1.0,
-        difficulty REAL NOT NULL DEFAULT 1.0,
-        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-  },
 
-  /**
-   * Derives a 0-5 quality score from mistakes and hesitations.
-   */
   deriveQualityScore(mistakes: number, hesitations: number): number {
     if (mistakes === 0 && hesitations === 0) return 5;
     if (mistakes === 0 && hesitations <= 2) return 4;
@@ -36,10 +22,7 @@ export const PerformanceService = {
     return 0;
   },
 
-  /**
-   * Calculates the new performance state based on a review session.
-   * Uses a simplified SM-2 inspired algorithm.
-   */
+
   calculateNextState(
     current: PagePerformance,
     qualityScore: number, // 0 to 5
@@ -48,16 +31,13 @@ export const PerformanceService = {
     let nextStability: number;
     let nextDifficulty: number = current.difficulty;
 
-    // Adjust difficulty based on quality score (SM-2 standard formula variant)
-    // EF' = f(EF, q) = EF + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
+   
     nextDifficulty = current.difficulty + (0.1 - (5 - qualityScore) * (0.08 + (5 - qualityScore) * 0.02));
-    nextDifficulty = Math.max(1.3, nextDifficulty); // Minimum difficulty
+    nextDifficulty = Math.max(1.3, nextDifficulty); 
 
     if (qualityScore < 3) {
-      // Failed review: reset stability but keep a fraction of it for recovery
       nextStability = 1;
     } else {
-      // Successful review: expand stability
       if (current.stability === 0) {
         nextStability = 1;
       } else if (current.stability === 1) {
@@ -67,7 +47,6 @@ export const PerformanceService = {
       }
     }
 
-    // Strength is a normalized representation of stability vs max intended stability (e.g. 365 days)
     const strength = Math.min(1.0, nextStability / 180); 
 
     const lastReviewedAt = reviewDate.toISOString();
@@ -82,83 +61,93 @@ export const PerformanceService = {
     };
   },
 
-  async getPagePerformance(db: SQLiteDatabase, pageNumber: number): Promise<PagePerformance> {
-    await this.ensurePerformanceTables(db);
-    const row = await db.getFirstAsync<PagePerformance>(
-      "SELECT * FROM page_performance WHERE page_number = ?",
-      [pageNumber]
-    );
+  async getPagePerformance(db: any, pageNumber: number): Promise<PagePerformance> {
+    const tx = db || drizzleDb;
+    const row = await tx.query.pagePerformance.findFirst({
+      where: eq(pagePerformance.pageNumber, pageNumber),
+    });
 
-    if (row) return row;
+    if (row) {
+      return {
+        page_number: row.pageNumber,
+        strength: row.strength,
+        last_reviewed_at: row.lastReviewedAt,
+        next_review_at: row.nextReviewAt,
+        stability: row.stability,
+        difficulty: row.difficulty,
+      };
+    }
 
-    // Default state for a new page
     return {
       page_number: pageNumber,
       strength: 0,
       last_reviewed_at: null,
       next_review_at: null,
       stability: 0,
-      difficulty: 2.5, // Standard starting difficulty
+      difficulty: 2.5, 
     };
   },
 
   async updatePagePerformance(
-    db: SQLiteDatabase,
+    db: any,
     pageNumber: number,
     qualityScore: number
   ) {
-    await this.ensurePerformanceTables(db);
-    const current = await this.getPagePerformance(db, pageNumber);
+    const tx = db || drizzleDb;
+    const current = await this.getPagePerformance(tx, pageNumber);
     const next = this.calculateNextState(current, qualityScore);
 
-    await db.runAsync(
-      `
-      INSERT INTO page_performance (
-        page_number, strength, last_reviewed_at, next_review_at, stability, difficulty, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(page_number) DO UPDATE SET
-        strength = excluded.strength,
-        last_reviewed_at = excluded.last_reviewed_at,
-        next_review_at = excluded.next_review_at,
-        stability = excluded.stability,
-        difficulty = excluded.difficulty,
-        updated_at = CURRENT_TIMESTAMP
-      `,
-      [
+    await tx.insert(pagePerformance)
+      .values({
         pageNumber,
-        next.strength,
-        next.last_reviewed_at,
-        next.next_review_at,
-        next.stability,
-        next.difficulty,
-      ]
-    );
+        strength: next.strength,
+        lastReviewedAt: next.last_reviewed_at,
+        nextReviewAt: next.next_review_at,
+        stability: next.stability,
+        difficulty: next.difficulty,
+      })
+      .onConflictDoUpdate({
+        target: pagePerformance.pageNumber,
+        set: {
+          strength: next.strength,
+          lastReviewedAt: next.last_reviewed_at,
+          nextReviewAt: next.next_review_at,
+          stability: next.stability,
+          difficulty: next.difficulty,
+          updatedAt: sql`CURRENT_TIMESTAMP`,
+        },
+      });
   },
 
-  /**
-   * Batch update for a range of pages (e.g. daily session)
-   */
+ 
   async updateRangePerformance(
-    db: SQLiteDatabase,
+    db: any,
     startPage: number,
     endPage: number,
     qualityScore: number
   ) {
+    const tx = db || drizzleDb;
     for (let p = startPage; p <= endPage; p++) {
-      await this.updatePagePerformance(db, p, qualityScore);
+      await this.updatePagePerformance(tx, p, qualityScore);
     }
   },
 
-  async getDuePages(db: SQLiteDatabase, limit = 10): Promise<PagePerformance[]> {
+  async getDuePages(db: any, limit = 10): Promise<PagePerformance[]> {
+    const tx = db || drizzleDb;
     const today = new Date().toISOString();
-    return db.getAllAsync<PagePerformance>(
-      `
-      SELECT * FROM page_performance
-      WHERE next_review_at <= ?
-      ORDER BY next_review_at ASC, strength ASC
-      LIMIT ?
-      `,
-      [today, limit]
-    );
+    const rows = await tx.query.pagePerformance.findMany({
+      where: lte(pagePerformance.nextReviewAt, today),
+      orderBy: [pagePerformance.nextReviewAt, pagePerformance.strength],
+      limit,
+    });
+
+    return rows.map((r: any) => ({
+      page_number: r.pageNumber,
+      strength: r.strength,
+      last_reviewed_at: r.lastReviewedAt,
+      next_review_at: r.nextReviewAt,
+      stability: r.stability,
+      difficulty: r.difficulty,
+    }));
   }
 };

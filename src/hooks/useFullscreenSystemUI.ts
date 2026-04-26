@@ -12,9 +12,10 @@ export function useFullscreenSystemUI(enabled: boolean) {
 
       const enterFullscreen = async () => {
         try {
-          await NavigationBar.setBehaviorAsync("overlay-swipe");
-          await NavigationBar.setBackgroundColorAsync("#00000000");
-          await NavigationBar.setVisibilityAsync("hidden");
+          //     await NavigationBar.setBehaviorAsync("overlay-swipe");
+          //     await NavigationBar.setBackgroundColorAsync("#00000000");
+          // await NavigationBar.setVisibilityAsync("hidden");
+         
         } catch (e) {
           console.warn("Failed to enter fullscreen:", e);
         }

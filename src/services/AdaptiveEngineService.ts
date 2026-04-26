@@ -1,4 +1,7 @@
-import { SQLiteDatabase } from "expo-sqlite";
+import { db } from "@/src/lib/db/local-client";
+import { hifzLogs, hifzPlans } from "../features/hifz/database/hifzSchema";
+import { dailyMurajaLogs, weeklyMurajaPlans } from "../features/muraja/database/murajaSchema";
+import { eq, and, gte, sql, inArray } from "drizzle-orm";
 
 export type PerformanceLevel = "GREEN" | "YELLOW" | "RED";
 
@@ -12,23 +15,33 @@ export type WeeklyPerformanceReport = {
 
 export const AdaptiveEngineService = {
   async evaluateWeeklyPerformance(
-    db: SQLiteDatabase,
     userId: string,
     weekStartDate: string
   ): Promise<WeeklyPerformanceReport> {
-    // 1. Fetch Muraja logs for the week
-    const murajaLogs = await db.getAllAsync<{ status: string; quality_score: number | null }>(
-      `SELECT status, quality_score FROM daily_muraja_logs WHERE date >= ?`,
-      [weekStartDate]
-    );
+    
+    const plans = await db.query.weeklyMurajaPlans.findMany({
+      where: eq(weeklyMurajaPlans.userId, userId),
+      columns: { id: true }
+    });
+    const planIds = plans.map(p => p.id);
 
-    // 2. Fetch Hifz logs for the week
-    const hifzLogs = await db.getAllAsync<{ status: string; quality_score: number | null }>(
-      `SELECT status, quality_score FROM hifz_logs_local WHERE user_id = ? AND date >= ?`,
-      [userId, weekStartDate]
-    );
+    const murajaLogs = planIds.length > 0 
+      ? await db.query.dailyMurajaLogs.findMany({
+          where: and(inArray(dailyMurajaLogs.planId, planIds), gte(dailyMurajaLogs.date, weekStartDate)),
+          columns: { status: true, qualityScore: true }
+        })
+      : [];
 
-    const allLogs = [...murajaLogs, ...hifzLogs];
+    const allHifzLogs = await db.query.hifzLogs.findMany({
+      where: and(eq(hifzLogs.userId, userId), gte(hifzLogs.date, weekStartDate)),
+      columns: { status: true, qualityScore: true }
+    });
+
+    const allLogs = [
+      ...murajaLogs.map(l => ({ status: l.status, quality_score: l.qualityScore })),
+      ...allHifzLogs.map(l => ({ status: l.status, quality_score: l.qualityScore }))
+    ];
+
     if (allLogs.length === 0) {
       return {
         completionRate: 0,
@@ -67,22 +80,17 @@ export const AdaptiveEngineService = {
     return {
       completionRate,
       averageQuality,
-      consistencyScore: completionRate, // Simplified
+      consistencyScore: completionRate,
       level,
       recommendation,
     };
   },
 
-  async applyRecommendation(db: SQLiteDatabase, userId: string, level: PerformanceLevel) {
+  async applyRecommendation(userId: string, level: PerformanceLevel) {
     if (level === "RED") {
-      // Pause active Hifz plans
-      await db.runAsync(
-        "UPDATE hifz_plans_local SET status = 'paused' WHERE user_id = ? AND status = 'active'",
-        [userId]
-      );
-    } else if (level === "GREEN") {
-      // Logic to increase pages_per_day could go here
-      // For now, we'll just log it or provide the UI option
+      await db.update(hifzPlans)
+        .set({ status: 'paused', syncStatus: 0, updatedAt: sql`CURRENT_TIMESTAMP` })
+        .where(and(eq(hifzPlans.userId, userId), eq(hifzPlans.status, 'active')));
     }
   }
 };

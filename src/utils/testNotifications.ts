@@ -1,15 +1,10 @@
-import { SQLiteDatabase } from "expo-sqlite";
-import {
-  insertNotificationDirect,
-  NotificationType,
-} from "@/src/services/notificationService";
+import { notificationRepository } from "@/src/features/notifications/services/notificationRepository";
 
 export async function sendTestNotification(
-  db: SQLiteDatabase,
   userId: string,
-  type: NotificationType,
+  type: 'xp' | 'warning' | 'milestone',
 ) {
-  const map: Record<NotificationType, { title: string; message: string }> = {
+  const map: Record<string, { title: string; message: string }> = {
     xp: {
       title: "XP Test",
       message: "✨ Great job! You earned 50 XP. Only 10 XP to level up!",
@@ -25,8 +20,7 @@ export async function sendTestNotification(
   };
 
   const entry = map[type];
-  await insertNotificationDirect(db, {
-    userId,
+  await notificationRepository.createNotification(userId, {
     type,
     title: entry.title,
     message: entry.message,
