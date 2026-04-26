@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSQLiteContext } from "expo-sqlite";
+;
 import { UserHabitStats } from "../services/habitService";
 
 const emptyStats: UserHabitStats = {

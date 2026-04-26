@@ -1,10 +1,9 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSQLiteContext } from "expo-sqlite";
+;
 import { useSession } from "@/src/hooks/useSession";
-import {
-  getHabitProgressSnapshot,
-} from "../services/habitProgressService";
+
+import { habitAnalyticsService } from "../services/habitAnalyticsService";
 import { HabitRepository } from "../services/habitRepository";
 
 function dateKey(date: Date) {
@@ -15,7 +14,6 @@ function dateKey(date: Date) {
 }
 
 export function useHabitProgress(viewDate?: Date) {
-  const db = useSQLiteContext();
   const { user } = useSession();
   const userId = user?.id ?? "local-user";
   const focusDate = viewDate ?? new Date();
@@ -27,16 +25,18 @@ export function useHabitProgress(viewDate?: Date) {
   const query = useQuery({
     queryKey: ["habit-progress", userId, dateKey(startOfMonth), dateKey(endOfMonth)],
     queryFn: async () => {
+      if (!user?.id) return null;
+
       const [snapshot, unsynced] = await Promise.all([
-        getHabitProgressSnapshot(db, userId, dateKey(startOfMonth), dateKey(endOfMonth)),
-        new HabitRepository(db).getPendingLogs(userId),
+        habitAnalyticsService.getProgressSnapshot(userId, dateKey(startOfMonth), dateKey(endOfMonth)),
+        new HabitRepository().getPendingLogs(userId),
       ]);
 
       if (unsynced.length > 0) {
         try {
-          await new HabitRepository(db).syncPendingLogs(userId);
-        } catch {
-          // Keep offline-first behavior; sync later.
+          await new HabitRepository().syncPendingLogs(userId);
+        } catch (e) {
+          console.warn("Habit sync deferred:", e);
         }
       }
 
