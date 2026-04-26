@@ -30,6 +30,7 @@ interface ReaderState {
   readerActive: boolean;
   playerState: PlayerState;
   viewMode: ViewMode;
+  tallyMode: boolean;
 
   selectedAudio: number;
   selectedTranslation: number;
@@ -50,6 +51,7 @@ interface ReaderState {
   showUI: () => void;
   hideUI: () => void;
   toggleUI: () => void;
+  toggleTallyMode: () => void;
   setReaderActive: (active: boolean) => void;
 }
 
@@ -62,6 +64,7 @@ export const useReaderStore = create<ReaderState>((set) => ({
   readerActive: false,
   playerState: "idle",
   viewMode: "mushaf",
+  tallyMode: false,
 
   selectedAudio: 7,
   selectedTranslation: 131,
@@ -93,6 +96,7 @@ export const useReaderStore = create<ReaderState>((set) => ({
   showUI: () => set({ uiVisible: true }),
   hideUI: () => set({ uiVisible: false }),
   toggleUI: () => set((state) => ({ uiVisible: !state.uiVisible })),
+  toggleTallyMode: () => set((state) => ({ tallyMode: !state.tallyMode })),
   setReaderActive: (readerActive) => set({ readerActive }),
 
   resetSelection: () =>

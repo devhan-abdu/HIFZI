@@ -1,23 +1,23 @@
 import React from "react";
-import { View, ScrollView, Dimensions } from "react-native";
+import { View } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
 import { useQuery } from "@tanstack/react-query";
-import { useSQLiteContext } from "expo-sqlite";
-import { PerformanceService } from "@/src/services/PerformanceService";
+import { db } from "@/src/lib/db/local-client";
+import { pagePerformance } from "@/src/features/user/database/userSchema";
 
 const TOTAL_PAGES = 604;
-const COLUMN_COUNT = 20;
 
 export const HeatmapOfHeart = () => {
-  const db = useSQLiteContext();
   const { data: performanceData, isLoading } = useQuery({
     queryKey: ["page-performance-all"],
     queryFn: async () => {
-      const rows = await db.getAllAsync<{ page_number: number; strength: number }>(
-        "SELECT page_number, strength FROM page_performance"
-      );
+      const rows = await db.select({
+        pageNumber: pagePerformance.pageNumber,
+        strength: pagePerformance.strength
+      }).from(pagePerformance);
+      
       const map = new Map<number, number>();
-      rows.forEach((r) => map.set(r.page_number, r.strength));
+      rows.forEach((r) => map.set(r.pageNumber, r.strength));
       return map;
     },
   });
@@ -27,11 +27,11 @@ export const HeatmapOfHeart = () => {
   const pages = Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1);
 
   const getColor = (strength: number | undefined) => {
-    if (strength === undefined || strength === 0) return "#f1f5f9"; // Slate 100 (Empty/New)
-    if (strength < 0.3) return "#fee2e2"; // Red 100 (Weak)
-    if (strength < 0.6) return "#fef08a"; // Yellow 100 (Medium)
-    if (strength < 0.9) return "#dcfce7"; // Green 100 (Strong)
-    return "#22c55e"; // Green 500 (Mastered)
+    if (strength === undefined || strength === 0) return "#f1f5f9";
+    if (strength < 0.3) return "#fee2e2";
+    if (strength < 0.6) return "#fef08a";
+    if (strength < 0.9) return "#dcfce7";
+    return "#22c55e";
   };
 
   const getBorderColor = (strength: number | undefined) => {

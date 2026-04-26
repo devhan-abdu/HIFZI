@@ -16,8 +16,8 @@ export type RemoteBookmarkRecord = {
   id: string;
   createdAt?: string;
   type: BookmarkType;
-  key: number; // This is the Surah ID in QF API
-  verseNumber?: number | null; // This is the Ayah ID
+  key: number; 
+  verseNumber?: number | null; 
   group?: string | null;
   isInDefaultCollection?: boolean;
 };
@@ -44,10 +44,6 @@ export type NormalizedRemoteBookmark = {
   verseKey: string;
 };
 
-/**
- * Ensures verse keys are valid (1-based index).
- * This prevents the "2:0" error you encountered.
- */
 export function parseVerseKey(verseKey: string): ParsedVerseKey | null {
   const match = /^(\d+):(\d+)$/.exec(String(verseKey).trim());
   if (!match) return null;
@@ -55,7 +51,6 @@ export function parseVerseKey(verseKey: string): ParsedVerseKey | null {
   const sura = Number(match[1]);
   const ayah = Number(match[2]);
 
-  // Ayah must be 1 or greater. 0 is invalid.
   if (!Number.isInteger(sura) || !Number.isInteger(ayah) || sura < 1 || ayah < 1) {
     return null;
   }
@@ -67,10 +62,7 @@ export function parseVerseKey(verseKey: string): ParsedVerseKey | null {
   };
 }
 
-/**
- * POST /auth/v1/bookmarks
- * Maps "2:3" to { key: 2, verseNumber: 3 ... }
- */
+
 export async function createRemoteBookmark(verseKey: string) {
   const parsed = parseVerseKey(verseKey);
   if (!parsed) {
@@ -97,9 +89,7 @@ export async function createRemoteBookmark(verseKey: string) {
   return response.data;
 }
 
-/**
- * DELETE /auth/v1/bookmarks/:id
- */
+
 export async function deleteRemoteBookmark(bookmarkId: string) {
   if (!bookmarkId) throw new Error("MISSING_BOOKMARK_ID");
 
@@ -111,10 +101,7 @@ export async function deleteRemoteBookmark(bookmarkId: string) {
   });
 }
 
-/**
- * GET /auth/v1/bookmarks
- * Fetches one page of bookmarks
- */
+
 export async function listRemoteBookmarksPage(after?: string) {
   const response = (await callQF("/auth/v1/bookmarks", {
     method: "GET",
@@ -132,9 +119,7 @@ export async function listRemoteBookmarksPage(after?: string) {
   };
 }
 
-/**
- * Background utility to normalize all remote bookmarks into our local verseKey format
- */
+
 export async function listAllRemoteBookmarks() {
   const bookmarks: NormalizedRemoteBookmark[] = [];
   let cursor: string | undefined;
@@ -163,9 +148,7 @@ export async function listAllRemoteBookmarks() {
   return bookmarks;
 }
 
-/**
- * Error Handling Helpers
- */
+
 export function isQFValidationError(error: unknown) {
   return error instanceof QFRequestError && error.status === 422;
 }
