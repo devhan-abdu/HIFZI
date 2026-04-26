@@ -7,9 +7,9 @@ import { ReviewPriority } from "@/src/features/hifz/utils/reviewPriority";
 import { PerformanceService, PagePerformance } from "@/src/services/PerformanceService";
 
 export type ReviewSuggestion = {
-  sourceLogId: number; // For compatibility, will be 0 or page_number
+  sourceLogId: number; 
   dueDate: string;
-  cycleDay: number; // Mapped from stability
+  cycleDay: number; 
   startPage: number;
   endPage: number;
   startSurah: string;

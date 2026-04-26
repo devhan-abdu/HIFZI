@@ -3,10 +3,10 @@ import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { getTargetPage } from "../utils/getTargetPage";
 import { getTodayTask } from "../utils/quran-logic";
 import { hifzStatus } from "../utils/plan-status";
-import { useGetHifzPlan } from "../hook/useGetHifzPlan";
+import { useHifzPlan } from "./useHifzPlan";
 
 export function useHifzDailyTask() {
-  const { hifz, isLoading, error, refetch } = useGetHifzPlan();
+  const { hifz, isLoading, error, refetch } = useHifzPlan();
   const { items: surah, loading: surahLoading } = useLoadSurahData();
 
   const analytics = useMemo(() => {
