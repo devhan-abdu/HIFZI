@@ -55,6 +55,7 @@ docs.tx
 *.apk
 # protobuf / generated binaries
 *.pb
+*.txt
 /home/hanunina/Documents/projects/hifzi/scratch-api-test.ts
 /home/hanunina/Documents/projects/hifzi/fix.txt
 /home/hanunina/Documents/projects/hifzi/hackatonTask.tx

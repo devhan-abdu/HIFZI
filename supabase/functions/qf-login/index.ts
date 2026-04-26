@@ -53,36 +53,47 @@ serve(async (req) => {
 
     let userId: string;
 
-    if (profile) {
-      userId = profile.id;
-    } else {
-      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-        email,
-        email_confirm: true,
-        user_metadata: { qf_user_id: qfUserId }
-      });
+   if (profile) {
+  userId = profile.id;
 
-      if (authError) {
-         if (authError.message.includes("already registered")) {
-            const { data: existing } = await supabase.auth.admin.listUsers();
-            userId = existing.users.find(u => u.email === email)!.id;
-         } else {
-            throw authError;
-         }
-      } else {
-        userId = authUser.user.id;
-      }
+} else {
+  const { data: userList } = await supabase.auth.admin.listUsers();
+  const existingUser = userList?.users.find(u => u.email === email);
 
-     const { error: profileError } = await supabase.from("profiles").upsert({
-        id: userId,
-        qf_user_id: qfUserId,
-        email: email,
-        name: `${qfUser.first_name || ""} ${qfUser.last_name || ""}`.trim() || "User",
-      });
-      if (profileError) throw profileError;
+  if (existingUser) {
+    userId = existingUser.id;
+
+    const { error: updateError } = await supabase.auth.admin.updateUserById(
+      userId,
+      { user_metadata: { qf_user_id: qfUserId } }
+    );
+
+    if (updateError) {
+      console.error("Metadata update failed:", updateError.message);
     }
+
+  } else {
+    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      email_confirm: true,
+      user_metadata: { qf_user_id: qfUserId }
+    });
+
+    if (authError) throw authError;
+
+    userId = authUser.user.id;
+
+    const { error: profileError } = await supabase.from("profiles").upsert({
+      id: userId,
+      qf_user_id: qfUserId,
+      email: email,
+      name: `${qfUser.first_name || ""} ${qfUser.last_name || ""}`.trim() || "User",
+    });
+
+    if (profileError) throw profileError;
+  }
+}
       
-    // 4. SAVE TO qf_tokens (THE FIX)
     const expiryTimestamp = Date.now() + (tokenData.expires_in * 1000);
     const { error: tokenStoreError } = await supabase.from("qf_tokens").upsert({
       user_id: userId,
