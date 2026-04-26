@@ -2,8 +2,8 @@ import { LogPageSkeleton } from "@/src/features/muraja/components/skeletons";
 import { Button } from "@/src/components/ui/Button";
 import Input from "@/src/components/ui/Input";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
 
@@ -29,7 +29,7 @@ export default function LogPage() {
   const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
 
   const [status, setStatus] = useState<StatusType>("pending");
-  const [pages, setPages] = useState(weeklyPlan?.planned_pages_per_day || 1);
+  const [pages, setPages] = useState<number>(weeklyPlan?.planned_pages_per_day || 1);
   const [min, setMin] = useState("");
   const [note, setNote] = useState("");
   const [mistakes, setMistakes] = useState(0);
@@ -226,14 +226,14 @@ export default function LogPage() {
               </View>
               <View className="flex-row items-center bg-white rounded-2xl p-1.5 border border-gray-200">
                 <Pressable
-                  onPress={() => setPages((p) => Math.max(0, p - 1))}
+                  onPress={() => setPages((p: number) => Math.max(0, p - 1))}
                   className="w-10 h-10 items-center justify-center active:bg-gray-50 rounded-xl"
                 >
                   <Ionicons name="remove" size={20} color="#276359" />
                 </Pressable>
                 <Text className="text-2xl text-gray-900 px-4 ">{pages}</Text>
                 <Pressable
-                  onPress={() => setPages((p) => p + 1)}
+                  onPress={() => setPages((p: number) => p + 1)}
                   className="w-10 h-10 items-center justify-center active:bg-gray-50 rounded-xl"
                 >
                   <Ionicons name="add" size={20} color="#276359" />

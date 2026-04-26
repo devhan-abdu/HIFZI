@@ -3,34 +3,31 @@ import Screen from "@/src/components/screen/Screen";
 import { ScreenContent } from "@/src/components/screen/ScreenContent";
 import { Button } from "@/src/components/ui/Button";
 import { useHabitProgress } from "@/src/features/habits/hooks/useHabitProgress";
-import { markWeeklySummarySeen } from "@/src/features/habits/services/habitProgressService";
+import { habitSummaryService } from "@/src/features/habits/services/habitSummaryService";
 import { useSession } from "@/src/hooks/useSession";
 import { useRouter } from "expo-router";
-import { useSQLiteContext } from "expo-sqlite";
-import { View, ScrollView } from "react-native";
-import { useQuery } from "@tanstack/react-query";
-import { AdaptiveEngineService, WeeklyPerformanceReport } from "@/src/services/AdaptiveEngineService";
+import { View } from "react-native";
+import { AdaptiveEngineService } from "@/src/services/AdaptiveEngineService";
 import { subDays, format as formatDate } from "date-fns";
+import { useWeeklyPerformance } from "@/src/hooks/useWeeklyPerformance";
 
 export default function WeeklySummaryScreen() {
   const router = useRouter();
-  const db = useSQLiteContext();
   const { user } = useSession();
   const { analytics, progressByType } = useHabitProgress();
   const userId = user?.id ?? "local-user";
 
   const weekStart = formatDate(subDays(new Date(), 7), "yyyy-MM-dd");
 
-  const { data: report, isLoading } = useQuery({
-    queryKey: ["weekly-performance-report", userId],
-    queryFn: () => AdaptiveEngineService.evaluateWeeklyPerformance(db, userId, weekStart),
-  });
+    const { data: report, isLoading } = useWeeklyPerformance(userId, weekStart);
+
+
 
   const handleContinue = async () => {
     if (report?.level === "RED") {
-       await AdaptiveEngineService.applyRecommendation(db, userId, "RED");
+       await AdaptiveEngineService.applyRecommendation(userId, "RED");
     }
-    await markWeeklySummarySeen(db, userId);
+    await habitSummaryService.markWeeklySummarySeen(userId);
     router.back();
   };
 

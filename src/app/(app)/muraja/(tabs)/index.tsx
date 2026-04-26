@@ -22,11 +22,9 @@ import MurajaEmptyState from "@/src/features/muraja/components/MurajaEmptyState"
 import StatCard from "@/src/features/hifz/components/StatCard";
 import { DayByDay } from "@/src/features/muraja/components/DayByDay";
 import { ActionTaskCard } from "@/src/components/common/ActionCard";
-import { useSQLiteContext } from "expo-sqlite";
 
 export default function MurajaIndex() {
   const router = useRouter();
-  const db = useSQLiteContext();
   const {
     weeklyPlan,
     stats,
@@ -44,8 +42,6 @@ export default function MurajaIndex() {
   } = useWeeklyReview();
   const { updateLog, isUpdating } = useMurajaOperation();
 
-  //this one must know what is stored in database
-  // why not you store pending as state , i was thing missed if log is not exist but need to make for all past day which status if it exist not completed or partial make as missed
   const handleUpdate = async (status: "completed" | "pending") => {
     const todayStr = new Date().toISOString().slice(0, 10);
     const isCompleted = status === "completed" ? true : false;
@@ -63,6 +59,8 @@ export default function MurajaIndex() {
         is_catchup: todayTask.isCatchup ? 1 : 0,
         sync_status: 0,
         remote_id: null,
+        mistakes_count: 0,
+        hesitation_count: 0
       });
     } catch (err: any) {
       console.log("Undo/Redo failed", err);
@@ -101,21 +99,20 @@ export default function MurajaIndex() {
                   typeLabel="Muraja'a"
                   title={`${todayTask.startSurah ?? ""} – ${todayTask.endSurah ?? ""}`}
                   subTitle={`Pages ${todayTask.startPage} – ${todayTask.endPage}`}
-                  status={todayTask.status} // completed | partial | pending | missed
+                  status={todayTask.status} 
                   isCatchup={todayTask.isCatchup}
                   isLoading={isUpdating}
-                  onDone={() =>
-                    handleUpdate(
-                      (
-                        todayTask.status === "completed" ||
-                          todayTask.status === "partial"
-                      ) ?
-                        "pending"
-                      : "completed",
-                    )
-                  }
-                  logRoute="/muraja/log"
-                />
+                  onDone={() => handleUpdate(
+                    (
+                      todayTask.status === "completed" ||
+                      todayTask.status === "partial"
+                    ) ?
+                      "pending"
+                      : "completed"
+                  )}
+                  logRoute="/muraja/log" onMissed={function (): void {
+                    throw new Error("Function not implemented.");
+                  } }                />
               : <View className="p-8 bg-slate-50 rounded-[32px] border border-dashed border-slate-200">
                   <Text className="text-center text-slate-400 ">
                     No session scheduled for today.
@@ -135,7 +132,7 @@ export default function MurajaIndex() {
               <View className="flex-row flex-wrap justify-between">
                 <StatCard
                   title="Completed"
-                  value={stats?.totalCompletedPages}
+                  value={stats?.totalCompletedPages ?? ""}
                   unit="Pages"
                   icon="checkmark-done-circle-outline"
                 />

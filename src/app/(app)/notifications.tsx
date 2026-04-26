@@ -68,7 +68,7 @@ export default function NotificationsScreen() {
                   key={item.id}
                   onPress={() => markAsRead(item.id)}
                   className={`rounded-2xl border p-4 ${
-                    item.is_read === 0
+                    item.isRead === 0
                       ? "bg-white border-slate-200"
                       : "bg-slate-50 border-slate-100"
                   }`}
@@ -79,13 +79,13 @@ export default function NotificationsScreen() {
                     </View>
                     <View className="flex-1">
                       <View className="flex-row items-center justify-between">
-                        <Text className={`text-sm ${item.is_read === 0 ? "text-slate-900" : "text-slate-700"}`}>
+                        <Text className={`text-sm ${item.isRead === 0 ? "text-slate-900" : "text-slate-700"}`}>
                           {item.title}
                         </Text>
-                        {item.is_read === 0 && <View className="w-2.5 h-2.5 rounded-full bg-red-500" />}
+                        {item.isRead === 0 && <View className="w-2.5 h-2.5 rounded-full bg-red-500" />}
                       </View>
                       <Text className="text-xs text-slate-600 mt-1">{item.message}</Text>
-                      <Text className="text-[10px] text-slate-400 mt-2">{formatTime(item.created_at)}</Text>
+                      <Text className="text-[10px] text-slate-400 mt-2">{formatTime(item.createdAt)}</Text>
                     </View>
                   </View>
                 </Pressable>

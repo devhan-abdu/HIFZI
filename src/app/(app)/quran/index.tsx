@@ -13,7 +13,7 @@ import { useGetSurahByJuz } from "@/src/hooks/useGetSurahByJuz";
 import { JuzHeader } from "@/src/features/quran/components/JuzHeader";
 import { SurahRow } from "@/src/features/quran/components/SurahRow";
 import { Surah } from "@/src/features/quran/type";
-import { useBookmarks } from "@/src/features/quran/hook/useBookmarks";
+import { useBookmarks } from "@/src/features/quran/hooks/useBookmarks";
 import { useCatalogStore } from "@/src/features/quran/store/catalogStore";
 
 export default function SurahIndex() {

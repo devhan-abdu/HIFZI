@@ -1,5 +1,5 @@
 import HifzOverViewCard from "@/src/features/hifz/components/HifzOverviewCard";
-import { useGetHifzPlan } from "@/src/features/hifz/hook/useGetHifzPlan";
+import { useHifzPlan } from "@/src/features/hifz/hooks/useHifzPlan";
 import { getPerformance } from "@/src/features/hifz/utils/plan-calculations";
 import { hifzStatus } from "@/src/features/hifz/utils/plan-status";
 import { useMemo } from "react";
@@ -10,7 +10,7 @@ import { SectionHeader } from "../SectionHeader";
 import { Text } from "@/src/components/common/ui/Text";
 
 export function HifzSection({ surahData }: { surahData: ISurah[] }) {
-  const { hifz, isLoading, error } = useGetHifzPlan();
+  const { hifz, isLoading, error } = useHifzPlan();
 
   const hifzAnalytics = useMemo(
     () => hifzStatus(hifz ?? null, surahData),
@@ -21,7 +21,7 @@ export function HifzSection({ surahData }: { surahData: ISurah[] }) {
   if (error || !hifz || !hifzAnalytics) return <Text>No Hifz plan found</Text>;
 
   const config = getPerformance(
-    hifzAnalytics.plannedPages - hifzAnalytics.actualPagesDone,
+    hifzAnalytics.plannedPages - hifzAnalytics.completedPages,
   );
 
   return (
@@ -53,8 +53,8 @@ export function HifzSection({ surahData }: { surahData: ISurah[] }) {
 
           <HifzOverViewCard
             progress={hifzAnalytics.accuracy}
-            pages={`${hifzAnalytics.startPage} - ${hifzAnalytics.endPage}`}
-            surahName={hifzAnalytics.endSurah}
+            remainingPages={hifzAnalytics.remainingPages}
+            currentSurah={hifzAnalytics.endSurah}
             strokeWidth={10}
             variant="white"
           />

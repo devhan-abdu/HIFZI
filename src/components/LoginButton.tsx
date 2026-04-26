@@ -1,20 +1,17 @@
 import * as React from "react";
 import { View } from "react-native";
 import * as WebBrowser from "expo-web-browser";
-import * as AuthSession from "expo-auth-session";
 import { useAuthRequest } from "expo-auth-session";
 import { Text, Button } from "./common/ui/Text";
 import { supabase } from "../lib/supabase";
+import * as Linking from "expo-linking";
 
 WebBrowser.maybeCompleteAuthSession();
 
 const CLIENT_ID = process.env.EXPO_PUBLIC_QF_CLIENT_ID!;
 const BACKEND = process.env.EXPO_PUBLIC_BACKEND_URL!;
 
-const REDIRECT_URI = AuthSession.makeRedirectUri({
-  scheme: "HIFZI",
-  path: "login",
-});
+const REDIRECT_URI = Linking.createURL("login");
 
 const authBaseUrl = "https://prelive-oauth2.quran.foundation";
 

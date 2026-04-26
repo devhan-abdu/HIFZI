@@ -6,7 +6,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusTab } from "@/src/features/hifz/components/StatusTab";
 import { useHifzDailyTask } from "@/src/features/hifz/hooks/useHifzDailyTask";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
-import { useAddLog } from "@/src/features/hifz/hook/useAddLog";
+import { useAddLog } from "@/src/features/hifz/hooks/useAddLog";
 import { useSession } from "@/src/hooks/useSession";
 import { Button } from "@/src/components/ui/Button";
 import { IHifzLog } from "@/src/features/hifz/types";

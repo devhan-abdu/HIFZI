@@ -3,7 +3,7 @@ import {
   ScreenContent,
   ScreenFooter,
 } from "@/src/components/screen/ScreenContent";
-import { useHifzTest } from "@/src/features/hifz/hook/useHifzTest";
+import { useHifzTest } from "@/src/features/hifz/hooks/useHifzTest";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { View, Pressable } from "react-native";

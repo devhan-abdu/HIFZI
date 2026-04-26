@@ -11,7 +11,7 @@ import HifzEmptyState from "@/src/features/hifz/components/HifzEmptyState";
 import HifzOverViewCard from "@/src/features/hifz/components/HifzOverviewCard";
 import { HifzTrackerSkeleton } from "@/src/features/hifz/components/skeleton";
 import StatCard from "@/src/features/hifz/components/StatCard";
-import { useGetHifzPlan } from "@/src/features/hifz/hook/useGetHifzPlan";
+import { useHifzPlan } from "@/src/features/hifz/hooks/useHifzPlan";
 import { useHifzDailyTask } from "@/src/features/hifz/hooks/useHifzDailyTask";
 import { useReviewSuggestions } from "@/src/features/hifz/hooks/useReviewSuggestions";
 import { getReviewPriorityColor } from "@/src/features/hifz/utils/reviewPriority";
@@ -25,27 +25,29 @@ import { Pressable, View } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "@/src/hooks/useSession";
-import { useSQLiteContext } from "expo-sqlite";
-import { getLatestInAppNotification } from "@/src/services/notificationService";
+import { notificationRepository } from "@/src/features/notifications/services/notificationRepository";
 import { useNotifications } from "@/src/hooks/useNotifications";
 import { sendTestNotification } from "@/src/utils/testNotifications";
-
 export default function Hifz() {
-  const { hifz, isLoading, error, refetch } = useGetHifzPlan();
+  const { hifz, isLoading, error, refetch } = useHifzPlan();
   const { todayTask } = useHifzDailyTask();
   const { suggestions } = useReviewSuggestions(hifz?.id);
   const { user } = useSession();
+  
   const handleSendTestNotification = async () => {
     if (!user?.id) return;
-    await sendTestNotification(db, user.id, "xp");
+    await sendTestNotification(user.id, "xp");
   };
-  const db = useSQLiteContext();
+
   const { unreadCount } = useNotifications();
   const { items: surah } = useLoadSurahData();
   const latestNotificationQuery = useQuery({
     queryKey: ["latest-notification", user?.id],
     enabled: !!user?.id,
-    queryFn: () => getLatestInAppNotification(db, user!.id),
+    queryFn: async () => {
+      const all = await notificationRepository.getNotifications(user!.id);
+      return all.find(n => n.isRead === 0) || null;
+    },
     staleTime: 1000 * 20,
   });
 
@@ -177,7 +179,7 @@ export default function Hifz() {
               Review
             </Text>
             <Text className="text-xl text-gray-900 mb-4">
-              📚 Review for Today
+               Review for Today
             </Text>
             {suggestions.length > 0 ?
               <View className="gap-y-3">

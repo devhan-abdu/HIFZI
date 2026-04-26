@@ -17,8 +17,7 @@ import {
 } from "@/src/features/hifz/types";
 import SelectDays from "@/src/features/muraja/components/SelectDays";
 import StatsSummary from "@/src/features/hifz/components/StatsSummary";
-import { useGetHifzPlan } from "@/src/features/hifz/hook/useGetHifzPlan";
-import { useSaveHifzPlanHifz } from "@/src/features/hifz/hook/useSaveHifzPlan";
+import { useSaveHifzPlanHifz } from "@/src/features/hifz/hooks/useSaveHifzPlan";
 import PlanFormSkeleton from "@/src/features/hifz/components/skeleton";
 import {
   ScreenContent,
@@ -31,13 +30,14 @@ import { Alert } from "@/src/components/common/Alert";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { Text } from "@/src/components/common/ui/Text";
 import { formatErrorMessage } from "@/src/utils/error-utils";
+import { useHifzPlan } from "@/src/features/hifz/hooks/useHifzPlan";
 
 export default function CreateHifzPlan() {
   const router = useRouter();
   const [showDatePicker, setShowDatePicker] = useState(false);
   const { user } = useSession();
-  const { hifz: existingPlan, isLoading } = useGetHifzPlan();
-  const { savePlan, isSaving } = useSaveHifzPlanHifz(existingPlan?.id);
+  const { hifz: existingPlan, isLoading } = useHifzPlan();
+  const { savePlan, isSaving } = useSaveHifzPlanHifz();
 
   const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
 

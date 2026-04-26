@@ -34,7 +34,7 @@ type Cardprops = {
     analytics: { longestStreak: number };
   };
   surah: ISurah[];
-  userStats: { total_xp: number; level: number; current_streak: number } | null;
+  userStats: { totalXp: number; level: number; hifzCurrentStreak: number } | null;
 };
 
 function safeFormat(date?: string) {
@@ -50,10 +50,8 @@ export default function Card({
   murajaPlan,
   userStats,
 }: Cardprops) {
-  // 🚫 If nothing exists, render nothing
   if (!murajaPlan && !hifzAnalytics) return null;
 
-  // ✅ Safe date range
   const dateRange =
     (
       murajaPlan &&
@@ -67,10 +65,8 @@ export default function Card({
 
   return (
     <View className="bg-primary rounded-[40px] p-7 shadow-2xl shadow-primary/40 overflow-hidden relative">
-      {/* Background bubble */}
       <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
 
-      {/* Header */}
       <View className="flex-row justify-between items-end mb-6">
         <View className="flex-1">
           <View className="flex-row items-center mb-1">
@@ -93,11 +89,11 @@ export default function Card({
               <View className="h-1 bg-white/10 rounded-full overflow-hidden">
                 <View 
                   className="h-full bg-amber-400" 
-                  style={{ width: `${(userStats.total_xp % 1000) / 10}%` }} 
+                  style={{ width: `${(userStats.totalXp % 1000) / 10}%` }} 
                 />
               </View>
               <Text className="text-[8px] text-white/40 mt-1 uppercase tracking-widest">
-                {userStats.total_xp % 1000} / 1000 XP
+                {userStats.totalXp % 1000} / 1000 XP
               </Text>
             </View>
           )}
@@ -120,7 +116,6 @@ export default function Card({
       <View className="w-full h-[2px] bg-white/10 rounded-full mb-9 overflow-hidden" />
 
       <View className="flex-row">
-        {/* HIFZ */}
         {hifzAnalytics && (
           <View className="flex-1 pr-5 border-r border-white/10">
             <View className="flex-row items-center mb-4">
@@ -173,7 +168,6 @@ export default function Card({
           </View>
         )}
 
-        {/* MURAJA */}
         {murajaPlan && (
           <View className="flex-1 pl-5">
             <View className="flex-row items-center mb-4">

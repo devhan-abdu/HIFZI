@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect, useState } from "react";
-import { View, FlatList, useWindowDimensions, Pressable } from "react-native";
+import { View, FlatList, useWindowDimensions } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   useFocusEffect,
@@ -12,7 +12,7 @@ import { MushafPage } from "@/src/features/mushaf/components/MushafPage";
 import { TranslationPage } from "@/src/features/quran/components/TranslationPage";
 import { ReaderBottomSheet } from "@/src/features/quran/components/ReaderBottomSheet";
 import ReaderHeader from "@/src/features/quran/components/ReaderHeader";
-import { useReaderStore } from "@/src/features/quran/hook/useReaderStore";
+import { useReaderStore } from "@/src/features/quran/hooks/useReaderStore";
 import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
 import { useFullscreenSystemUI } from "@/src/hooks/useFullscreenSystemUI";
 import { TallyCounter } from "@/src/features/quran/components/TallyCounter";
@@ -25,9 +25,8 @@ import { parseVerseKey } from "@/src/features/quran/services/bookmarkApi";
 
 import { PageData } from "@/src/features/quran/type";
 import { useSession } from "@/src/hooks/useSession";
-import { processDailyActivity } from "@/src/features/habit/services/habitService";
-import { useSQLiteContext } from "expo-sqlite";
-import { useQuranStateDb } from "@/src/lib/db/QuranStateDatabaseProvider";
+import { insertHabitProgressLog } from "@/src/features/habits/services/habitProgressService";
+import { habitAnalyticsService } from "@/src/features/habits/services/habitAnalyticsService";
 
 const ALL_PAGES = Array.from({ length: 604 }, (_, i) => i + 1);
 
@@ -40,13 +39,10 @@ export default function QuranReaderScreen() {
     ayah?: string;
   }>();
 
-  // Core State
   const [currentPage, setCurrentPage] = useState(Number(initialPage) || 1);
   const [pageMeta, setPageMeta] = useState<Record<number, PageData>>({});
 
   const sessionStartRef = useRef(Date.now());
-  const coreDb = useSQLiteContext();
-  const stateDb = useQuranStateDb();
   const { user } = useSession();
 
   const openReaderSession = useReaderSessionStore((s) => s.openSession);
@@ -71,10 +67,8 @@ export default function QuranReaderScreen() {
 
   const habitUserId = user?.id ?? "local-user";
 
-  // Toggle full-screen UI
   useFullscreenSystemUI(!uiVisible);
 
-  // 1. Manage Navigation and Reader Context
   useFocusEffect(
     useCallback(() => {
       const parent = navigation.getParent();
@@ -86,16 +80,28 @@ export default function QuranReaderScreen() {
         resetSelection();
         hideUI();
         parent?.setOptions({ tabBarStyle: undefined });
+
+        const durationMs = Date.now() - sessionStartRef.current;
+        const minutes = Math.floor(durationMs / 60000);
+        if (minutes > 0) {
+          void insertHabitProgressLog(undefined, {
+            userId: habitUserId,
+            date: new Date().toISOString().split("T")[0],
+            activityType: "NORMAL_READING",
+            minutesSpent: minutes,
+            unitsCompleted: 0, 
+          }).then(() => {
+            void habitAnalyticsService.recalculateStreaks(habitUserId);
+          });
+        }
       };
-    }, [hideUI, navigation, resetSelection, setReaderActive]),
+    }, [hideUI, navigation, resetSelection, setReaderActive, habitUserId]),
   );
 
-  // 2. Initialize Session and Activity Tracking
   useEffect(() => {
     openReaderSession(currentPage);
   }, [currentPage, openReaderSession]);
 
-  // 3. Metadata Management (Range-based preloading)
   const RANGE = 3;
   useEffect(() => {
     let isMounted = true;
@@ -108,7 +114,7 @@ export default function QuranReaderScreen() {
         Array.from({ length: end - start + 1 }, (_, i) => start + i).map(
           async (p) => {
             if (!pageMeta[p]) {
-              const data = await getPageData(coreDb, p);
+              const data = await getPageData(p);
               if (data) metaUpdates[p] = data;
             }
           },
@@ -124,16 +130,14 @@ export default function QuranReaderScreen() {
     return () => {
       isMounted = false;
     };
-  }, [currentPage, coreDb]);
+  }, [currentPage]);
 
-  // 4. Handle Deep Linking (Ayah/Page from Bookmarks or Search)
   useEffect(() => {
     const syncToDeepLink = async () => {
       if (initialAyah) {
         const parsed = parseVerseKey(initialAyah);
         if (parsed) {
           const targetPage = await getAyahPage(
-            coreDb,
             parsed.sura,
             parsed.ayah,
           );
@@ -153,7 +157,7 @@ export default function QuranReaderScreen() {
       }
     };
     syncToDeepLink();
-  }, [coreDb]);
+  }, []);
 
   const onScrollEnd = useCallback(
     (e: any) => {

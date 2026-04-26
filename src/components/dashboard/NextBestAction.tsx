@@ -66,11 +66,11 @@ export const NextBestAction = () => {
         <View className="flex-row items-center justify-between">
           <View className="flex-1 pr-4">
             <View className="bg-white/20 self-start px-2 py-0.5 rounded-full mb-2">
-              <Text className="text-white text-[10px] font-bold uppercase tracking-wider">
+              <Text className="text-white text-[10px]  uppercase tracking-wider">
                 Recommended Action
               </Text>
             </View>
-            <Text className="text-white text-2xl font-bold mb-1">
+            <Text className="text-white text-2xl mb-1">
               {primaryAction.title}
             </Text>
             <Text className="text-white/80 text-sm">

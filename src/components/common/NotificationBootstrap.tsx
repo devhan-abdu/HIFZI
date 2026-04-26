@@ -1,16 +1,11 @@
 import { useEffect } from "react";
 import { AppState } from "react-native";
 import * as Notifications from "expo-notifications";
-import { useSQLiteContext } from "expo-sqlite";
-
 import { useSession } from "@/src/hooks/useSession";
-import {
-  recordDeliveredNotificationFromPayload,
-  syncHabitNotificationSchedules,
-} from "@/src/services/notificationService";
+import { notificationService } from "@/src/features/notifications/services/notificationService";
+import { notificationRepository } from "@/src/features/notifications/services/notificationRepository";
 
 export function NotificationBootstrap() {
-  const db = useSQLiteContext();
   const { user, loading } = useSession();
 
   useEffect(() => {
@@ -19,9 +14,7 @@ export function NotificationBootstrap() {
     }
 
     const syncNotifications = () =>
-      syncHabitNotificationSchedules(db, {
-        userId: user.id,
-      }).catch((error) => {
+      notificationService.refreshSchedules(user.id).catch((error) => {
         console.warn("Notification schedule sync skipped:", error);
       });
 
@@ -36,22 +29,24 @@ export function NotificationBootstrap() {
     const receivedSubscription = Notifications.addNotificationReceivedListener(
       (notification) => {
         const payload =
-          notification.request.content.data as Record<string, unknown> | undefined;
+          notification.request.content.data as any;
 
-        void recordDeliveredNotificationFromPayload(db, payload).catch(() => {
-          // Ignore listener persistence errors so notifications still show.
-        });
+        if (payload?.userId && payload?.eventKey) {
+          void notificationRepository.recordDeliveredNotification(payload).catch(() => {
+          });
+        }
       },
     );
 
     const responseSubscription =
       Notifications.addNotificationResponseReceivedListener((response) => {
         const payload =
-          response.notification.request.content.data as Record<string, unknown> | undefined;
+          response.notification.request.content.data as any;
 
-        void recordDeliveredNotificationFromPayload(db, payload).catch(() => {
-          // Ignore listener persistence errors so notifications still show.
-        });
+        if (payload?.userId && payload?.eventKey) {
+          void notificationRepository.recordDeliveredNotification(payload).catch(() => {
+          });
+        }
       });
 
     return () => {
@@ -59,7 +54,7 @@ export function NotificationBootstrap() {
       receivedSubscription.remove();
       responseSubscription.remove();
     };
-  }, [db, loading, user?.id]);
+  }, [loading, user?.id]);
 
   return null;
 }
