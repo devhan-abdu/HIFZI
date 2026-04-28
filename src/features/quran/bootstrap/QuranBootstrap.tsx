@@ -6,11 +6,19 @@ import { useBookmarkStore } from "../store/bookmarkStore";
 import { useCatalogStore } from "../store/catalogStore";
 import { useDownloadStore } from "../store/downloadStore";
 import { db as stateDb } from "@/src/lib/db/local-client";
-import { initAppDatabase } from "@/src/lib/db/initAppDatabase";
-import { bookmarksLocal, quranDownloadJobs, quranPackages } from "../../quran/database/quranStateSchema";
+import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
+import migrations from "@/drizzle/migrations";
+import {
+  bookmarksLocal,
+  quranDownloadJobs,
+  quranPackages,
+} from "../../quran/database/quranStateSchema";
 import { eq, desc, asc } from "drizzle-orm";
+import { View } from "react-native";
+import { Text } from "@/src/components/common/ui/Text";
 
 export function QuranBootstrap({ children }: PropsWithChildren) {
+  const { success, error: migrationError } = useMigrations(stateDb, migrations);
   const status = useCatalogStore((store) => store.status);
   const setCatalog = useCatalogStore((store) => store.setCatalog);
   const startHydration = useCatalogStore((store) => store.startHydration);
@@ -20,18 +28,22 @@ export function QuranBootstrap({ children }: PropsWithChildren) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    if (!success) return;
     let cancelled = false;
 
     const bootstrap = async () => {
       try {
-        console.log("[Bootstrap] Initializing database...");
-        await initAppDatabase();
-
-        console.log("[Bootstrap] Hydrating stores...");
+        // await initAppDatabase();
         ensureQuranStorageDirectories();
         startHydration();
 
-        const [surahs, juzSections, bookmarkRows, downloadJobs, downloadPackages] = await Promise.all([
+        const [
+          surahs,
+          juzSections,
+          bookmarkRows,
+          downloadJobs,
+          downloadPackages,
+        ] = await Promise.all([
           getSurah(),
           getJuz(),
           stateDb.query.bookmarksLocal.findMany({
@@ -39,10 +51,16 @@ export function QuranBootstrap({ children }: PropsWithChildren) {
             orderBy: [desc(bookmarksLocal.updatedAt)],
           }),
           stateDb.query.quranDownloadJobs.findMany({
-            orderBy: [desc(quranDownloadJobs.priority), asc(quranDownloadJobs.createdAt)],
+            orderBy: [
+              desc(quranDownloadJobs.priority),
+              asc(quranDownloadJobs.createdAt),
+            ],
           }),
           stateDb.query.quranPackages.findMany({
-            orderBy: [asc(quranPackages.packageType), asc(quranPackages.packageKey)],
+            orderBy: [
+              asc(quranPackages.packageType),
+              asc(quranPackages.packageKey),
+            ],
           }),
         ]);
 
@@ -54,11 +72,13 @@ export function QuranBootstrap({ children }: PropsWithChildren) {
 
         setCatalog({ surahs, juzSections });
         setBookmarks(bookmarkRows as any);
-        setDownloads({ jobs: downloadJobs as any, packages: downloadPackages as any });
+        setDownloads({
+          jobs: downloadJobs as any,
+          packages: downloadPackages as any,
+        });
         setReady(true);
       } catch (error) {
         if (cancelled) return;
-        console.error("[Bootstrap Error]", error);
         setCatalogError("Failed to bootstrap data.");
         setReady(true);
       }
@@ -69,11 +89,30 @@ export function QuranBootstrap({ children }: PropsWithChildren) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [success]);
 
-  if (!ready) {
+  if (migrationError) {
+    console.log(migrationError, "error from the database");
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 20,
+        }}
+      >
+        <Text>Something went wrong</Text>
+        <Text style={{ textAlign: "center", marginTop: 10 }}>
+          We encountered an error updating the database. Please restart the app.
+        </Text>
+      </View>
+    );
+  }
+
+  if (!success || !ready) {
     return <AppLoadingScreen />;
   }
 
-  return children;
+  return <>{children}</>;
 }
