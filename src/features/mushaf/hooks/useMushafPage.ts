@@ -29,7 +29,7 @@ export function useMushafPage(
       try {
         const [uri, fetchedBboxes] = await Promise.all([
           getPageImage(page),
-          getAyahBBoxesByPage(db, page)
+          getAyahBBoxesByPage(page , db)
         ]);
 
         if (!isCancelled) {

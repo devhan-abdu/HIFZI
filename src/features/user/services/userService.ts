@@ -6,9 +6,10 @@ export const userService = {
   async getUserStats(userId: string) {
     if (!userId) return null;
     
-    return await db.query.userStats.findFirst({
+    const stats = await db.query.userStats.findFirst({
       where: eq(userStats.userId, userId),
     });
+    return stats ?? null;
   },
   
   async updateXp(userId: string, amount: number) {

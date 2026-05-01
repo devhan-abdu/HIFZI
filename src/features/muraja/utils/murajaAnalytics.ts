@@ -2,13 +2,10 @@ import { IMonthHistory } from "@/src/types";
 import { IWeeklyMUrajaStatus } from "../types";
 
 
-export const computeWeeklyReview = (plan: IMonthHistory) => {
-  const days = plan.weekly_plan_days || [];
+export const computeWeeklyReview = (plan: any) => {
+  const logs = plan.daily_logs || [];
   
- 
-
- const summary = days.reduce((acc, day) => {
-    const log = day.daily_muraja_logs?.[0];
+  const summary = logs.reduce((acc: any, log: any) => {
     if (log) {
       if (log.status === "completed") acc.completed++;
       if (log.status === "missed") acc.missed++;
@@ -20,27 +17,24 @@ export const computeWeeklyReview = (plan: IMonthHistory) => {
     return acc;
   }, { completed: 0, missed: 0, partial: 0, totalTime: 0, totalPages: 0, logCount: 0 });
       
-
   let maxStreak = 0;
   let currentStreak = 0;
   let bestDayName = "N/A"
   let highestScore = -1;
   
-  days.forEach(day => {
-    const activity = day.daily_muraja_logs?.[0]
-    
-      if (activity && (activity.status === "completed" || activity.status === "partial")) {
+  logs.forEach((log: any) => {
+      if (log && (log.status === "completed" || log.status === "partial")) {
           currentStreak++;
           maxStreak = Math.max(maxStreak, currentStreak);
-        } else if (activity && activity.status === "missed") {
+        } else if (log && log.status === "missed") {
               currentStreak = 0
       }
     
-   if (activity) {
-      const plannedPage = day.planned_pages || 0;
-      const actualPages = activity.completed_pages || 0;
-      const plannedTime = plan.estimated_time_min || 0;
-      const actualTime = activity.actual_time_min || 0;
+   if (log) {
+      const plannedPage = plan.plannedPagesPerDay || plan.planned_pages_per_day || 0;
+      const actualPages = log.completed_pages || 0;
+      const plannedTime = plan.estimatedTimeMin || plan.estimated_time_min || 0;
+      const actualTime = log.actual_time_min || 0;
 
       let dayScore = 0;
       if (actualPages >= plannedPage && plannedPage > 0) {
@@ -53,13 +47,14 @@ export const computeWeeklyReview = (plan: IMonthHistory) => {
 
       if (dayScore > highestScore) {
         highestScore = dayScore;
-        bestDayName = day.day_of_week;
+        const dateObj = new Date(log.date);
+        bestDayName = dateObj.toLocaleDateString('en-US', { weekday: "short" });
       }
     }
 
   });
 
-  const totalPlannedDays = days.length || 1
+  const totalPlannedDays = plan.selectedDays ? (typeof plan.selectedDays === 'string' ? JSON.parse(plan.selectedDays).length : plan.selectedDays.length) : 1;
 
  return {
     completed: summary.completed,

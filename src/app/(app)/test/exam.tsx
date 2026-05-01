@@ -10,6 +10,9 @@ import { View, Pressable } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
 import { Text as QuranText } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import { useSession } from "@/src/hooks/useSession";
+import { TestService } from "@/src/features/test/services/testService";
+import { useEffect } from "react";
 
 export default function Test() {
   const { pages } = useLocalSearchParams()
@@ -21,6 +24,21 @@ export default function Test() {
   const [score, setScore] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const { user } = useSession();
+  const { type, planId } = useLocalSearchParams();
+
+  useEffect(() => {
+    if (isFinished && user?.id) {
+      TestService.saveResult({
+        userId: user.id,
+        planId: planId && !isNaN(Number(planId)) ? Number(planId) : undefined,
+        type: (type as any) || "HIFZ",
+        pagesRange: parsedPages,
+        score,
+        totalQuestions: questions.length,
+      });
+    }
+  }, [isFinished, user?.id]);
 
   const resetUI = () => {
     setCurrentIndex(0);

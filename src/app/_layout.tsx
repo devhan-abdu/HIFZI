@@ -12,6 +12,7 @@ import { AppLoadingScreen } from "@/src/components/common/AppLoadingScreen";
 import { QuranBootstrap } from "@/src/features/quran/bootstrap/QuranBootstrap";
 import { NotificationBootstrap } from "@/src/components/common/NotificationBootstrap";
 import { QURAN_CORE_DB_NAME } from "@/src/lib/db/constants";
+import { CelebrationOverlay } from "@/src/components/common/CelebrationOverlay";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -52,6 +53,7 @@ export default function RootLayout() {
             <QuranBootstrap>
               <NotificationBootstrap />
               <RootLayoutNav />
+              <CelebrationOverlay />
             </QuranBootstrap>
           </SQLiteProvider>
         </Suspense>

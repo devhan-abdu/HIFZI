@@ -1,7 +1,7 @@
 import {  useMemo } from "react"
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "@/src/hooks/useSession";
-import { murajaServices } from "../services/murajaServices";
+import { murajaService } from "../services/murajaService";
 import { computeWeeklyReview } from "../utils/murajaAnalytics";
 
 
@@ -12,7 +12,7 @@ export const useWeeklyReview = (weekId?: number) => {
         queryKey: ["muraja-review", user?.id,weekId],
         queryFn: () => {
             if (!user?.id) return null;
-            return murajaServices.getReviewStats(user.id, weekId);
+            return murajaService.getReviewStats(user.id, weekId);
         },
         enabled: !!user?.id,
         
