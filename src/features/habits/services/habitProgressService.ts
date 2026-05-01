@@ -56,6 +56,23 @@ export const habitProgressService = {
     return result.id;
   },
 
+  async deleteHabitProgressLog(
+    db: any,
+    payload: {
+      userId: string;
+      activityType: HabitType;
+      localRefId: number;
+    }
+  ) {
+    const type = this.normalizeActivityType(payload.activityType);
+    const tx = db || drizzleDb;
+    await tx.delete(activityLogs).where(and(
+      eq(activityLogs.userId, payload.userId),
+      eq(activityLogs.activityType, type),
+      eq(activityLogs.localRefId, payload.localRefId)
+    ));
+  },
+
   async upsertActivityPlan(
     db: any,
     payload: {
@@ -171,6 +188,7 @@ export const habitProgressService = {
 };
 
 export const insertHabitProgressLog = habitProgressService.insertHabitProgressLog.bind(habitProgressService);
+export const deleteHabitProgressLog = habitProgressService.deleteHabitProgressLog.bind(habitProgressService);
 export const upsertActivityPlan = habitProgressService.upsertActivityPlan.bind(habitProgressService);
 export const shouldShowWeeklySummary = habitProgressService.shouldShowWeeklySummary.bind(habitProgressService);
 export const markWeeklySummarySeen = habitProgressService.markWeeklySummarySeen.bind(habitProgressService);

@@ -140,6 +140,33 @@ export const notificationService = {
     void this.syncWithRemote(payload.userId);
   },
 
+  async removeHabitEvent(userId: string, habitType: 'hifz' | 'muraja', date: string) {
+    await notificationRepository.deleteHabitEvent(userId, habitType, date);
+    
+    const todayKey = this.toDateKey();
+    const allEvents = await notificationRepository.getHabitEvents(userId);
+    const streaks = this.calculateStreaks(allEvents.map(e => e.date), todayKey);
+    
+    const totalXpResult = await db.select({ total: sql<number>`sum(xp_gained)` })
+      .from(habitEvents)
+      .where(eq(habitEvents.userId, userId));
+    
+    const totalXp = totalXpResult[0]?.total ?? 0;
+    const level = Math.floor(totalXp / 100);
+
+    await db.update(userStats)
+      .set({
+        totalXp,
+        level,
+        [habitType === 'hifz' ? 'hifzCurrentStreak' : 'murajaCurrentStreak']: streaks.current,
+        globalLongestStreak: streaks.longest,
+      })
+      .where(eq(userStats.userId, userId));
+
+    await this.refreshSchedules(userId);
+    void this.syncWithRemote(userId);
+  },
+
   async triggerXPReward(userId: string, habitType: string, status: string, date: string, gained: number, remaining: number) {
     const eventKey = `xp:${habitType}:${status}:${date}:${gained}`;
     const result = await notificationRepository.createNotification(userId, {

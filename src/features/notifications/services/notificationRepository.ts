@@ -108,6 +108,15 @@ export const notificationRepository = {
       });
   },
 
+  async deleteHabitEvent(userId: string, habitType: 'hifz' | 'muraja', date: string) {
+    await db.delete(habitEvents)
+      .where(and(
+        eq(habitEvents.userId, userId),
+        eq(habitEvents.habitType, habitType),
+        eq(habitEvents.date, date)
+      ));
+  },
+
 
   async getScheduledNotification(userId: string, eventKey: string) {
     return await db.query.scheduledNotifications.findFirst({
