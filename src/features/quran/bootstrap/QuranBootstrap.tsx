@@ -16,6 +16,7 @@ import {
 import { eq, desc, asc } from "drizzle-orm";
 import { View } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
+import { useSQLiteContext } from "expo-sqlite";
 
 export function QuranBootstrap({ children }: PropsWithChildren) {
   const { success, error: migrationError } = useMigrations(stateDb, migrations);
@@ -26,6 +27,8 @@ export function QuranBootstrap({ children }: PropsWithChildren) {
   const setBookmarks = useBookmarkStore((store) => store.setBookmarks);
   const setDownloads = useDownloadStore((store) => store.setDownloads);
   const [ready, setReady] = useState(false);
+
+   const expoDb = useSQLiteContext(); 
 
   useEffect(() => {
     if (!success) return;
@@ -44,8 +47,8 @@ export function QuranBootstrap({ children }: PropsWithChildren) {
           downloadJobs,
           downloadPackages,
         ] = await Promise.all([
-          getSurah(),
-          getJuz(),
+          getSurah(expoDb),
+          getJuz(expoDb),
           stateDb.query.bookmarksLocal.findMany({
             where: eq(bookmarksLocal.deletedAt, null as any),
             orderBy: [desc(bookmarksLocal.updatedAt)],
@@ -78,6 +81,7 @@ export function QuranBootstrap({ children }: PropsWithChildren) {
         });
         setReady(true);
       } catch (error) {
+        console.log(error, "errorrrr");
         if (cancelled) return;
         setCatalogError("Failed to bootstrap data.");
         setReady(true);

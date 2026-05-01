@@ -23,6 +23,7 @@ import SelectDays from "@/src/features/muraja/components/SelectDays";
 import SurahDropdown, {
   SurahPageDropdown,
 } from "@/src/features/muraja/components/SurahDropdown";
+import { HabitTriggerSelector } from "@/src/components/common/HabitTriggerSelector";
 
 import { useSession } from "@/src/hooks/useSession";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
@@ -48,6 +49,7 @@ export default function CreateWeeklyPlan() {
     handleSubmit,
     formState: { errors },
     control,
+    setValue,
   } = useForm({
     resolver: yupResolver(WeeklyMurajaSchema),
     defaultValues: {
@@ -59,6 +61,8 @@ export default function CreateWeeklyPlan() {
       selectedDays: [],
       place: "",
       note: "",
+      preferred_time: "fajr",
+      is_custom_time: false,
     },
   });
 
@@ -91,6 +95,8 @@ export default function CreateWeeklyPlan() {
         estimated_time_min: data.estimated_time_min,
         place: data.place || null,
         note: data.note || null,
+        preferred_time: data.preferred_time,
+        is_custom_time: data.is_custom_time ?? false,
       };
 
      
@@ -190,6 +196,20 @@ export default function CreateWeeklyPlan() {
                     />
                   )}
                 </View>
+              )}
+            />
+            <View className="h-[1px] bg-slate-100 my-5" />
+            <Controller
+              name="preferred_time"
+              control={control}
+              render={({ field: { value, onChange } }) => (
+                <HabitTriggerSelector 
+                  value={value} 
+                  onChange={onChange} 
+                  isCustom={useWatch({ control, name: 'is_custom_time' })}
+                  setIsCustom={(val) => setValue('is_custom_time', val)}
+                  error={errors.preferred_time?.message}
+                />
               )}
             />
             <View className="h-[1px] bg-slate-100 my-5" />

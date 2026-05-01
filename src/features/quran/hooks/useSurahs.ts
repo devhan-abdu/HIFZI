@@ -1,16 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
-import { quranService } from '../services/quranService';
+import { getJuz, getSurah } from '../services';
+// import { quranService } from '../services/quranService';
 
 export function useSurahs() {
   return useQuery({
     queryKey: ['surahs'],
-    queryFn: () => quranService.getSurahs(),
+    queryFn: () => getSurah(),
   });
 }
 
 export function useJuz() {
   return useQuery({
     queryKey: ['juz'],
-    queryFn: () => quranService.getJuz(),
+    queryFn: () => getJuz(),
   });
 }

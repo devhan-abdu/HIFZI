@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
-import { useReaderStore } from "../hook/useReaderStore";
+import { useReaderStore } from "../hooks/useReaderStore";
 import {
   getPageVersesWithTranslation,
   getTranslationsCached,

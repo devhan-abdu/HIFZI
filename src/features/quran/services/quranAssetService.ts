@@ -1,10 +1,12 @@
-import { db as assetDb } from "@/src/lib/db/asset-client";
+import {  getAssetDb } from "@/src/lib/db/asset-client";
 import { aya, sora, ayahBbox } from "../database/quranAssetSchema";
 import { eq, and, sql, asc } from "drizzle-orm";
 import { AyahBbox, PageData, Surah } from "../type";
 import { ISurah } from "@/src/types";
+import { SQLiteDatabase } from "expo-sqlite";
 
-export async function getJuz() {
+export async function getJuz(db:SQLiteDatabase) {
+    const assetDb = getAssetDb(db);
   try {
     const rows = await assetDb.select({
       juzNumber: aya.joza,
@@ -46,7 +48,9 @@ export async function getJuz() {
   }
 }
 
-export async function getPageData(page: number): Promise<PageData | null> {
+export async function getPageData(page: number, db:SQLiteDatabase): Promise<PageData | null> {
+      const assetDb = getAssetDb(db);
+
   try {
     const result = await assetDb.query.aya.findFirst({
       where: eq(aya.page, page),
@@ -70,7 +74,9 @@ export async function getPageData(page: number): Promise<PageData | null> {
   }
 }
 
-export async function getAyahPage(sura: number, ayahId: number) {
+export async function getAyahPage(sura: number, ayahId: number, db:SQLiteDatabase) {
+      const assetDb = getAssetDb(db);
+
   try {
     const result = await assetDb.query.aya.findFirst({
       where: and(eq(aya.soraid, sura), eq(aya.ayaid, ayahId)),
@@ -83,7 +89,9 @@ export async function getAyahPage(sura: number, ayahId: number) {
   }
 }
 
-export async function getAyahBBoxesByPage(page: number): Promise<AyahBbox[]> {
+export async function getAyahBBoxesByPage(page: number,db:SQLiteDatabase): Promise<AyahBbox[]> {
+      const assetDb = getAssetDb(db);
+
   try {
     const rows = await assetDb.query.ayahBbox.findMany({
       where: eq(ayahBbox.page, page)
@@ -103,7 +111,8 @@ export async function getAyahBBoxesByPage(page: number): Promise<AyahBbox[]> {
   }
 }
 
-export async function getSurah(): Promise<ISurah[] | null> {
+export async function getSurah(db: SQLiteDatabase): Promise<ISurah[] | null> {
+   const assetDb = getAssetDb(db);
   try {
     const result = await assetDb.select({
       number: sora.soraid,

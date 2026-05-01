@@ -27,10 +27,12 @@ import { PageData } from "@/src/features/quran/type";
 import { useSession } from "@/src/hooks/useSession";
 import { insertHabitProgressLog } from "@/src/features/habits/services/habitProgressService";
 import { habitAnalyticsService } from "@/src/features/habits/services/habitAnalyticsService";
+import { useSQLiteContext } from "expo-sqlite";
 
 const ALL_PAGES = Array.from({ length: 604 }, (_, i) => i + 1);
 
 export default function QuranReaderScreen() {
+  const db = useSQLiteContext()
   const { width, height } = useWindowDimensions();
   const listRef = useRef<FlatList>(null);
   const navigation = useNavigation();
@@ -114,7 +116,7 @@ export default function QuranReaderScreen() {
         Array.from({ length: end - start + 1 }, (_, i) => start + i).map(
           async (p) => {
             if (!pageMeta[p]) {
-              const data = await getPageData(p);
+              const data = await getPageData(p,db);
               if (data) metaUpdates[p] = data;
             }
           },
@@ -140,6 +142,7 @@ export default function QuranReaderScreen() {
           const targetPage = await getAyahPage(
             parsed.sura,
             parsed.ayah,
+            db
           );
           if (targetPage) {
             setCurrentPage(targetPage);

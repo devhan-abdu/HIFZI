@@ -16,6 +16,8 @@ export interface IWeeklyMurajaPLan {
     estimated_time_min: number;
     place?: string | null;
     note?: string | null;
+    preferred_time?: string;
+    is_custom_time?: boolean;
 }
 
 export interface IUserStats {
@@ -114,6 +116,8 @@ export const WeeklyMurajaSchema = Yup.object({
 
   place: Yup.string().nullable(),
   note: Yup.string().nullable(),
+  preferred_time: Yup.string().required("Habit trigger is required").default("fajr"),
+  is_custom_time: Yup.boolean().default(false),
 });
 
 export type WeeklyMurajaFormType = Yup.InferType<typeof WeeklyMurajaSchema>;

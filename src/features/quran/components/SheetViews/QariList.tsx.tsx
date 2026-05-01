@@ -8,8 +8,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import { Text } from "@/src/components/common/ui/Text";
-import { useQuranAudio } from "../../hook/useQuranAudio";
-import { useReaderStore } from "../../hook/useReaderStore";
+import { useQuranAudio } from "../../hooks/useQuranAudio";
+import { useReaderStore } from "../../hooks/useReaderStore";
 import { getRecitationsCached, Reciter } from "../../services";
 
 interface QariListProps {

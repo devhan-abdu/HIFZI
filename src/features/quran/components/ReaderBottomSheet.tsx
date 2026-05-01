@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState } from "react";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useWindowDimensions } from "react-native";
 
-import { useReaderStore } from "../hook/useReaderStore";
+import { useReaderStore } from "../hooks/useReaderStore";
 import { AyahActionMenu } from "./SheetViews/AyahActionMenu";
 import { QariList } from "./SheetViews/QariList.tsx";
 import { animatedIndex } from "./readerAnimation";

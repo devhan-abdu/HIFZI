@@ -13,6 +13,7 @@ export interface IHifzLog {
     mistakes_count?: number;
     hesitation_count?: number;
     quality_score?: number;
+    actual_minutes_spent?: number;
 };
 
 
@@ -30,8 +31,9 @@ export interface IHifzPlan {
   estimated_end_date: string;  
   direction: 'forward' | "backward", 
   status?: "active" | "completed" | "paused";
+  preferred_time?: string;
+  is_custom_time?: boolean;
   hifz_daily_logs?: IHifzLog[]
-    
 }
 export interface HifzQuestion {
  type: 'SEQUENCE' | 'BOUNDARY';
@@ -56,6 +58,8 @@ export const HifzPlanSchema = Yup.object({
     .min(0.1, "Minimum 0.1 page") 
     .typeError("Must be a number"),
       
+  preferred_time: Yup.string().required("Habit trigger is required").default("fajr"),
+  is_custom_time: Yup.boolean().default(false),
 });
 
 

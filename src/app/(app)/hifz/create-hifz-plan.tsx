@@ -31,6 +31,7 @@ import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { Text } from "@/src/components/common/ui/Text";
 import { formatErrorMessage } from "@/src/utils/error-utils";
 import { useHifzPlan } from "@/src/features/hifz/hooks/useHifzPlan";
+import { HabitTriggerSelector } from "@/src/components/common/HabitTriggerSelector";
 
 export default function CreateHifzPlan() {
   const router = useRouter();
@@ -56,6 +57,8 @@ export default function CreateHifzPlan() {
       start_surah: 1,
       start_page: 1,
       direction: "forward",
+      preferred_time: "fajr",
+      is_custom_time: false,
     },
   });
   const startSurah = useWatch({ control, name: "start_surah" });
@@ -89,7 +92,6 @@ export default function CreateHifzPlan() {
     try {
       const stats = calculatePlanStats(data);
       const { selectedDays, ...rest } = data;
-
       const planData = {
         ...rest,
         selected_days: selectedDays,
@@ -103,6 +105,7 @@ export default function CreateHifzPlan() {
         existingPlan ? "Plan updated!" : "Journey started!",
         () => router.back(),
       );
+      console.log("after calling savePlan")
     } catch (error: any) {
       showError("Error", formatErrorMessage(error));
     }
@@ -288,6 +291,20 @@ export default function CreateHifzPlan() {
               )}
             />
           </View>
+
+          <Controller
+            name="preferred_time"
+            control={control}
+            render={({ field: { value, onChange } }) => (
+              <HabitTriggerSelector 
+                value={value} 
+                onChange={onChange}
+                isCustom={useWatch({ control, name: 'is_custom_time' })}
+                setIsCustom={(val) => setValue('is_custom_time', val)}
+                error={errors.preferred_time?.message}
+              />
+            )}
+          />
         </ScreenContent>
 
         <ScreenFooter>
