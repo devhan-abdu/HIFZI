@@ -5,6 +5,7 @@ import { supabase } from "@/src/lib/supabase";
 import { IHifzLog, IHifzPlan } from "../types";
 import {
   insertHabitProgressLog,
+  deleteHabitProgressLog,
   upsertActivityPlan,
 } from "@/src/features/habits/services/habitProgressService";
 import { PerformanceService } from "@/src/services/PerformanceService";
@@ -12,6 +13,9 @@ import { GamificationService } from "@/src/services/GamificationService";
 import { userStats } from "@/src/features/user/database/userSchema";
 import { notificationService } from "../../notifications/services/notificationService";
 import { HabitRepository } from "@/src/features/habits/services/habitRepository";
+import { habitStackingService } from "@/src/features/habits/services/habitStackingService";
+
+import { PageMasteryService } from "@/src/services/PageMasteryService";
 
 export const hifzService = {
   async createPlan(planData: Omit<IHifzPlan, "hifz_daily_logs" | "id"> & { user_id: string }) {
@@ -37,6 +41,8 @@ export const hifzService = {
         estimatedEndDate: planData.estimated_end_date,
         direction: planData.direction,
         status: planData.status ?? "active",
+        preferredTime: planData.preferred_time,
+        isCustomTime: planData.is_custom_time ?? false,
         syncStatus: 0,
       }).returning({ id: hifzPlans.id });
 
@@ -57,6 +63,16 @@ export const hifzService = {
         }),
       });
     });
+
+    if (planData.preferred_time) {
+      void habitStackingService.scheduleReminders({
+        id: localId,
+        type: 'hifz',
+        preferredTime: planData.preferred_time,
+        isCustomTime: planData.is_custom_time ?? false,
+        selectedDays: planData.selected_days,
+      });
+    }
 
     void this.syncPending(userId);
     return localId;
@@ -92,6 +108,8 @@ export const hifzService = {
       estimated_end_date: localPlan.estimatedEndDate,
       direction: localPlan.direction as "forward" | "backward",
       status: localPlan.status as any,
+      preferred_time: localPlan.preferredTime ?? undefined,
+      is_custom_time: localPlan.isCustomTime ?? undefined,
       hifz_daily_logs: logs.map(l => ({
         id: l.id,
         hifz_plan_id: l.hifzPlanId,
@@ -127,6 +145,20 @@ export const hifzService = {
       });
 
       previousStatus = (existing?.status as any) ?? null;
+
+      if (todayLog.status === ("pending" as any)) {
+        if (existing) {
+          await tx.delete(hifzLogs).where(eq(hifzLogs.id, existing.id));
+          await deleteHabitProgressLog(tx as any, {
+            userId,
+            activityType: 'hifz',
+            localRefId: existing.id
+          });
+          await notificationService.removeHabitEvent(userId, 'hifz', todayLog.date);
+          changed = true;
+        }
+        return;
+      }
 
       const mCount = todayLog.mistakes_count ?? 0;
       const hCount = todayLog.hesitation_count ?? 0;
@@ -191,7 +223,7 @@ export const hifzService = {
         userId,
         date: todayLog.date,
         activityType: "HIFZ",
-        minutesSpent: isMissed ? 0 : Math.max(1, normalizedUnits) * 3,
+        minutesSpent: todayLog.actual_minutes_spent ?? (isMissed ? 0 : Math.max(1, normalizedUnits) * 3),
         unitsCompleted: isMissed ? 0 : normalizedUnits,
         note: todayLog.notes ?? null,
         planId: todayLog.hifz_plan_id,
@@ -200,19 +232,31 @@ export const hifzService = {
       });
 
       if (!isMissed && todayLog.actual_pages_completed > 0) {
-        const quality = todayLog.quality_score ?? PerformanceService.deriveQualityScore(todayLog.mistakes_count ?? 0, todayLog.hesitation_count ?? 0);
-        await PerformanceService.updateRangePerformance(tx as any, todayLog.actual_start_page, todayLog.actual_end_page, quality);
-      }
+        const qualityScore = todayLog.quality_score ?? PerformanceService.deriveQualityScore(todayLog.mistakes_count ?? 0, todayLog.hesitation_count ?? 0);
+        
+        // Map quality score to PageMastery categories
+        let sessionQuality: 'perfect' | 'medium' | 'low' = 'medium';
+        if (qualityScore >= 5) sessionQuality = 'perfect';
+        else if (qualityScore <= 2) sessionQuality = 'low';
 
-      const stats = await tx.query.userStats.findFirst({
-        where: eq(userStats.userId, userId),
-        columns: { hifzCurrentStreak: true }
-      });
-      const currentStreak = stats?.hifzCurrentStreak ?? 0;
+        await PageMasteryService.logPageRangeActivity(
+          userId,
+          todayLog.actual_start_page,
+          todayLog.actual_end_page,
+          'hifz',
+          sessionQuality,
+          Math.ceil((todayLog.mistakes_count ?? 0) / Math.max(1, todayLog.actual_pages_completed))
+        );
 
-      if (!isMissed && todayLog.actual_pages_completed > 0) {
-        const quality = todayLog.quality_score ?? PerformanceService.deriveQualityScore(todayLog.mistakes_count ?? 0, todayLog.hesitation_count ?? 0);
-        await GamificationService.processSessionCompletion(tx as any, userId, quality, currentStreak);
+        await PerformanceService.updateRangePerformance(tx as any, todayLog.actual_start_page, todayLog.actual_end_page, qualityScore);
+        
+        const stats = await tx.query.userStats.findFirst({
+          where: eq(userStats.userId, userId),
+          columns: { hifzCurrentStreak: true }
+        });
+        const currentStreak = stats?.hifzCurrentStreak ?? 0;
+
+        await GamificationService.processSessionCompletion(tx as any, userId, qualityScore, currentStreak);
       }
 
       if (changed && (todayLog.status === "completed" || todayLog.status === "partial" || todayLog.status === "missed")) {
@@ -253,6 +297,8 @@ export const hifzService = {
           estimated_end_date: plan.estimatedEndDate,
           direction: plan.direction,
           status: plan.status,
+          preferred_time: plan.preferredTime,
+          is_custom_time: plan.isCustomTime,
         };
 
         const { data, error } = await supabase

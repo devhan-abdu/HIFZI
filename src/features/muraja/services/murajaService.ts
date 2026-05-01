@@ -4,11 +4,13 @@ import { weeklyMurajaPlans, dailyMurajaLogs } from '../database/murajaSchema';
 import { IDailyMurajaLog, IWeeklyMurajaPLan } from "../types";
 import { PerformanceService } from "@/src/services/PerformanceService";
 import { GamificationService } from "@/src/services/GamificationService";
-import { insertHabitProgressLog } from "../../habits/services/habitProgressService";
+import { PageMasteryService } from "@/src/services/PageMasteryService";
+import { insertHabitProgressLog, deleteHabitProgressLog } from "../../habits/services/habitProgressService";
 import { supabase } from "@/src/lib/supabase";
 import { notificationService } from "../../notifications/services/notificationService";
 
 import { userStats } from '../../user/database/userSchema';
+import { habitStackingService } from '../../habits/services/habitStackingService';
 
 export type LocalMurajaLogWriteResult = {
   localLogId: number | null;
@@ -40,6 +42,8 @@ export const murajaService = {
         estimatedTimeMin: planData.estimated_time_min,
         place: planData.place ?? null,
         note: planData.note ?? null,
+        preferredTime: planData.preferred_time,
+        isCustomTime: planData.is_custom_time ?? false,
       }).returning({ id: weeklyMurajaPlans.id });
 
       lastId = newPlan.id;
@@ -51,6 +55,16 @@ export const murajaService = {
           set: { murajaLastPage: planData.start_page - 1 }
         });
     });
+
+    if (planData.preferred_time) {
+      void habitStackingService.scheduleReminders({
+        id: lastId,
+        type: 'muraja',
+        preferredTime: planData.preferred_time,
+        isCustomTime: planData.is_custom_time ?? false,
+        selectedDays: JSON.parse(planData.selected_days),
+      });
+    }
 
     void this.syncPending(planData.user_id);
     return lastId;
@@ -75,6 +89,8 @@ export const murajaService = {
 
     return {
       ...plan,
+      preferred_time: plan.preferredTime ?? undefined,
+      is_custom_time: plan.isCustomTime ?? undefined,
       muraja_last_page: stats?.murajaLastPage ?? 0,
       muraja_current_streak: stats?.murajaCurrentStreak ?? 0,
       daily_logs: logs.map(l => ({
@@ -115,6 +131,12 @@ export const murajaService = {
       if (log.status === "pending" && (log.completed_pages ?? 0) <= 0) {
         if (existing?.id) {
           await tx.delete(dailyMurajaLogs).where(eq(dailyMurajaLogs.id, existing.id));
+          await deleteHabitProgressLog(tx as any, {
+            userId,
+            activityType: 'review',
+            localRefId: existing.id
+          });
+          await notificationService.removeHabitEvent(userId, 'muraja', log.date ?? '');
           localLogId = existing.id;
           changed = true;
           currentStatus = "pending";
@@ -214,15 +236,30 @@ export const murajaService = {
       const currentStreak = stats?.murajaCurrentStreak ?? 0;
 
       if ((log.completed_pages ?? 0) > 0) {
-        const quality = log.quality_score ?? PerformanceService.deriveQualityScore(log.mistakes_count ?? 0, log.hesitation_count ?? 0);
+        const qualityScore = log.quality_score ?? PerformanceService.deriveQualityScore(log.mistakes_count ?? 0, log.hesitation_count ?? 0);
+        
+        // Map quality score to PageMastery categories
+        let sessionQuality: 'perfect' | 'medium' | 'low' = 'medium';
+        if (qualityScore >= 5) sessionQuality = 'perfect';
+        else if (qualityScore <= 2) sessionQuality = 'low';
+
+        await PageMasteryService.logPageRangeActivity(
+          userId,
+          log.start_page ?? 0,
+          (log.start_page ?? 0) + (log.completed_pages ?? 0) - 1,
+          'muraja',
+          sessionQuality,
+          Math.ceil((log.mistakes_count ?? 0) / Math.max(1, log.completed_pages ?? 1))
+        );
+
         await PerformanceService.updateRangePerformance(
           tx as any,
           log.start_page ?? 0,
           (log.start_page ?? 0) + (log.completed_pages ?? 0) - 1,
-          quality
+          qualityScore
         );
 
-        await GamificationService.processSessionCompletion(tx as any, userId, quality, currentStreak);
+        await GamificationService.processSessionCompletion(tx as any, userId, qualityScore, currentStreak);
       }
 
       if (changed && currentStatus !== "pending" && (log.status === "completed" || log.status === "partial" || log.status === "missed")) {
@@ -262,6 +299,8 @@ export const murajaService = {
           estimated_time_min: plan.estimatedTimeMin,
           place: plan.place,
           note: plan.note,
+          preferred_time: plan.preferredTime,
+          is_custom_time: plan.isCustomTime,
         };
 
         const { data, error } = await supabase
@@ -321,5 +360,46 @@ export const murajaService = {
     } catch (e) {
       console.warn("Muraja sync failed", e);
     }
+  },
+
+  async getReviewStats(userId: string, planId?: number) {
+    const conditions = [
+      eq(weeklyMurajaPlans.userId, userId),
+      eq(weeklyMurajaPlans.isActive, false)
+    ];
+    if (planId) {
+      conditions.push(eq(weeklyMurajaPlans.id, planId));
+    }
+
+    const plan = await db.query.weeklyMurajaPlans.findFirst({
+      where: and(...conditions),
+      orderBy: [desc(weeklyMurajaPlans.weekEndDate)],
+    });
+
+    if (!plan) return null;
+
+    const logs = await db.query.dailyMurajaLogs.findMany({
+      where: eq(dailyMurajaLogs.planId, plan.id),
+      orderBy: [dailyMurajaLogs.date],
+    });
+
+    return {
+      ...plan,
+      daily_logs: logs.map(l => ({
+        id: l.id,
+        remote_id: l.remoteId,
+        plan_id: l.planId,
+        date: l.date,
+        completed_pages: l.completedPages,
+        actual_time_min: l.actualTimeMin,
+        status: l.status,
+        is_catchup: l.isCatchup,
+        sync_status: l.syncStatus,
+        start_page: l.startPage,
+        mistakes_count: l.mistakesCount,
+        hesitation_count: l.hesitationCount,
+        quality_score: l.qualityScore,
+      })),
+    };
   }
 };
