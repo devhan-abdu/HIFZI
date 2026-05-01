@@ -14,13 +14,19 @@ type HifzAnalytics = {
 };
 
 type MurajaPlan = {
-  week_start_date?: string;
-  week_end_date?: string;
+  id: number;
+  week_start_date: string;
+  week_end_date: string;
   start_juz?: number;
   end_juz?: number;
   planned_pages_per_day?: number;
   estimated_time_min?: number;
+  totalPage?: number;
+  totalDays?: number;
+  startSurah?: string;
+  endSurah?: string;
 };
+
 
 type Cardprops = {
   hifzAnalytics?: HifzAnalytics | null;

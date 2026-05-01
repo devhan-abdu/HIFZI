@@ -8,7 +8,7 @@ import { useMushafPage } from "../hooks/useMushafPage";
 import { PageImage } from "./PageImage";
 import { AyahHighlight } from "./AyahHighlight";
 import { isPointInRect } from "../utils/coordinates";
-import { useReaderStore } from "../../quran/hook/useReaderStore";
+import { useReaderStore } from "../../quran/hooks/useReaderStore";
 
 interface MushafPageProps {
   pageNumber: number;
