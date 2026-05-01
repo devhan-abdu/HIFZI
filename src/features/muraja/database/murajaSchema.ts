@@ -15,6 +15,8 @@ export const weeklyMurajaPlans = sqliteTable('weekly_muraja_plan', {
   estimatedTimeMin: integer('estimated_time_min'),
   place: text('place'),
   note: text('note'),
+  preferredTime: text('preferred_time'),
+  isCustomTime: integer('is_custom_time', { mode: 'boolean' }).default(false),
 }, (table) => ({
   userIdIdx: index('idx_weekly_muraja_plan_user_id').on(table.userId),
   activeUserIdx: index('idx_weekly_muraja_plan_active_user').on(table.userId, table.isActive),

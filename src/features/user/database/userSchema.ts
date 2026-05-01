@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 export const userStats = sqliteTable('user_stats', {
@@ -12,6 +12,9 @@ export const userStats = sqliteTable('user_stats', {
   level: integer('level').notNull().default(0),
   lastNotifiedAt: text('last_notified_at'),
   lastActivityDate: text('last_activity_date'),
+  hasRecoveryShield: integer('has_recovery_shield', { mode: 'boolean' }).default(false),
+  lastTestDate: text('last_test_date'),
+  consecutivePerfects: integer('consecutive_perfects').notNull().default(0),
 });
 
 export const userBadges = sqliteTable('user_badges', {
@@ -20,7 +23,9 @@ export const userBadges = sqliteTable('user_badges', {
   badgeType: text('badge_type').notNull(),
   achievedAt: text('achieved_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   metadata: text('metadata'),
-});
+}, (table) => ({
+  userIdx: index('idx_user_badges_user').on(table.userId),
+}));
 
 export const pagePerformance = sqliteTable('page_performance', {
   pageNumber: integer('page_number').primaryKey(),

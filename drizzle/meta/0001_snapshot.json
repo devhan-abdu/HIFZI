@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "1ae39fb0-3835-4d22-b58b-394b02b26e15",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "be6be74b-d4ba-4996-a2b8-556f51958b19",
+  "prevId": "1ae39fb0-3835-4d22-b58b-394b02b26e15",
   "tables": {
     "quran_activity_logs": {
       "name": "quran_activity_logs",
@@ -649,6 +649,21 @@
           "notNull": true,
           "autoincrement": false,
           "default": "CURRENT_TIMESTAMP"
+        },
+        "preferred_time": {
+          "name": "preferred_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "is_custom_time": {
+          "name": "is_custom_time",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": false
         }
       },
       "indexes": {
@@ -926,6 +941,21 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "preferred_time": {
+          "name": "preferred_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "is_custom_time": {
+          "name": "is_custom_time",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": false
         }
       },
       "indexes": {

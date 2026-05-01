@@ -1,0 +1,1 @@
+CREATE INDEX `idx_user_badges_user` ON `user_badges` (`user_id`);
