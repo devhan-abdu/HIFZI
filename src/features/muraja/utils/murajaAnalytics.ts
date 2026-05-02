@@ -149,3 +149,68 @@ export function generateWeeklyProgress(
         }
         return progress;
     }
+
+export function calculateTodayTask(params: {
+    today: Date;
+    weekStartDate: string;
+    weekEndDate: string;
+    activeDays: number[];
+    plannedPagesPerDay: number;
+    startPage: number;
+    endPage: number;
+    murajaLastPage: number;
+    dailyLogs: any[];
+    surahs: any[];
+    getSurahByPage: (page: number, surahs: any[]) => string | undefined;
+}) {
+    const { today, weekStartDate, weekEndDate, activeDays, plannedPagesPerDay, startPage, endPage, murajaLastPage, dailyLogs, surahs, getSurahByPage } = params;
+    
+    const todayStr = today.toISOString().slice(0, 10);
+    const isPlanActiveNow = today >= new Date(weekStartDate) && today <= new Date(weekEndDate);
+    if (!isPlanActiveNow) return null;
+
+    const todayLog = dailyLogs.find((log: any) => log.date === todayStr);
+    const isScheduledToday = activeDays.includes((today.getDay() + 6) % 7);
+
+   
+    const fallbackStart = Math.max(startPage, (murajaLastPage ?? startPage - 1) + 1);
+    const displayStart = todayLog?.startPage ?? todayLog?.start_page ?? fallbackStart;
+    
+    const quotaEnd = Math.min(displayStart + plannedPagesPerDay - 1, endPage);
+
+    const completed = todayLog?.completedPages ?? todayLog?.completed_pages ?? 0;
+    const actualEnd = completed > 0 ? (displayStart + completed - 1) : quotaEnd;
+    
+    const displayEnd = Math.max(quotaEnd, actualEnd);
+
+    let status: "pending" | "completed" | "partial" | "missed" = "pending";
+    if (todayLog) {
+        const logStatus = todayLog.status;
+        if (logStatus === "missed") {
+            status = "missed";
+        } else if (completed >= plannedPagesPerDay) {
+            status = "completed";
+        } else if (completed > 0) {
+            status = "partial";
+        } else {
+            status = "pending";
+        }
+    }
+
+    const expectedPages = calculateExpectedPages(weekStartDate, weekEndDate, today, activeDays, plannedPagesPerDay);
+    const totalCompletedPages = dailyLogs.reduce((acc, curr) => acc + (curr.completedPages ?? curr.completed_pages ?? 0), 0);
+    const pageDiff = totalCompletedPages - expectedPages;
+
+    return {
+        isCompleted: status === "completed" || (status === "partial" && completed >= plannedPagesPerDay),
+        isCatchup: !isScheduledToday && pageDiff < 0,
+        status,
+        startPage: displayStart,
+        endPage: displayEnd,
+        quotaEnd: quotaEnd, 
+        completedPages: completed,
+        startSurah: getSurahByPage(displayStart, surahs) ?? "",
+        endSurah: getSurahByPage(displayEnd, surahs) ?? "",
+        isVirtualTask: !isScheduledToday && !todayLog,
+    };
+}

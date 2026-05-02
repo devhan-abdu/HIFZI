@@ -11,45 +11,46 @@ export const WeeklyOverviewCard = ({
   weeklyPlan: IWeeklyPlanDashboardData;
 }) => {
   const dateRange = `${format(
-    new Date(weeklyPlan.week_start_date),
+    new Date(weeklyPlan.week_start_date || new Date()),
     "MMM dd",
-  )} - ${format(new Date(weeklyPlan.week_end_date), "MMM dd")}`;
+  )} - ${format(new Date(weeklyPlan.week_end_date || new Date()), "MMM dd")}`;
 
   return (
-    <View className="bg-primary rounded-[32px] p-6 mb-6 shadow-xl shadow-primary/20 overflow-hidden border border-white/10 relative">
-      <View className="mb-6">
-        <Text className="text-white/50  uppercase tracking-[2px] text-[9px] mb-1.5">
-          Active Cycle
-        </Text>
-        <View className="bg-white/15 px-3 py-1 rounded-full self-start border border-white/5">
-          <Text className="text-white text-[10px]  ">{dateRange}</Text>
-        </View>
-      </View>
-      <View className="absolute -top-4 -right-4 bg-slate-100/10 w-28 h-28 rounded-full" />
-
-      <View className="flex-row items-center mb-2">
+    <View className="bg-primary rounded-[40px] p-7 mb-8 shadow-2xl shadow-primary/40 overflow-hidden relative border border-white/5">
+      <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
+      
+      <View className="flex-row justify-between items-end mb-6">
         <View className="flex-1">
-          <Text className="text-white/50  uppercase tracking-widest text-[9px] mb-1">
-            Total Pages
+          <Text className="text-white/50 uppercase tracking-[2px] text-[9px] mb-1.5">
+            Active Cycle
           </Text>
-          <Text className="text-white text-4xl  tracking-tighter">
-            {weeklyPlan.totalPage}
-          </Text>
+          <View className="bg-white/10 px-3 py-1 rounded-full self-start border border-white/10">
+            <Text className="text-white text-[10px]  tracking-wider">{dateRange}</Text>
+          </View>
         </View>
 
-        <View className="h-10 w-[1px] bg-white/10 mx-4" />
-
-        <View className="flex-1">
-          <Text className="text-white/50  uppercase tracking-widest text-[9px] mb-1">
+        <View className="items-end">
+           <Text className="text-white/50 uppercase tracking-[2px] text-[9px] mb-1.5">
             Juz Focus
           </Text>
-          <Text className="text-white text-2xl  tracking-tight">
+          <Text className="text-white text-2xl tracking-tighter">
             {weeklyPlan.start_juz}—{weeklyPlan.end_juz}
           </Text>
         </View>
       </View>
 
-      <View className="flex-row justify-between items-center border-t border-white/10 pt-5 mt-2">
+      <View className="mb-6">
+        <Text className="text-white/40 uppercase tracking-widest text-[9px] mb-1">
+          Target Progress
+        </Text>
+        <Text className="text-white text-4xl tracking-tighter">
+          {weeklyPlan.totalPage} <Text className="text-white/40 text-xl">Pages</Text>
+        </Text>
+      </View>
+
+      <View className="w-full h-[2px] bg-white/10 rounded-full mb-8 overflow-hidden" />
+
+      <View className="flex-row justify-between items-center">
         <View className="flex-1 items-center border-r border-white/10">
           <View className="flex-row items-center gap-1.5 mb-1">
             <Ionicons
@@ -57,9 +58,9 @@ export const WeeklyOverviewCard = ({
               size={12}
               color="rgba(255,255,255,0.6)"
             />
-            <Text className="text-white  text-sm">{weeklyPlan.totalDays}</Text>
+            <Text className="text-white text-sm font-medium">{weeklyPlan.totalDays}</Text>
           </View>
-          <Text className="text-white/40 text-[8px]  uppercase tracking-[1.5px]">
+          <Text className="text-white/40 text-[8px] uppercase tracking-[1.5px]">
             Days
           </Text>
         </View>
@@ -71,11 +72,11 @@ export const WeeklyOverviewCard = ({
               size={12}
               color="rgba(255,255,255,0.6)"
             />
-            <Text className="text-white  text-sm">
+            <Text className="text-white text-sm font-medium">
               {weeklyPlan.estimated_time_min}m
             </Text>
           </View>
-          <Text className="text-white/40 text-[8px]  uppercase tracking-[1.5px]">
+          <Text className="text-white/40 text-[8px] uppercase tracking-[1.5px]">
             Daily
           </Text>
         </View>
@@ -87,12 +88,12 @@ export const WeeklyOverviewCard = ({
               size={12}
               color="rgba(255,255,255,0.6)"
             />
-            <Text className="text-white  text-sm">
+            <Text className="text-white text-sm font-medium">
               {weeklyPlan.planned_pages_per_day}
             </Text>
           </View>
-          <Text className="text-white/40 text-[8px]  uppercase tracking-[1.5px]">
-            Pages
+          <Text className="text-white/40 text-[8px] uppercase tracking-[1.5px]">
+            Rate
           </Text>
         </View>
       </View>

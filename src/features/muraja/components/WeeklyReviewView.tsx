@@ -9,12 +9,35 @@ import { DayByDay } from "./DayByDay";
 import { IMonthHistory } from "@/src/types";
 
 interface ReviewProps {
-  plan: IMonthHistory;
+  plan: IMonthHistory | any;
   analytics: any;
+  progress?: any;
   weekRange: string;
 }
 
-export function WeeklyReviewView({ plan, analytics, weekRange }: ReviewProps) {
+export function WeeklyReviewView({
+  plan,
+  analytics,
+  progress,
+  weekRange,
+}: ReviewProps) {
+  const displayProgress = React.useMemo(() => {
+    if (progress) return progress;
+    
+    // Fallback: Generate progress from weekly_plan_days (legacy/insert flow)
+    if (plan.weekly_plan_days?.length) {
+      return plan.weekly_plan_days.map((day: any) => ({
+        date: day.date,
+        dayName: day.day_of_week.slice(0, 3),
+        isToday: day.date === new Date().toISOString().slice(0, 10),
+        isSelected: true,
+        status: day.daily_muraja_logs?.[0]?.status || 'pending',
+        completed: day.daily_muraja_logs?.[0]?.completed_pages || 0
+      }));
+    }
+    return null;
+  }, [progress, plan]);
+
   const metrics = [
     {
       label: "Total Time",
@@ -46,7 +69,7 @@ export function WeeklyReviewView({ plan, analytics, weekRange }: ReviewProps) {
 
       <View className="mb-8">
         <SectionHeader title="Performance Summary" />
-        <DayByDay days={plan.weekly_plan_days ?? []} />
+        <DayByDay progress={displayProgress} />
       </View>
 
       <View className="flex-row flex-wrap justify-between gap-3 mb-8">

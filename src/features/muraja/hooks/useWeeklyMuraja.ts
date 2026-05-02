@@ -4,8 +4,7 @@ import { useSession } from "@/src/hooks/useSession";
 import { getJuzByPage, getSurahByPage } from "../utils/quranMapping";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { murajaService } from "../services/murajaService";
-import { calculateExpectedPages, generateWeeklyProgress, getPerformanceStatus } from "../utils/murajaAnalytics";
-
+import { calculateExpectedPages, generateWeeklyProgress, getPerformanceStatus, calculateTodayTask } from "../utils/murajaAnalytics";
 
 export const useWeeklyMuraja = () => {
    const { user } = useSession();
@@ -50,34 +49,19 @@ export const useWeeklyMuraja = () => {
         const pageDiff = totalCompletedPages - expectedPages;
         const performanceStatus = getPerformanceStatus(pageDiff);
 
-        const isScheduledToday = activeDays.includes(today.getDay());
-        const todayLog = daily_logs.find((log: any) => log.date === todayStr);
-        const isPlanActiveNow = today >= new Date(week_start_date ?? "") && today <= new Date(week_end_date ?? "");
-
-        let todayTask = null;
-        if (isPlanActiveNow) {
-            const safeStartPage = start_page ?? 1;
-            const fallbackStart = Math.max(safeStartPage, (muraja_last_page ?? safeStartPage - 1) + 1);
-            const start = todayLog?.start_page ?? fallbackStart;
-            const completed = todayLog?.completed_pages ?? 0;
-            const end = todayLog
-                    ? completed > 0
-                        ? start + completed - 1
-                        : start
-                    : start + (planned_pages_per_day ?? 1) - 1;
-
-           todayTask = {
-            isCompleted: todayLog?.status === "completed",
-            isCatchup: !isScheduledToday && pageDiff < 0,
-            status: todayLog ? todayLog.status : "pending",
-            startPage: start,
-            endPage: end,
-            completedPages: completed,
-            startSurah: getSurahByPage(start, surah),
-            endSurah: getSurahByPage(end, surah),
-            isVirtualTask: !isScheduledToday && !todayLog,
-        };
-        }
+        const todayTask = calculateTodayTask({
+            today,
+            weekStartDate: week_start_date ?? "",
+            weekEndDate: week_end_date ?? "",
+            activeDays,
+            plannedPagesPerDay: planned_pages_per_day ?? 1,
+            startPage: start_page ?? 1,
+            endPage: end_page ?? 604,
+            murajaLastPage: muraja_last_page ?? 0,
+            dailyLogs: daily_logs,
+            surahs: surah,
+            getSurahByPage
+        });
 
         const start_juz = getJuzByPage(start_page ?? 1) ?? 0; 
         const end_juz = getJuzByPage(end_page ?? 1) ?? 0;
