@@ -55,6 +55,11 @@ export type HabitProgressSnapshot = {
     revisionFrequency: number;
   };
   progressByType: Record<ActivityType, { minutes: number; units: number; sessions: number }>;
+  todayStats: {
+    completedPages: number;
+    goalPages: number;
+    percent: number;
+  };
   activityHash: string;
   lastActivityAt: string | null;
 };

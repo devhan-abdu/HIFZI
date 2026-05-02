@@ -9,7 +9,7 @@ import {
 } from "./habitTypes";
 
 export const habitProgressService = {
-  async insertHabitProgressLog(
+  async upsertHabitProgressLog(
     db: any,
     payload: {
       userId: string;
@@ -40,7 +40,16 @@ export const habitProgressService = {
     } satisfies HabitLogMetadata;
 
     const tx = db || drizzleDb;
-    const [result] = await tx.insert(activityLogs).values({
+
+    const existing = payload.localRefId ? await tx.query.activityLogs.findFirst({
+      where: and(
+        eq(activityLogs.userId, payload.userId),
+        eq(activityLogs.activityType, type),
+        eq(activityLogs.localRefId, payload.localRefId)
+      )
+    }) : null;
+
+    const values = {
       userId: payload.userId,
       date: payload.date,
       activityType: type,
@@ -51,9 +60,18 @@ export const habitProgressService = {
       note: payload.note ?? null,
       metadata: JSON.stringify(mergedMetadata),
       isSynced: 0,
-    }).returning({ id: activityLogs.id });
+      updatedAt: sql`CURRENT_TIMESTAMP`,
+    };
 
-    return result.id;
+    if (existing) {
+      await tx.update(activityLogs)
+        .set(values)
+        .where(eq(activityLogs.id, existing.id));
+      return existing.id;
+    } else {
+      const [result] = await tx.insert(activityLogs).values(values).returning({ id: activityLogs.id });
+      return result.id;
+    }
   },
 
   async deleteHabitProgressLog(
@@ -187,7 +205,7 @@ export const habitProgressService = {
   }
 };
 
-export const insertHabitProgressLog = habitProgressService.insertHabitProgressLog.bind(habitProgressService);
+export const upsertHabitProgressLog = habitProgressService.upsertHabitProgressLog.bind(habitProgressService);
 export const deleteHabitProgressLog = habitProgressService.deleteHabitProgressLog.bind(habitProgressService);
 export const upsertActivityPlan = habitProgressService.upsertActivityPlan.bind(habitProgressService);
 export const shouldShowWeeklySummary = habitProgressService.shouldShowWeeklySummary.bind(habitProgressService);
