@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, Pressable, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { Text } from "./ui/Text";
 
 interface ActionCardProps {
@@ -15,7 +14,7 @@ interface ActionCardProps {
   onStart: () => void;
   onResume?: () => void;
   isResumable?: boolean;
-  logRoute: string;
+  onDetails: () => void;
 }
 
 export const ActionTaskCard = ({
@@ -29,141 +28,105 @@ export const ActionTaskCard = ({
   onStart,
   onResume,
   isResumable,
-  logRoute,
+  onDetails,
 }: ActionCardProps) => {
-  const router = useRouter();
-  const accentColor = "#276359";
-  const [showQuality, setShowQuality] = useState(false);
+    const isCompleted = status === "completed";
+    const isPartial = status === "partial";
+    const isMissed = status === "missed";
+    const isFinished = isCompleted || isPartial;
+  
+    const hifzColor = "#276359";
+    const murajaColor = "#0891b2";
+    const accentColor = typeLabel.toLowerCase().includes("hifz") ? hifzColor : murajaColor;
 
-  const isCompleted = status === "completed" || status === "partial";
-  const isMissed = status === "missed";
+    return (
+        <Pressable 
+            onPress={isResumable ? onResume : onStart}
+            disabled={isLoading}
+            className="overflow-hidden rounded-[32px] shadow-sm active:scale-[0.98] transition-all bg-white border border-slate-100 p-6"
+        >
+            <View className="flex-row justify-between items-start">
+                <View className="flex-1 pr-4">
+                    <View className="flex-row items-center mb-3 gap-2">
+                        <View className={`px-2 py-0.5 rounded-full ${isFinished ? 'bg-slate-100' : 'bg-slate-50'}`}>
+                            <Text style={{ color: isFinished ? '#64748b' : accentColor }} className="text-[9px] uppercase tracking-widest">
+                                {typeLabel}
+                            </Text>
+                        </View>
+                        {isCatchup && !isFinished && (
+                            <View className="bg-amber-50 px-2 py-0.5 rounded-full">
+                                <Text className="text-amber-600 text-[9px] uppercase tracking-widest">Catch-up</Text>
+                            </View>
+                        )}
+                        {isMissed && (
+                            <View className="bg-rose-50 px-2 py-0.5 rounded-full">
+                                <Text className="text-rose-600 text-[9px] uppercase tracking-widest">Missed</Text>
+                            </View>
+                        )}
+                        {isPartial && (
+                            <View className="bg-sky-50 px-2 py-0.5 rounded-full flex-row items-center">
+                                <Ionicons name="pause-circle" size={10} color="#0284c7" />
+                                <Text className="text-sky-700 text-[9px] uppercase tracking-widest ml-1">Partial</Text>
+                            </View>
+                        )}
+                        {isCompleted && (
+                            <View className="bg-emerald-50 px-2 py-0.5 rounded-full flex-row items-center">
+                                <Ionicons name="checkmark-circle" size={10} color="#059669" />
+                                <Text className="text-emerald-700 text-[9px] uppercase tracking-widest ml-1">Completed</Text>
+                            </View>
+                        )}
+                    </View>
 
-  const handleDonePress = () => {
-    if (isCompleted) {
-      onDone(); 
-    } else {
-      setShowQuality(!showQuality);
-    }
-  };
-
-  const selectQuality = (score: number) => {
-    onDone(score);
-    setShowQuality(false);
-  };
-
-  return (
-    <View className="bg-white border border-slate-100 rounded-[24px] p-6 shadow-sm">
-      <View className="flex-row justify-between items-start">
-        <View className="flex-1">
-          <View className="flex-row items-center mb-2 gap-2">
-            <Text className="text-slate-400 text-[10px] uppercase tracking-[2px] font-bold">
-              {typeLabel}
-            </Text>
-            {isCatchup && (
-              <View className="bg-amber-100 px-2 py-0.5 rounded-full">
-                <Text className="text-amber-700 text-[8px] uppercase font-bold">
-                  Catch-up
-                </Text>
-              </View>
-            )}
-            {isMissed && (
-               <View className="bg-red-100 px-2 py-0.5 rounded-full">
-                <Text className="text-red-700 text-[8px] uppercase font-bold">
-                  Missed
-                </Text>
-              </View>
-            )}
-          </View>
-
-          <Text className="text-slate-900 text-[22px] font-bold tracking-tight mb-1">
+          <Text className="text-2xl tracking-tight mb-1 text-slate-900">
             {title}
           </Text>
-          <Text className="text-slate-500 text-sm font-medium">{subTitle}</Text>
+          <Text className="text-sm font-medium text-slate-500">
+            {subTitle}
+          </Text>
         </View>
 
         <Pressable
-          onPress={() => router.push(logRoute as any)}
-          className="bg-slate-50 w-12 h-12 rounded-2xl items-center justify-center border border-slate-100 active:scale-95"
+          onPress={onDetails}
+          className="w-10 h-10 rounded-2xl items-center justify-center active:scale-95 bg-slate-50 border border-slate-100"
         >
-          <Ionicons name="ellipsis-horizontal" size={20} color={accentColor} />
+          <Ionicons name="ellipsis-horizontal" size={18} color="#94a3b8" />
         </Pressable>
       </View>
 
-      {showQuality && !isCompleted ? (
-        <View className="mt-8 flex-row gap-2">
-          <Pressable
-            onPress={() => selectQuality(5)}
-            className="flex-1 bg-emerald-50 border border-emerald-100 h-16 rounded-2xl items-center justify-center active:scale-95"
-          >
-            <Ionicons name="checkmark-circle" size={20} color="#059669" />
-            <Text className="text-emerald-700 font-bold text-[10px] mt-1 uppercase tracking-tighter">Perfect</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => selectQuality(3)}
-            className="flex-1 bg-amber-50 border border-amber-100 h-16 rounded-2xl items-center justify-center active:scale-95"
-          >
-            <Ionicons name="warning" size={20} color="#d97706" />
-            <Text className="text-amber-700 font-bold text-[10px] mt-1 uppercase tracking-tighter">Stumbles</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => selectQuality(1)}
-            className="flex-1 bg-rose-50 border border-rose-100 h-16 rounded-2xl items-center justify-center active:scale-95"
-          >
-            <Ionicons name="help-circle" size={20} color="#e11d48" />
-            <Text className="text-rose-700 font-bold text-[10px] mt-1 uppercase tracking-tighter">Struggle</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <View className="mt-8 flex-row gap-3">
-          {!isCompleted && (
-            <Pressable
-              onPress={isResumable ? onResume : onStart}
-              disabled={isLoading}
-              className="h-14 flex-[2] rounded-2xl flex-row items-center justify-center bg-[#276359] active:opacity-90 shadow-sm"
-            >
-              <Ionicons
-                name={isResumable ? "play-forward" : "book-outline"}
-                size={20}
-                color="white"
-              />
-              <Text className="ml-3 text-white font-bold uppercase tracking-widest text-xs">
-                {isResumable ? "Resume" : "Start Recitation"}
+      <View className="mt-8 flex-row items-center justify-between">
+        <View className="flex-row items-center">
+          {isLoading ? (
+            <ActivityIndicator size="small" color={accentColor} />
+          ) : (
+            <>
+              <Text style={{ color: isFinished ? '#94a3b8' : accentColor }} className="uppercase tracking-widest text-[10px]">
+                {isFinished ? (isCompleted ? "Review Activity" : "Resume Session") : isResumable ? "Resume Session" : "Open Mushaf"}
               </Text>
-            </Pressable>
+              <Ionicons 
+                name={isFinished ? "arrow-forward" : "chevron-forward"} 
+                size={12} 
+                color={isFinished ? "#94a3b8" : accentColor} 
+                style={{ marginLeft: 6 }} 
+              />
+            </>
           )}
-
-          <Pressable
-            onPress={handleDonePress}
-            disabled={isLoading}
-            style={{ 
-              backgroundColor: isCompleted ? "#f1f5f9" : isMissed ? "#fef2f2" : "#f8fafc",
-              flex: isCompleted ? 1 : 1
-            }}
-            className={`h-14 rounded-2xl flex-row items-center justify-center border ${
-              isCompleted ? "border-slate-200" : isMissed ? "border-red-100" : "border-slate-200"
-            } active:opacity-90`}
-          >
-            {isLoading ? (
-              <ActivityIndicator color={accentColor} />
-            ) : (
-              <>
-                <Ionicons
-                  name={isCompleted ? "checkmark-circle" : "checkmark-circle-outline"}
-                  size={22}
-                  color={isCompleted ? accentColor : isMissed ? "#f87171" : "#cbd5e1"}
-                />
-                <Text
-                  className={`ml-3 text-xs uppercase tracking-widest font-bold ${
-                    isCompleted ? "text-slate-900" : isMissed ? "text-red-400" : "text-slate-400"
-                  }`}
-                >
-                  {isCompleted ? "Done" : "Mark Done"}
-                </Text>
-              </>
-            )}
-          </Pressable>
         </View>
-      )}
-    </View>
+
+        {!isCompleted && (
+          <Pressable 
+            onPress={(e) => {
+              e.stopPropagation();
+              onDone();
+            }}
+            className="h-10 px-4 rounded-lg flex-row items-center bg-slate-50 border border-slate-100 active:bg-slate-100"
+          >
+            <Ionicons name="checkmark-circle-outline" size={16} color={accentColor} />
+            <Text style={{ color: accentColor }} className="uppercase tracking-widest text-[9px] ml-2">Mark Done</Text>
+          </Pressable>
+        )}
+      </View>
+    </Pressable>
   );
 };
+
+

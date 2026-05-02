@@ -39,7 +39,7 @@ export const QualityCounter = ({
         </Pressable>
         
         <View className="w-10 items-center">
-          <Text className="text-2xl font-bold text-gray-900">{value}</Text>
+          <Text className="text-2xl  text-gray-900">{value}</Text>
         </View>
         
         <Pressable
