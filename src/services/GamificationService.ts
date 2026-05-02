@@ -1,6 +1,7 @@
 import { db as drizzleDb } from "@/src/lib/db/local-client";
 import { userStats, userBadges } from "@/src/features/user/database/userSchema";
 import { eq, sql, and } from "drizzle-orm";
+import { notificationRepository } from "../features/notifications/services/notificationRepository";
 
 export type BadgeType = 
   | "STREAK_3" | "STREAK_7" | "STREAK_30" 
@@ -11,12 +12,32 @@ export type BadgeType =
 export const GamificationService = {
   async awardXP(db: any, userId: string, amount: number) {
     const tx = db || drizzleDb;
+    
+    const stats = await tx.query.userStats.findFirst({
+      where: eq(userStats.userId, userId),
+    });
+
+    if (!stats) return;
+
+    const oldLevel = stats.level;
+    const newXp = stats.totalXp + amount;
+    const newLevel = Math.floor(newXp / 1000);
+
     await tx.update(userStats)
       .set({
-        totalXp: sql`${userStats.totalXp} + ${amount}`,
-        level: sql`(${userStats.totalXp} + ${amount}) / 1000`
+        totalXp: newXp,
+        level: newLevel,
       })
       .where(eq(userStats.userId, userId));
+
+    if (newLevel > oldLevel) {
+      await notificationRepository.createNotification(userId, {
+        type: 'milestone',
+        title: 'Level Up!',
+        message: `Mubarak! You've reached Level ${newLevel}! Keep up the great work.`,
+        eventKey: `levelup_${newLevel}_${Date.now()}`
+      });
+    }
   },
 
   async awardBadge(db: any, userId: string, type: BadgeType, metadata?: any) {
@@ -50,7 +71,7 @@ export const GamificationService = {
     let newConsecutivePerfects = stats?.consecutivePerfects || 0;
 
     if (qualityScore === 5) {
-      xpAwarded += 30; // Quality Bonus
+      xpAwarded += 30; 
       newConsecutivePerfects += 1;
       if (newConsecutivePerfects === 5) {
         await this.awardBadge(tx, userId, "MUTQEEN_5");
