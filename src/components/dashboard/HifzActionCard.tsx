@@ -5,8 +5,9 @@ import { IHifzPlan } from "@/src/features/hifz/types";
 import { useSession } from "@/src/hooks/useSession";
 import { ActionTaskCard } from "../common/ActionCard";
 import { Alert } from "../common/Alert";
+import { QualityModal } from "../common/QualityModal";
 import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
-import { useRouter } from "expo-router";
+
 import { GamificationService } from "@/src/services/GamificationService";
 import { useCelebrationStore } from "@/src/hooks/useCelebrationStore";
 import { db } from "@/src/lib/db/local-client";
@@ -16,19 +17,25 @@ import { eq } from "drizzle-orm";
 export const HifzActionCard = ({
   hifz,
   todayTask,
+  onStart,
+  onResume,
+  onDetails,
 }: {
   hifz: IHifzPlan;
   todayTask: any;
+  onStart: () => void;
+  onResume: () => void;
+  onDetails: () => void;
 }) => {
   const { addLog, isCreating } = useAddLog();
   const { user } = useSession();
-  const router = useRouter();
   const session = useReaderSessionStore();
   const trigger = useCelebrationStore((s) => s.trigger);
 
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [warningVisible, setWarningVisible] = useState(false);
+  const [qualityModalVisible, setQualityModalVisible] = useState(false);
 
   const today = new Date();
   const todayStr = today.toISOString().slice(0, 10);
@@ -40,7 +47,7 @@ export const HifzActionCard = ({
   if (!todayTask) {
     return (
       <View className="bg-slate-50 border border-dashed border-slate-200 rounded-[24px] p-6 items-center">
-        <Text className="text-slate-400   text-[10px] uppercase tracking-widest">
+        <Text className="text-slate-400 text-[10px] uppercase tracking-widest">
           Rest Day (No Hifz)
         </Text>
       </View>
@@ -99,15 +106,6 @@ export const HifzActionCard = ({
     }
   };
 
-  const onStart = () => {
-    session.openSession(todayTask.startPage);
-    router.push(`/(app)/quran/reader?page=${todayTask.startPage}&planId=${hifz.id}&type=hifz&start=${todayTask.startPage}&end=${todayTask.endPage}`);
-  };
-
-  const onResume = () => {
-    router.push(`/(app)/quran/reader?page=${session.currentPage}&planId=${hifz.id}&type=hifz&start=${todayTask.startPage}&end=${todayTask.endPage}`);
-  };
-
   return (
     <>
       <ActionTaskCard
@@ -117,11 +115,27 @@ export const HifzActionCard = ({
         isCatchup={todayTask.isCatchup}
         status={currentStatus}
         isLoading={isCreating}
-        onDone={(quality) => handleStatusChange(currentStatus === "completed" ? "pending" : "completed", quality)}
+        onDone={() => {
+          if (currentStatus === "completed") {
+            handleStatusChange("pending");
+          } else {
+            setQualityModalVisible(true);
+          }
+        }}
         onStart={onStart}
         onResume={onResume}
         isResumable={isResumable}
-        logRoute="/hifz/log"
+        onDetails={onDetails}
+      />
+
+      <QualityModal
+        visible={qualityModalVisible}
+        onClose={() => setQualityModalVisible(false)}
+        onSelect={(score) => {
+          setQualityModalVisible(false);
+          handleStatusChange("completed", score);
+        }}
+        title="Rate your Hifz session"
       />
 
       <Alert
@@ -131,9 +145,7 @@ export const HifzActionCard = ({
         message={errorMessage}
         confirmText="Try Again"
         cancelText="Close"
-        onConfirm={() => {
-          setErrorVisible(false);
-        }}
+        onConfirm={() => setErrorVisible(false)}
         onCancel={() => setErrorVisible(false)}
       />
       <Alert
@@ -147,10 +159,9 @@ export const HifzActionCard = ({
           setWarningVisible(false);
           await handleStatusChange("missed");
         }}
-        onCancel={() => {
-          setWarningVisible(false);
-        }}
+        onCancel={() => setWarningVisible(false)}
       />
     </>
   );
 };
+
