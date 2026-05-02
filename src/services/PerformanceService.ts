@@ -1,6 +1,7 @@
 import { db as drizzleDb } from "@/src/lib/db/local-client";
 import { pagePerformance } from "@/src/features/user/database/userSchema";
-import { eq, and, sql, lte } from "drizzle-orm";
+import { pageActivityLogs } from "@/src/features/habits/database/habitSchema";
+import { eq, and, sql, lte, asc } from "drizzle-orm";
 
 export type PagePerformance = {
   page_number: number;
@@ -9,6 +10,7 @@ export type PagePerformance = {
   next_review_at: string | null;
   stability: number; 
   difficulty: number; 
+  consecutive_perfects: number;
 };
 
 export const PerformanceService = {
@@ -25,12 +27,18 @@ export const PerformanceService = {
 
   calculateNextState(
     current: PagePerformance,
-    qualityScore: number, // 0 to 5
+    qualityScore: number, 
     reviewDate = new Date()
   ): Omit<PagePerformance, "page_number"> {
     let nextStability: number;
     let nextDifficulty: number = current.difficulty;
+    let nextConsecutivePerfects = current.consecutive_perfects || 0;
 
+    if (qualityScore >= 5) {
+      nextConsecutivePerfects += 1;
+    } else if (qualityScore < 4) {
+      nextConsecutivePerfects = 0;
+    }
    
     nextDifficulty = current.difficulty + (0.1 - (5 - qualityScore) * (0.08 + (5 - qualityScore) * 0.02));
     nextDifficulty = Math.max(1.3, nextDifficulty); 
@@ -58,6 +66,7 @@ export const PerformanceService = {
       next_review_at: nextReviewDate.toISOString(),
       stability: nextStability,
       difficulty: nextDifficulty,
+      consecutive_perfects: nextConsecutivePerfects,
     };
   },
 
@@ -75,6 +84,7 @@ export const PerformanceService = {
         next_review_at: row.nextReviewAt,
         stability: row.stability,
         difficulty: row.difficulty,
+        consecutive_perfects: row.consecutivePerfects || 0,
       };
     }
 
@@ -85,50 +95,128 @@ export const PerformanceService = {
       next_review_at: null,
       stability: 0,
       difficulty: 2.5, 
+      consecutive_perfects: 0,
     };
   },
 
   async updatePagePerformance(
     db: any,
+    userId: string,
     pageNumber: number,
-    qualityScore: number
+    qualityScore: number,
+    reviewDate: Date
   ) {
     const tx = db || drizzleDb;
     const current = await this.getPagePerformance(tx, pageNumber);
-    const next = this.calculateNextState(current, qualityScore);
+    const next = this.calculateNextState(current, qualityScore, reviewDate);
 
     await tx.insert(pagePerformance)
       .values({
         pageNumber,
+        userId,
         strength: next.strength,
         lastReviewedAt: next.last_reviewed_at,
         nextReviewAt: next.next_review_at,
         stability: next.stability,
         difficulty: next.difficulty,
+        consecutivePerfects: next.consecutive_perfects,
       })
       .onConflictDoUpdate({
-        target: pagePerformance.pageNumber,
+        target: [pagePerformance.userId, pagePerformance.pageNumber],
         set: {
           strength: next.strength,
           lastReviewedAt: next.last_reviewed_at,
           nextReviewAt: next.next_review_at,
           stability: next.stability,
           difficulty: next.difficulty,
+          consecutivePerfects: next.consecutive_perfects,
           updatedAt: sql`CURRENT_TIMESTAMP`,
         },
       });
   },
 
- 
+
+  async recomputeAllPerformance(tx: any, userId: string) {
+    await tx.delete(pagePerformance).where(eq(pagePerformance.userId, userId));
+    
+    const history = await tx.query.pageActivityLogs.findMany({
+      where: eq(pageActivityLogs.userId, userId),
+      orderBy: [asc(pageActivityLogs.logDate), asc(pageActivityLogs.id)],
+    });
+
+    const lastPerfectDateMap = new Map<number, string>();
+
+    for (const log of history) {
+      let score = 3;
+      if (log.sessionQuality === 'perfect') score = 5;
+      if (log.sessionQuality === 'low') score = 1;
+
+      const current = await this.getPagePerformance(tx, log.pageId);
+      
+      let nextConsecutive = current.consecutive_perfects;
+      if (score >= 5) {
+        const lastDate = lastPerfectDateMap.get(log.pageId);
+        const curDate = new Date(log.logDate);
+        
+        if (!lastDate) {
+          nextConsecutive = 1;
+          lastPerfectDateMap.set(log.pageId, log.logDate);
+        } else {
+          const prevDate = new Date(lastDate);
+          const diffDays = (curDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24);
+          if (diffDays >= 6) { 
+             nextConsecutive += 1;
+             lastPerfectDateMap.set(log.pageId, log.logDate);
+          }
+        }
+      } else if (score < 4) {
+        nextConsecutive = 0;
+        lastPerfectDateMap.delete(log.pageId);
+      }
+
+      const next = this.calculateNextState(current, score, new Date(log.logDate));
+      
+      await tx.insert(pagePerformance)
+        .values({
+          pageNumber: log.pageId,
+          userId,
+          strength: next.strength,
+          lastReviewedAt: next.last_reviewed_at,
+          nextReviewAt: next.next_review_at,
+          stability: next.stability,
+          difficulty: next.difficulty,
+          consecutivePerfects: nextConsecutive,
+          lastSessionQuality: log.sessionQuality,
+          lastMistakesCount: log.mistakesCount,
+        })
+        .onConflictDoUpdate({
+          target: [pagePerformance.userId, pagePerformance.pageNumber],
+          set: {
+            strength: next.strength,
+            lastReviewedAt: next.last_reviewed_at,
+            nextReviewAt: next.next_review_at,
+            stability: next.stability,
+            difficulty: next.difficulty,
+            consecutivePerfects: nextConsecutive,
+            lastSessionQuality: log.sessionQuality,
+            lastMistakesCount: log.mistakesCount,
+            updatedAt: sql`CURRENT_TIMESTAMP`,
+          },
+        });
+    }
+  },
+
   async updateRangePerformance(
     db: any,
+    userId: string,
     startPage: number,
     endPage: number,
     qualityScore: number
   ) {
     const tx = db || drizzleDb;
+    const today = new Date();
     for (let p = startPage; p <= endPage; p++) {
-      await this.updatePagePerformance(tx, p, qualityScore);
+      await this.updatePagePerformance(tx, userId, p, qualityScore, today);
     }
   },
 
@@ -148,6 +236,7 @@ export const PerformanceService = {
       next_review_at: r.nextReviewAt,
       stability: r.stability,
       difficulty: r.difficulty,
+      consecutive_perfects: r.consecutivePerfects || 0,
     }));
   }
 };
