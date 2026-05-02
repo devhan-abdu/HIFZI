@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, index, primaryKey } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 export const userStats = sqliteTable('user_stats', {
@@ -28,11 +28,17 @@ export const userBadges = sqliteTable('user_badges', {
 }));
 
 export const pagePerformance = sqliteTable('page_performance', {
-  pageNumber: integer('page_number').primaryKey(),
+  pageNumber: integer('page_number').notNull(),
+  userId: text('user_id').notNull().default('unknown'),
   strength: real('strength').notNull().default(0.0),
   lastReviewedAt: text('last_reviewed_at'),
   nextReviewAt: text('next_review_at'),
   stability: real('stability').notNull().default(1.0),
   difficulty: real('difficulty').notNull().default(1.0),
+  consecutivePerfects: integer('consecutive_perfects').notNull().default(0),
+  lastSessionQuality: text('last_session_quality', { enum: ['perfect', 'medium', 'low'] }),
+  lastMistakesCount: integer('last_mistakes_count').default(0),
   updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  pk: primaryKey({ columns: [table.userId, table.pageNumber] }),
+}));

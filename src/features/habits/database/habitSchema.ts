@@ -3,7 +3,6 @@ import { sql } from 'drizzle-orm';
 
 
 
-// Define this FIRST - it's referenced by activityLogs
 export const activityPlans = sqliteTable('quran_activity_plans', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   userId: text('user_id').notNull(),
@@ -22,7 +21,6 @@ export const activityPlans = sqliteTable('quran_activity_plans', {
   userTypeIdx: index('idx_quran_activity_plans_user_type').on(table.userId, table.activityType, table.status),
 }));
 
-// Define this SECOND - it references activityPlans
 export const activityLogs = sqliteTable('quran_activity_logs', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   userId: text('user_id').notNull(),
@@ -65,10 +63,13 @@ export const pageActivityLogs = sqliteTable('page_activity_logs', {
   userId: text('user_id').notNull(),
   pageId: integer('page_id').notNull(),
   source: text('source', { enum: ['hifz', 'muraja'] }).notNull(),
+  localLogId: integer('local_log_id').notNull().default(0), 
+  logDate: text('log_date').notNull().default(''), 
   sessionQuality: text('session_quality', { enum: ['perfect', 'medium', 'low'] }).notNull(),
   mistakesCount: integer('mistakes_count').default(0),
   createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   pageUserIdx: index('idx_page_activity_user_page').on(table.userId, table.pageId),
-  createdAtIdx: index('idx_page_activity_created_at').on(table.createdAt),
+  logIdIdx: index('idx_page_activity_log_id').on(table.userId, table.source, table.localLogId),
+  dateIdx: index('idx_page_activity_date').on(table.userId, table.logDate),
 }));

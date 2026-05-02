@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, primaryKey, index } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, primaryKey, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 
@@ -14,7 +14,7 @@ export const habitEvents = sqliteTable('habit_events', {
   createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
-  unqUserHabitDate: index('unq_user_habit_date').on(table.userId, table.habitType, table.date),
+  unqUserHabitDate: uniqueIndex('unq_user_habit_date').on(table.userId, table.habitType, table.date),
   idxUserDate: index('idx_habit_events_user_date').on(table.userId, table.date),
 }));
 
@@ -33,7 +33,7 @@ export const notifications = sqliteTable('notifications', {
   createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
-  unqUserEvent: index('unq_user_notification_event').on(table.userId, table.eventKey),
+  unqUserEvent: uniqueIndex('unq_user_notification_event').on(table.userId, table.eventKey),
   idxUserCreated: index('idx_notifications_user_created').on(table.userId, table.createdAt),
 }));
 
@@ -46,7 +46,7 @@ export const notificationQueue = sqliteTable('notification_queue', {
   remoteId: text('remote_id'),
   createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
-  unqUserNotification: index('unq_notif_queue_user_notif').on(table.userId, table.notificationId),
+  unqUserNotification: uniqueIndex('unq_notif_queue_user_notif').on(table.userId, table.notificationId),
 }));
 
 
@@ -62,6 +62,6 @@ export const scheduledNotifications = sqliteTable('scheduled_notifications', {
   createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
-  unqUserEvent: index('unq_scheduled_user_event').on(table.userId, table.eventKey),
+  unqUserEvent: uniqueIndex('unq_scheduled_user_event').on(table.userId, table.eventKey),
   idxUserKind: index('idx_scheduled_user_kind').on(table.userId, table.kind, table.scheduledFor),
 }));
