@@ -15,12 +15,12 @@ type HifzAnalytics = {
 
 type MurajaPlan = {
   id: number;
-  week_start_date: string;
-  week_end_date: string;
+  week_start_date: string | null;
+  week_end_date: string | null;
   start_juz?: number;
   end_juz?: number;
-  planned_pages_per_day?: number;
-  estimated_time_min?: number;
+  planned_pages_per_day?: number | null;
+  estimated_time_min?: number | null;
   totalPage?: number;
   totalDays?: number;
   startSurah?: string;
@@ -43,7 +43,7 @@ type Cardprops = {
   userStats: { totalXp: number; level: number; hifzCurrentStreak: number } | null;
 };
 
-function safeFormat(date?: string) {
+function safeFormat(date: string | null | undefined) {
   if (!date) return "";
   const d = new Date(date);
   if (isNaN(d.getTime())) return "";
@@ -82,7 +82,7 @@ export default function Card({
             {userStats && (
               <View className="ml-3 bg-white/20 px-2 py-0.5 rounded-full flex-row items-center">
                 <Ionicons name="star" size={8} color="#fbbf24" />
-                <Text className="text-white text-[9px] font-bold ml-1">LVL {userStats.level}</Text>
+                <Text className="text-white text-[9px]  ml-1">LVL {userStats.level}</Text>
               </View>
             )}
           </View>
@@ -94,7 +94,7 @@ export default function Card({
             <View className="mt-2 w-32">
               <View className="h-1 bg-white/10 rounded-full overflow-hidden">
                 <View 
-                  className="h-full bg-amber-400" 
+                  className="h-full bg-white" 
                   style={{ width: `${(userStats.totalXp % 1000) / 10}%` }} 
                 />
               </View>
@@ -104,19 +104,6 @@ export default function Card({
             </View>
           )}
         </View>
-
-        {hifzAnalytics && (
-          <View className="items-end">
-            <Text className="text-white/60 uppercase text-[8px] mb-1 tracking-widest">
-              Hifz Progress
-            </Text>
-            <View className="bg-white/10 px-3 py-1.5 rounded-xl border border-white/10">
-              <Text className="text-white text-[11px]">
-                {hifzAnalytics.progress ?? 0}%
-              </Text>
-            </View>
-          </View>
-        )}
       </View>
 
       <View className="w-full h-[2px] bg-white/10 rounded-full mb-9 overflow-hidden" />
@@ -192,7 +179,7 @@ export default function Card({
             </Text>
 
             {dateRange ?
-              <Text className="text-white/70 text-[10px] mt-1 italic">
+              <Text className="text-white/70 text-[10px] mt-1">
                 {dateRange}
               </Text>
             : null}
