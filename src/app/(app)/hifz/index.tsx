@@ -1,4 +1,5 @@
 import { HifzActionCard } from "@/src/components/dashboard/HifzActionCard";
+import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
 import { NotificationCard } from "@/src/components/NotificationCard";
 import Screen from "@/src/components/screen/Screen";
 import {
@@ -34,6 +35,8 @@ export default function Hifz() {
   const { suggestions } = useReviewSuggestions(hifz?.id);
   const { user } = useSession();
   
+  const session = useReaderSessionStore();
+
   const handleSendTestNotification = async () => {
     if (!user?.id) return;
     await sendTestNotification(user.id, "xp");
@@ -107,26 +110,20 @@ export default function Hifz() {
               )}
             </Pressable>
           </View>
-          <View className="bg-primary rounded-[32px] p-6 shadow-xl shadow-black/10 border border-white/10">
-            <View className="flex-row items-center justify-between mb-4">
+          <View className="bg-primary rounded-[40px] p-7 shadow-2xl shadow-primary/40 overflow-hidden relative">
+            <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
+            
+            <View className="flex-row items-center justify-between mb-6">
               <View className="flex-1">
-                <Text className="text-white/70   uppercase tracking-widest text-[10px] mb-1">
-                  Current Goal
+                <Text className="text-white/60 uppercase tracking-[2px] text-[10px] mb-1">
+                  Current Plan
                 </Text>
-                <Text className="text-white text-3xl  mb-2">Daily Hifz</Text>
+                <Text className="text-white text-3xl tracking-tighter">Daily Hifz</Text>
 
-                <View
-                  className={`flex-row items-center px-3 py-1 rounded-full mr-auto ${config.bg}`}
-                >
-                  <View
-                    className={`w-1.5 h-1.5 rounded-full mr-2 ${config.dot}`}
-                  />
-                  <Text
-                    className={`  text-[11px] uppercase tracking-wider ${config.color}`}
-                  >
-                    {config.value === 0 ?
-                      config.label
-                    : `${Math.abs(config.value)} Pages ${config.label}`}
+                <View className={`flex-row items-center px-2 py-0.5 rounded-full mr-auto mt-2 ${config.bg} border border-white/10`}>
+                  <View className={`w-1 h-1 rounded-full mr-1.5 ${config.dot}`} />
+                  <Text className={`text-[9px]  uppercase tracking-wider ${config.color}`}>
+                    {config.value === 0 ? config.label : `${Math.abs(config.value)} Pgs ${config.label}`}
                   </Text>
                 </View>
               </View>
@@ -135,26 +132,28 @@ export default function Hifz() {
                 progress={analytics.progress}
                 remainingPages={analytics.remainingPages}
                 currentSurah={analytics.currentSurah}
-                strokeWidth={10}
+                strokeWidth={8}
               />
             </View>
 
-            <View className="flex-row items-center border-t border-white/10 pt-5">
+            <View className="w-full h-[2px] bg-white/10 rounded-full mb-8" />
+
+            <View className="flex-row items-center">
               <View className="pr-6 mr-6 border-r border-white/10">
-                <Text className="text-white text-3xl ">
+                <Text className="text-white text-3xl tracking-tight leading-7">
                   {analytics.todayTarget}
                 </Text>
-                <Text className="text-white/60 text-[10px]   uppercase">
+                <Text className="text-white/50 text-[9px] uppercase tracking-widest mt-1">
                   Daily Pages
                 </Text>
               </View>
 
               <View>
-                <Text className="text-white text-lg ">
+                <Text className="text-white text-xl tracking-tight leading-6">
                   {analytics.targetEndDate}
                 </Text>
-                <Text className="text-white/60 text-[10px]   uppercase">
-                  Target End Date
+                <Text className="text-white/50 text-[9px] uppercase tracking-widest mt-1">
+                  Target End
                 </Text>
               </View>
             </View>
@@ -165,11 +164,33 @@ export default function Hifz() {
             </Text>
             <Text className="text-xl  text-gray-900 mb-4 px-1">Today Hifz</Text>
             {todayTask ?
-              <HifzActionCard hifz={hifz} todayTask={todayTask} />
-            : <View className="bg-slate-50 border border-dashed border-slate-200 rounded-[24px] p-6 items-center">
-                <Text className="text-slate-400 text-[10px] uppercase tracking-widest">
-                  No task today, you can still log progress
+              <HifzActionCard 
+                hifz={hifz} 
+                todayTask={todayTask} 
+                onStart={() => {
+                  session.openSession(todayTask.startPage);
+                  router.push(`/(app)/quran/reader?page=${todayTask.startPage}&planId=${hifz.id}&type=hifz&start=${todayTask.startPage}&end=${todayTask.endPage}`);
+                }}
+                onResume={() => {
+                  router.push(`/(app)/quran/reader?page=${session.currentPage}&planId=${hifz.id}&type=hifz&start=${todayTask.startPage}&end=${todayTask.endPage}`);
+                }}
+                onDetails={() => router.push("/(app)/hifz/log")}
+              />
+            : <View className="bg-white border border-slate-100 rounded-[32px] p-8 items-center shadow-sm">
+                <View className="w-12 h-12 bg-slate-50 rounded-full items-center justify-center mb-4">
+                  <Ionicons name="cafe-outline" size={24} color="#276359" />
+                </View>
+                <Text className="text-slate-900 text-base text-center mb-1">Rest Day for Hifz</Text>
+                <Text className="text-slate-500 text-xs text-center mb-6 px-4">
+                  No Hifz tasks today. You can take a break or log an extra session to keep your momentum.
                 </Text>
+                <Button 
+                  variant="outline" 
+                  className="w-full border-slate-100 bg-slate-50"
+                  onPress={() => router.push("/(app)/hifz/log")}
+                >
+                  <Text style={{ color: '#276359' }} className="text-xs uppercase tracking-widest ">Log Extra Hifz</Text>
+                </Button>
               </View>
             }
           </View>
@@ -299,29 +320,22 @@ export default function Hifz() {
         </ScreenContent>
         <ScreenFooter>
           <View className="flex-row gap-x-3">
-            <Pressable
-              className="flex-1 bg-primary h-14 rounded-2xl px-4 flex-row items-center justify-start shadow-lg shadow-primary/20 active:opacity-90"
-              onPress={() => router.push(`/(app)/hifz/log`)}
+            <Button
+              className="flex-1 shadow-lg shadow-primary/20"
+              onPress={() => router.push(`/(app)/log-center?type=hifz`)}
             >
-              <View className="bg-white/20 p-1.5 rounded-full mr-3">
-                <Ionicons name="add" size={20} color="white" />
-              </View>
-              <Text className="text-white  text-lg tracking-tight">
-                Log Today's Hifz
-              </Text>
-            </Pressable>
+              <Ionicons name="add-circle" size={20} color="white" />
+              Log Progress
+            </Button>
 
-            <Pressable
-              className="flex-1 bg-white h-14 rounded-2xl px-4 flex-row items-center justify-start border border-primary shadow-sm active:opacity-90"
+            <Button
+              variant="outline"
+              className="flex-1"
               onPress={() => router.push("/(app)/hifz/create-hifz-plan")}
             >
-              <View className="bg-primary/10 p-1.5 rounded-full mr-3">
-                <Ionicons name="create-outline" size={18} color="#276359" />
-              </View>
-              <Text className="text-primary   text-lg tracking-tight">
-                Edit Plan
-              </Text>
-            </Pressable>
+              <Ionicons name="create-outline" size={18} color="#276359" />
+              Edit Plan
+            </Button>
           </View>
         </ScreenFooter>
       </Screen>

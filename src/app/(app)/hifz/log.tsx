@@ -125,22 +125,7 @@ export default function LogProgress() {
     );
   }
 
-  if (!logContext && !hasReviewPrefill) {
-    return (
-      <Screen>
-        <View className="flex-1 items-center justify-center p-6">
-          <Ionicons name="cafe-outline" size={48} color="#276359" />
-          <Text className="text-xl  text-slate-900 mt-4">Rest Day</Text>
-          <Text className="text-slate-500 text-center mt-2">
-            No task scheduled for today. Take a moment to revise!
-          </Text>
-          <Button className="mt-6" onPress={() => router.back()}>
-            Go Back
-          </Button>
-        </View>
-      </Screen>
-    );
-  }
+  const isRestDayLog = !logContext?.isPlannedDay && !hasReviewPrefill;
 
   const handleSave = async () => {
     if (!plan || isCreating || !plan.id)
@@ -180,101 +165,71 @@ export default function LogProgress() {
 
   return (
     <>
-      <View className="bg-white border-b border-slate-100">
-        <View className="h-16 px-4 flex-row items-center">
-          <Pressable
-            onPress={() => router.replace("/(app)/hifz")}
-            className="w-10 h-10 items-center justify-center rounded-full active:bg-slate-100"
-          >
-            <Ionicons name="arrow-back" size={24} color="#0f172a" />
-          </Pressable>
-          <Text className="text-lg  text-primary leading-tight ml-2">
-            Log Progress
-          </Text>
-        </View>
+      <View className="bg-white px-4 pt-12 pb-4 flex-row items-center">
+        <Pressable
+          onPress={() => router.replace("/(app)/hifz")}
+          className="w-10 h-10 items-center justify-center rounded-full active:bg-slate-100"
+        >
+          <Ionicons name="arrow-back" size={24} color="#0f172a" />
+        </Pressable>
+        <Text className="text-xl  text-slate-900 leading-tight ml-2">
+          Log Progress
+        </Text>
       </View>
       <Screen>
         <ScreenContent>
-          <View className="bg-primary p-6 rounded-[40px] mb-8 shadow-xl shadow-green-900/20">
-            <View className="flex-row justify-between items-center mb-4">
-              <View className="flex-row items-center">
-                <Text className="text-white/70   text-[10px] uppercase tracking-[2px]">
-                  {logContext?.isPlannedDay ?
-                    "Scheduled Session"
-                  : "Recovery Session"}
+          <View className="bg-primary rounded-[40px] p-7 mb-8 shadow-2xl shadow-primary/40 overflow-hidden relative">
+            <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
+            
+            <View className="flex-row justify-between items-center mb-6">
+              <View className="flex-1">
+                <Text className="text-white/60 uppercase tracking-[2px] text-[10px] mb-1">
+                  {hasReviewPrefill ? "Revision Session" : 
+                   logContext?.isPlannedDay ? "Scheduled Session" : "Extra Session"}
+                </Text>
+                <Text className="text-white text-3xl tracking-tighter">
+                  {hasReviewPrefill ? "Targeted Review" : logContext?.displaySurah}
                 </Text>
               </View>
-              <View className="bg-white/10 px-3 py-1 rounded-full border border-white/10">
+              <View className="bg-white/20 px-3 py-1 rounded-full border border-white/10">
                 <Text className="text-white text-[9px]  uppercase tracking-widest">
-                  {hasReviewPrefill ? `Review C${params.reviewCycleDay ?? "1"}` : plan.direction}
+                  {hasReviewPrefill ? `Cycle ${params.reviewCycleDay ?? "1"}` : plan.direction}
                 </Text>
               </View>
             </View>
 
-            <Text className="text-white text-3xl  mb-6 tracking-tight">
-              {hasReviewPrefill ? "Targeted Review Session" : logContext?.displaySurah}
-            </Text>
+            <View className="w-full h-[2px] bg-white/10 rounded-full mb-8 overflow-hidden" />
 
-            <View className="bg-black/10 rounded-3xl p-5 border border-white/5">
-              <View className="flex-row justify-between items-end mb-1">
-                <View>
-                  <Text className="text-white text-4xl ">
-                    {pages}
-                    <Text className="text-white/50 text-xl "> Pages</Text>
-                  </Text>
-                  <Text className="text-white/40 text-[9px]   uppercase tracking-widest mt-1">
-                    Goal for today
-                  </Text>
-                </View>
-                <View className="items-end">
-                  <Text className="text-white   text-sm">
-                    {hasReviewPrefill ? reviewStartPage : (logContext?.startPage ?? 0)} —{" "}
-                    {hasReviewPrefill ? reviewEndPage : (logContext?.endPage ?? 0)}
-                  </Text>
-                  <Text className="text-white/40 text-[9px]   uppercase tracking-widest mt-1">
-                    {hasReviewPrefill ?
-                      "Suggested from spaced repetition"
-                    : `Range (Juz ${logContext?.juz ?? "-"})`}
-                  </Text>
-                </View>
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text className="text-white text-2xl tracking-tight leading-7">
+                  {pages}
+                  <Text className="text-white/50 text-xl"> Pgs</Text>
+                </Text>
+                <Text className="text-white/40 text-[9px] uppercase tracking-widest mt-1">
+                  Daily Goal
+                </Text>
               </View>
+              
+              <View className="h-8 w-px bg-white/10 mx-6" />
 
-              {!hasReviewPrefill && (
-                <View className="flex-row mt-4 gap-x-5">
-                  {(logContext?.baseTarget ?? 0) > 0 && (
-                  <View className="flex-row items-center">
-                    <View className="w-2 h-2 rounded-full bg-emerald-400 mr-2" />
-                    <Text className="text-white/60 text-[9px]   uppercase">
-                        Daily: {logContext?.baseTarget}
-                    </Text>
-                  </View>
-                  )}
-                  {(logContext?.catchUpAmount ?? 0) > 0 && (
-                  <View className="flex-row items-center">
-                    <View className="w-2 h-2 rounded-full bg-amber-400 mr-2" />
-                    <Text className="text-white/60 text-[9px]   uppercase">
-                        Extra: {logContext?.catchUpAmount}
-                    </Text>
-                  </View>
-                  )}
-                </View>
-              )}
+              <View className="flex-1">
+                <Text className="text-white text-lg tracking-tight leading-6">
+                  {hasReviewPrefill ? reviewStartPage : (logContext?.startPage ?? 0)} —{" "}
+                  {hasReviewPrefill ? reviewEndPage : (logContext?.endPage ?? 0)}
+                </Text>
+                <Text className="text-white/40 text-[9px] uppercase tracking-widest mt-1">
+                  {hasReviewPrefill ? "Review Range" : `Juz ${logContext?.juz ?? "-"}`}
+                </Text>
+              </View>
             </View>
           </View>
 
-          <View className="bg-white border border-slate-100 p-6 rounded-[32px] mb-6 flex-row items-center justify-between">
+          <View className="bg-white border border-slate-100 p-5 rounded-[32px] mb-6 flex-row items-center justify-between">
             <View className="flex-1">
-              <View className="flex-row items-center mb-1">
-                <Ionicons
-                  name="library-outline"
-                  size={18}
-                  color="#276359"
-                  className="mr-2"
-                />
-                <Text className="text-[#0f172a] text-lg  ml-2">Revision</Text>
-              </View>
-              <Text className="text-slate-500 text-xs">
-                Revise last 5 pages before memorizing
+              <Text className="text-slate-900 text-lg ">Revision Done</Text>
+              <Text className="text-slate-400 text-[10px] uppercase tracking-widest mt-1">
+                Last 5 pages revised
               </Text>
             </View>
             <Switch value={reviewed} onValueChange={setReviewed} />
@@ -303,61 +258,61 @@ export default function LogProgress() {
           </View>
 
           {status !== "missed" && (
-            <View className="mb-8 gap-y-4">
+            <View className="mb-8 p-5 bg-slate-50 rounded-[32px] border border-slate-100 gap-y-4">
               <QualityCounter
                 label="Mistakes"
                 description="Incorrect words or tajweed"
                 value={mistakes}
                 onValueChange={setMistakes}
-                icon="alert-circle"
-                color="#ef4444"
+                icon="alert-circle-outline"
+                color="#276359"
               />
               <QualityCounter
                 label="Hesitations"
                 description="Long pauses or unsureness"
                 value={hesitations}
                 onValueChange={setHesitations}
-                icon="timer"
-                color="#f59e0b"
+                icon="timer-outline"
+                color="#276359"
               />
             </View>
           )}
 
-          <View className="bg-gray-50 p-6 rounded-[28px] border border-gray-100 flex-row items-center justify-between mb-8">
-            <View>
-              <Text className=" text-gray-900 text-lg">Pages Memorized</Text>
-              <Text className="text-gray-400 text-xs ">
-                Actual progress today
-              </Text>
+          <View className="bg-slate-50 p-6 rounded-[32px] border border-slate-100 mb-8">
+            <View className="flex-row items-center justify-between mb-6">
+              <View>
+                <Text className=" text-slate-900 text-lg">Pages Memorized</Text>
+                <Text className="text-slate-400 text-[10px] uppercase tracking-widest mt-1">
+                  Actual progress
+                </Text>
+              </View>
+              <View className="flex-row items-center bg-white rounded-2xl p-1 border border-slate-200">
+                <Pressable
+                  onPress={() => setPages((prev) => Math.max(0, prev - 1))}
+                  className="w-10 h-10 items-center justify-center active:bg-slate-50 rounded-xl"
+                >
+                  <Ionicons name="remove" size={20} color="#276359" />
+                </Pressable>
+                <Text className="text-2xl  text-slate-900 px-4">{pages}</Text>
+                <Pressable
+                  onPress={() => setPages((prev) => prev + 1)}
+                  className="w-10 h-10 items-center justify-center active:bg-slate-50 rounded-xl"
+                >
+                  <Ionicons name="add" size={20} color="#276359" />
+                </Pressable>
+              </View>
             </View>
-            <View className="flex-row items-center bg-white rounded-2xl p-1.5 border border-gray-200">
-              <Pressable
-                onPress={() => setPages((prev) => Math.max(0, prev - 1))}
-                className="w-10 h-10 items-center justify-center active:bg-gray-50 rounded-xl"
-              >
-                <Ionicons name="remove" size={20} color="#276359" />
-              </Pressable>
-              <Text className="text-2xl  text-gray-900 px-4">{pages}</Text>
-              <Pressable
-                onPress={() => setPages((prev) => prev + 1)}
-                className="w-10 h-10 items-center justify-center active:bg-gray-50 rounded-xl"
-              >
-                <Ionicons name="add" size={20} color="#276359" />
-              </Pressable>
-            </View>
-          </View>
 
-          <View className="mb-8">
-            <Text className="text-gray-400   uppercase text-[10px] mb-2 ml-1 tracking-widest">
+            <Text className="text-slate-400 uppercase text-[10px] mb-2 ml-1 tracking-widest">
               Reflection or Notes
             </Text>
             <TextInput
               multiline
               placeholder="Difficulties with specific ayahs?"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor="#94a3b8"
               value={notes}
               onChangeText={setNotes}
-              className="bg-gray-50 p-5 rounded-[28px] border border-gray-100 h-32 text-gray-900 "
+              className="bg-white p-5 rounded-[24px] border border-slate-100 h-32 text-slate-900"
               textAlignVertical="top"
             />
           </View>
