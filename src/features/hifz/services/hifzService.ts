@@ -4,14 +4,14 @@ import { hifzPlans, hifzLogs } from '../database/hifzSchema';
 import { supabase } from "@/src/lib/supabase";
 import { IHifzLog, IHifzPlan } from "../types";
 import {
-  insertHabitProgressLog,
+  upsertHabitProgressLog,
   deleteHabitProgressLog,
   upsertActivityPlan,
 } from "@/src/features/habits/services/habitProgressService";
 import { PerformanceService } from "@/src/services/PerformanceService";
 import { GamificationService } from "@/src/services/GamificationService";
-import { userStats } from "@/src/features/user/database/userSchema";
 import { notificationService } from "../../notifications/services/notificationService";
+import { habitAnalyticsService } from "@/src/features/habits/services/habitAnalyticsService";
 import { HabitRepository } from "@/src/features/habits/services/habitRepository";
 import { habitStackingService } from "@/src/features/habits/services/habitStackingService";
 
@@ -154,6 +154,10 @@ export const hifzService = {
             activityType: 'hifz',
             localRefId: existing.id
           });
+
+          await PageMasteryService.syncPageActivityLogs(tx, userId, 'hifz', existing.id, todayLog.date, null, 'low');
+          await PerformanceService.recomputeAllPerformance(tx, userId);
+
           await notificationService.removeHabitEvent(userId, 'hifz', todayLog.date);
           changed = true;
         }
@@ -219,7 +223,7 @@ export const hifzService = {
       const normalizedUnits = Math.max(0, Math.round(todayLog.actual_pages_completed ?? 0));
       const isMissed = todayLog.status === "missed" || normalizedUnits === 0;
 
-      await insertHabitProgressLog(tx as any, {
+      await upsertHabitProgressLog(tx as any, {
         userId,
         date: todayLog.date,
         activityType: "HIFZ",
@@ -229,35 +233,31 @@ export const hifzService = {
         planId: todayLog.hifz_plan_id,
         localRefId: localId,
         eventType: isMissed ? "TASK_MISSED" : "HIFZ_COMPLETED",
+        metadata: JSON.stringify({
+          startPage: todayLog.actual_start_page,
+          endPage: todayLog.actual_end_page,
+          qualityScore: todayLog.quality_score
+        })
       });
 
-      if (!isMissed && todayLog.actual_pages_completed > 0) {
-        const qualityScore = todayLog.quality_score ?? PerformanceService.deriveQualityScore(todayLog.mistakes_count ?? 0, todayLog.hesitation_count ?? 0);
-        
-        // Map quality score to PageMastery categories
-        let sessionQuality: 'perfect' | 'medium' | 'low' = 'medium';
-        if (qualityScore >= 5) sessionQuality = 'perfect';
-        else if (qualityScore <= 2) sessionQuality = 'low';
+      const qualityScore = todayLog.quality_score ?? PerformanceService.deriveQualityScore(todayLog.mistakes_count ?? 0, todayLog.hesitation_count ?? 0);
+      const quality: 'perfect' | 'medium' | 'low' = qualityScore >= 5 ? 'perfect' : qualityScore <= 2 ? 'low' : 'medium';
 
-        await PageMasteryService.logPageRangeActivity(
-          userId,
-          todayLog.actual_start_page,
-          todayLog.actual_end_page,
-          'hifz',
-          sessionQuality,
-          Math.ceil((todayLog.mistakes_count ?? 0) / Math.max(1, todayLog.actual_pages_completed))
-        );
+      await PageMasteryService.syncPageActivityLogs(
+        tx,
+        userId,
+        'hifz',
+        localId,
+        todayLog.date,
+        isMissed ? null : { start: todayLog.actual_start_page, end: todayLog.actual_end_page },
+        quality,
+        todayLog.mistakes_count ?? 0
+      );
 
-        await PerformanceService.updateRangePerformance(tx as any, todayLog.actual_start_page, todayLog.actual_end_page, qualityScore);
-        
-        const stats = await tx.query.userStats.findFirst({
-          where: eq(userStats.userId, userId),
-          columns: { hifzCurrentStreak: true }
-        });
-        const currentStreak = stats?.hifzCurrentStreak ?? 0;
-
-        await GamificationService.processSessionCompletion(tx as any, userId, qualityScore, currentStreak);
-      }
+      await PerformanceService.recomputeAllPerformance(tx, userId);
+      
+      const { currentStreak } = await habitAnalyticsService.recalculateStreaks(userId);
+      await GamificationService.processSessionCompletion(tx as any, userId, qualityScore, currentStreak);
 
       if (changed && (todayLog.status === "completed" || todayLog.status === "partial" || todayLog.status === "missed")) {
         await notificationService.processHabitEvent({
