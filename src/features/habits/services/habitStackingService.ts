@@ -1,5 +1,6 @@
 import { notificationManager } from "../../notifications/services/notificationManager";
 import * as Notifications from "expo-notifications";
+import { Platform } from "react-native";
 
 export const SOLAT_TIMES_DEFAULT: Record<string, { hour: number; minute: number }> = {
   fajr: { hour: 5, minute: 0 },
@@ -20,7 +21,6 @@ export const habitStackingService = {
     const { id, type, preferredTime, isCustomTime, selectedDays } = plan;
     if (!preferredTime || !selectedDays || selectedDays.length === 0) return;
 
-    // 1. Cancel all possible existing identifiers for this plan (days 1-7)
     for (let day = 1; day <= 7; day++) {
       await Notifications.cancelScheduledNotificationAsync(`habit_stacking_${type}_${id}_day_${day}`);
     }
@@ -59,23 +59,22 @@ export const habitStackingService = {
    
       const expoWeekday = ((dayOffset + 1) % 7) + 1;
       const identifier = `habit_stacking_${type}_${id}_day_${expoWeekday}`;
-
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title,
-          body,
-          data: { planId: id, type: 'habit_stacking', habitType: type },
-          sound: true,
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
-          weekday: expoWeekday,
-          hour,
-          minute,
-          repeats: true,
-        } as Notifications.CalendarTriggerInput,
-        identifier,
-      });
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title,
+              body,
+              data: { planId: id, type: 'habit_stacking', habitType: type },
+              sound: true,
+              ...(Platform.OS === "android" ? { channelId: "default" } : {}),
+            },
+            trigger: {
+              type: Notifications.SchedulableTriggerInputTypes.WEEKLY, 
+              weekday: expoWeekday,
+              hour,
+              minute,
+            },
+            identifier,
+          });
     }
 
     console.log(`Scheduled ${selectedDays.length} reminders for ${type} plan ${id} at ${hour}:${minute}`);

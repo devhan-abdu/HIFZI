@@ -20,7 +20,7 @@ export class HabitRepository {
     metadata?: string | null;
     localRefId?: number | null;
   }) {
-    return habitProgressService.insertHabitProgressLog(db, payload);
+    return habitProgressService.upsertHabitProgressLog(db, payload);
   }
 
  

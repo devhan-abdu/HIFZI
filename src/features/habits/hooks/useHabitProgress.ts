@@ -1,8 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-;
 import { useSession } from "@/src/hooks/useSession";
-
 import { habitAnalyticsService } from "../services/habitAnalyticsService";
 import { HabitRepository } from "../services/habitRepository";
 
@@ -13,9 +11,12 @@ function dateKey(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
+
 export function useHabitProgress(viewDate?: Date) {
   const { user } = useSession();
   const userId = user?.id ?? "local-user";
+  
+ 
   const focusDate = viewDate ?? new Date();
   const year = focusDate.getFullYear();
   const month = focusDate.getMonth();
@@ -23,7 +24,7 @@ export function useHabitProgress(viewDate?: Date) {
   const endOfMonth = new Date(year, month + 1, 0);
 
   const query = useQuery({
-    queryKey: ["habit-progress", userId, dateKey(startOfMonth), dateKey(endOfMonth)],
+    queryKey: ["habit-progress", userId],
     queryFn: async () => {
       if (!user?.id) return null;
 
@@ -68,7 +69,12 @@ export function useHabitProgress(viewDate?: Date) {
           MURAJA: { minutes: 0, units: 0, sessions: 0 },
           NORMAL_READING: { minutes: 0, units: 0, sessions: 0 },
         },
-        activityHash: "v1-0",
+        todayStats: {
+          completedPages: 0,
+          goalPages: 0,
+          percent: 0
+        },
+        activityHash: "v2-0",
         lastActivityAt: null,
       },
     [query.data],

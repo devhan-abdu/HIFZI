@@ -50,7 +50,7 @@ export function SuggestionsSheet({
         >
           <View className="flex-row items-center justify-between p-5 pb-2">
             <View>
-              <Text className="text-slate-900 text-xl font-bold">Adaptive Suggestions</Text>
+              <Text className="text-slate-900 text-xl ">Adaptive Suggestions</Text>
               {isStale && !isRefreshing && (
                 <Text className="text-orange-500 text-xs font-medium">New progress detected</Text>
               )}
@@ -85,7 +85,7 @@ export function SuggestionsSheet({
             contentContainerStyle={{ paddingBottom: 40 }}
           >
             <View className="bg-slate-50 rounded-2xl p-4 border border-slate-200 mb-4">
-              <Text className="text-[10px] uppercase font-bold tracking-[2px] text-slate-500 mb-2">Next Task</Text>
+              <Text className="text-[10px] uppercase  tracking-[2px] text-slate-500 mb-2">Next Task</Text>
               <Text className="text-slate-900 text-base font-semibold">
                 {mapAdjustmentLabel(suggestion?.hifzAdjustment)}
               </Text>
@@ -95,7 +95,7 @@ export function SuggestionsSheet({
             </View>
 
             <View className="bg-white rounded-2xl p-4 border border-slate-200 mb-4">
-              <Text className="text-[10px] uppercase font-bold tracking-[2px] text-slate-500 mb-2">Plan Insights</Text>
+              <Text className="text-[10px] uppercase  tracking-[2px] text-slate-500 mb-2">Plan Insights</Text>
               <View className="flex-row items-center justify-between">
                 <Text className="text-slate-600 text-sm">Completion</Text>
                 <Text className="text-slate-900 font-semibold">{completionRate}%</Text>
@@ -111,7 +111,7 @@ export function SuggestionsSheet({
             </View>
 
             <View className="bg-white rounded-2xl p-4 border border-slate-200">
-              <Text className="text-[10px] uppercase font-bold tracking-[2px] text-slate-500 mb-2">Adaptive Focus</Text>
+              <Text className="text-[10px] uppercase  tracking-[2px] text-slate-500 mb-2">Adaptive Focus</Text>
               {focusPages.length > 0 ? (
                 <View className="flex-row flex-wrap gap-2">
                   {focusPages.map((page) => (

@@ -1,5 +1,5 @@
 import { db } from "@/src/lib/db/local-client";
-import { activityLogs, adaptiveGuidanceCache } from "../database/habitSchema";
+import { activityLogs } from "../database/habitSchema";
 import { userStats } from "../../user/database/userSchema";
 import { eq, and, sql, desc, lte, asc } from "drizzle-orm";
 import { ActivityType, ActivityEventType, HabitProgressSnapshot, HabitHistoryEntry, HabitLogMetadata } from "./habitTypes";
@@ -8,8 +8,10 @@ export const habitAnalyticsService = {
   
 
   async getProgressSnapshot(userId: string, startDate: string, endDate: string): Promise<HabitProgressSnapshot> {
-    const logs = await db.query.activityLogs.findMany({
-      where: and(eq(activityLogs.userId, userId), lte(activityLogs.date, endDate)),
+    const today = new Date().toISOString().split('T')[0];
+    
+    const allLogs = await db.query.activityLogs.findMany({
+      where: eq(activityLogs.userId, userId),
       orderBy: [asc(activityLogs.date), asc(activityLogs.id)],
     });
 
@@ -23,13 +25,21 @@ export const habitAnalyticsService = {
     const historyEntries: HabitHistoryEntry[] = [];
     const reflections: HabitProgressSnapshot["reflections"] = [];
 
-    for (const log of logs) {
+    let completedPagesToday = 0;
+
+    for (const log of allLogs) {
       const meta = this.safeParseMetadata(log.metadata);
       const eventType = meta.eventType || this.defaultEventType(log.activityType as ActivityType);
       const sourceDate = meta.sourceDate || log.date;
       const sourceKey = meta.sourceKey || `${log.activityType}:${log.planId ?? "na"}:${sourceDate}`;
       
       finalBySource.set(sourceKey, { ...log, eventType, sourceDate });
+
+      if (sourceDate === today) {
+        if (eventType.includes("_COMPLETED")) {
+          completedPagesToday += log.unitsCompleted || 0;
+        }
+      }
 
       if (sourceDate >= startDate && sourceDate <= endDate) {
         historyEntries.push({
@@ -55,26 +65,31 @@ export const habitAnalyticsService = {
       }
     }
 
-    const finalizedEntries = Array.from(finalBySource.values()).filter(
-      (e) => e.sourceDate >= startDate && e.sourceDate <= endDate
-    );
+    const finalizedList = Array.from(finalBySource.values());
+    const rangeEntries = finalizedList.filter(e => e.sourceDate >= startDate && e.sourceDate <= endDate);
 
-    const heatmap = this.calculateHeatmap(finalizedEntries);
-    const analytics = this.calculateAnalytics(finalizedEntries, startDate, endDate, userId);
+    const heatmap = this.calculateHeatmap(rangeEntries);
+    const analytics = this.calculateAnalytics(finalizedList, rangeEntries, userId);
+
+    const goalPages = await this.calculateDailyGoal(userId);
 
     return {
-      userHistory: this.calculateUserHistory(finalizedEntries),
+      userHistory: this.calculateUserHistory(rangeEntries),
       weekHistory: [],
       historyEntries: historyEntries.sort((a, b) => b.timestamp.localeCompare(a.timestamp)),
       heatmap,
       reflections: reflections.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 20),
-      analytics: await analytics,
+      analytics,
       progressByType,
-      activityHash: this.computeActivityHash(finalizedEntries),
-      lastActivityAt: finalizedEntries[finalizedEntries.length - 1]?.updatedAt || null,
+      todayStats: {
+        completedPages: completedPagesToday,
+        goalPages,
+        percent: goalPages > 0 ? Math.round((completedPagesToday / goalPages) * 100) : 0
+      },
+      activityHash: this.computeActivityHash(rangeEntries),
+      lastActivityAt: finalizedList[finalizedList.length - 1]?.updatedAt || null,
     };
   },
-
 
   async recalculateStreaks(userId: string) {
     const logs = await db.select({ date: activityLogs.date })
@@ -87,6 +102,7 @@ export const habitAnalyticsService = {
     const currentStreak = this.computeCurrentStreak(dates);
     const longestStreak = this.computeLongestStreak(dates);
 
+    // Update userStats as a cache
     await db.insert(userStats)
       .values({ userId, murajaCurrentStreak: currentStreak, globalLongestStreak: longestStreak })
       .onConflictDoUpdate({
@@ -100,6 +116,58 @@ export const habitAnalyticsService = {
     return { currentStreak, longestStreak };
   },
 
+  async calculateDailyGoal(userId: string): Promise<number> {
+    try {
+      const { weeklyMurajaPlans, hifzPlans } = await import("@/src/lib/db/schema");
+
+      const murajaPlan = await db.select({ goal: weeklyMurajaPlans.plannedPagesPerDay })
+        .from(weeklyMurajaPlans)
+        .where(and(eq(weeklyMurajaPlans.userId, userId), eq(weeklyMurajaPlans.isActive, true)))
+        .limit(1);
+      const murajaGoal = murajaPlan[0]?.goal || 0;
+
+      const hifzPlan = await db.select({ goal: hifzPlans.pagesPerDay })
+        .from(hifzPlans)
+        .where(and(eq(hifzPlans.userId, userId), eq(hifzPlans.status, 'active')))
+        .limit(1);
+      const hifzGoal = hifzPlan[0]?.goal || 0;
+
+      return Math.round(murajaGoal + hifzGoal);
+    } catch (e) {
+      console.warn("Failed to calculate daily goal", e);
+      return 0;
+    }
+  },
+
+  calculateAnalytics(allEntries: any[], rangeEntries: any[], userId: string) {
+    const completedRange = rangeEntries.filter(e => e.eventType.includes("_COMPLETED"));
+    const missedRange = rangeEntries.filter(e => e.eventType === "TASK_MISSED");
+    
+    // Global stats derived from ALL historical logs
+    const totalMinutes = allEntries.reduce((acc, e) => acc + (e.minutesSpent || 0), 0);
+    const totalPages = allEntries.reduce((acc, e) => acc + (e.unitsCompleted || 0), 0);
+
+    // Derive streaks from full history
+    const completionDates = Array.from(new Set(
+      allEntries
+        .filter(e => e.eventType.includes("_COMPLETED") && (e.unitsCompleted || 0) > 0)
+        .map(e => e.sourceDate)
+    )).sort();
+
+    const currentStreak = this.computeCurrentStreak(completionDates);
+    const longestStreak = this.computeLongestStreak(completionDates);
+
+    return {
+      completionRate: Math.round((completedRange.length / Math.max(1, completedRange.length + missedRange.length)) * 100),
+      currentStreak,
+      longestStreak,
+      totalMinutes,
+      totalPages,
+      completedCount: completedRange.length,
+      missedCount: missedRange.length,
+      revisionFrequency: 0,
+    };
+  },
 
   calculateUserHistory(entries: any[]) {
     const grouped = new Map<string, any[]>();
@@ -119,26 +187,6 @@ export const habitAnalyticsService = {
     });
   },
 
-  async calculateAnalytics(entries: any[], start: string, end: string, userId: string) {
-    const completed = entries.filter(e => e.eventType.includes("_COMPLETED"));
-    const missed = entries.filter(e => e.eventType === "TASK_MISSED");
-    const totalMinutes = entries.reduce((acc, e) => acc + (e.minutesSpent || 0), 0);
-    const totalPages = entries.reduce((acc, e) => acc + (e.unitsCompleted || 0), 0);
-
-    const stats = await db.query.userStats.findFirst({ where: eq(userStats.userId, userId) });
-
-    return {
-      completionRate: Math.round((completed.length / Math.max(1, completed.length + missed.length)) * 100),
-      currentStreak: stats?.murajaCurrentStreak || 0,
-      longestStreak: stats?.globalLongestStreak || 0,
-      totalMinutes,
-      totalPages,
-      completedCount: completed.length,
-      missedCount: missed.length,
-      revisionFrequency: 0, // Placeholder
-    };
-  },
-
   calculateHeatmap(entries: any[]) {
     const map = new Map<string, { count: number; minutes: number }>();
     entries.forEach(e => {
@@ -153,28 +201,34 @@ export const habitAnalyticsService = {
   },
 
   computeCurrentStreak(dates: string[]) {
+    if (dates.length === 0) return 0;
+    
     const set = new Set(dates);
     const today = new Date().toISOString().split('T')[0];
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
     
-    let cursor = set.has(today) ? today : (set.has(yesterday) ? yesterday : null);
-    if (!cursor) return 0;
+    let cursorStr = set.has(today) ? today : (set.has(yesterday) ? yesterday : null);
+    if (!cursorStr) return 0;
 
     let streak = 0;
-    let current = new Date(cursor);
-    while (set.has(current.toISOString().split('T')[0])) {
+    let cursor = new Date(cursorStr);
+    
+    while (set.has(cursor.toISOString().split('T')[0])) {
       streak++;
-      current.setDate(current.getDate() - 1);
+      cursor.setDate(cursor.getDate() - 1);
     }
     return streak;
   },
 
   computeLongestStreak(dates: string[]) {
+    if (dates.length === 0) return 0;
+    
     let longest = 0, current = 0, prev = null;
     for (const d of dates) {
       const date = new Date(d);
-      if (!prev) current = 1;
-      else {
+      if (!prev) {
+        current = 1;
+      } else {
         const diff = Math.round((date.getTime() - prev.getTime()) / 86400000);
         current = diff === 1 ? current + 1 : 1;
       }
