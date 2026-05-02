@@ -2,7 +2,7 @@ import React from "react";
 import { Text } from "@/src/components/common/ui/Text";
 import { View } from "react-native";
 
-import { useRouter } from "expo-router";
+import { router } from "expo-router";
 
 import Screen from "@/src/components/screen/Screen";
 import {
@@ -22,9 +22,10 @@ import MurajaEmptyState from "@/src/features/muraja/components/MurajaEmptyState"
 import StatCard from "@/src/features/hifz/components/StatCard";
 import { DayByDay } from "@/src/features/muraja/components/DayByDay";
 import { ActionTaskCard } from "@/src/components/common/ActionCard";
+import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function MurajaIndex() {
-  const router = useRouter();
   const {
     weeklyPlan,
     stats,
@@ -34,6 +35,7 @@ export default function MurajaIndex() {
     error,
     refetch,
   } = useWeeklyMuraja();
+  const session = useReaderSessionStore();
 
   const {
     analytics,
@@ -53,7 +55,7 @@ export default function MurajaIndex() {
         date: todayStr,
         start_page: todayTask.startPage,
         end_page: isCompleted ? todayTask.endPage : todayTask.startPage,
-        completed_pages: isCompleted ? weeklyPlan.planned_pages_per_day : 0,
+        completed_pages: isCompleted ? (weeklyPlan.planned_pages_per_day || 0) : 0,
         actual_time_min: weeklyPlan.estimated_time_min || 0,
         status: status,
         is_catchup: todayTask.isCatchup ? 1 : 0,
@@ -85,6 +87,11 @@ export default function MurajaIndex() {
     );
   }
 
+  const title =
+    todayTask?.startSurah === todayTask?.endSurah ?
+      todayTask?.startSurah
+    : `${todayTask?.startSurah} – ${todayTask?.endSurah}`;
+
   if (weeklyPlan) {
     return (
       <Screen>
@@ -97,7 +104,7 @@ export default function MurajaIndex() {
               {todayTask ?
                 <ActionTaskCard
                   typeLabel="Muraja'a"
-                  title={`${todayTask.startSurah ?? ""} – ${todayTask.endSurah ?? ""}`}
+                  title={title ?? ''}
                   subTitle={`Pages ${todayTask.startPage} – ${todayTask.endPage}`}
                   status={todayTask.status} 
                   isCatchup={todayTask.isCatchup}
@@ -110,13 +117,31 @@ export default function MurajaIndex() {
                       "pending"
                       : "completed"
                   )}
-                  logRoute="/muraja/log" onMissed={function (): void {
-                    throw new Error("Function not implemented.");
-                  } }                />
-              : <View className="p-8 bg-slate-50 rounded-[32px] border border-dashed border-slate-200">
-                  <Text className="text-center text-slate-400 ">
-                    No session scheduled for today.
+                  onStart={() => {
+                    session.openSession(todayTask.startPage);
+                    router.push(`/(app)/quran/reader?page=${todayTask.startPage}&planId=${weeklyPlan.id}&type=muraja&start=${todayTask.startPage}&end=${todayTask.endPage}`);
+                  }}
+                  onResume={() => {
+                    router.push(`/(app)/quran/reader?page=${session.currentPage}&planId=${weeklyPlan.id}&type=muraja&start=${todayTask.startPage}&end=${todayTask.endPage}`);
+                  }}
+                  isResumable={session.currentPage >= todayTask.startPage && session.currentPage <= todayTask.endPage}
+                  onDetails={() => router.push("/(app)/muraja/log")}
+                />
+              : <View className="bg-white border border-slate-100 rounded-[32px] p-8 items-center shadow-sm">
+                  <View className="w-12 h-12 bg-slate-50 rounded-full items-center justify-center mb-4">
+                    <Ionicons name="cafe-outline" size={24} color="#0891b2" />
+                  </View>
+                  <Text className="text-slate-900 text-base text-center mb-1">Rest Day for Muraja'a</Text>
+                  <Text className="text-slate-500 text-xs text-center mb-6 px-4">
+                    No Muraja tasks today. Feel free to rest or log some extra revision pages.
                   </Text>
+                  <Button 
+                    variant="outline" 
+                    className="w-full border-slate-100 bg-slate-50"
+                    onPress={() => router.push("/(app)/muraja/log")}
+                  >
+                    <Text className="text-xs uppercase tracking-widest text-primary ">Log Extra Muraja</Text>
+                  </Button>
                 </View>
               }
             </View>
@@ -159,12 +184,28 @@ export default function MurajaIndex() {
         </ScreenContent>
 
         <ScreenFooter>
-          <Button
-            variant="outline"
-            onPress={() => router.push("/(app)/muraja/create-muraja-plan")}
-          >
-            Replace Current Plan
-          </Button>
+          <View className="flex-row gap-x-3">
+            <Button
+              className="flex-1 shadow-lg shadow-primary/20"
+              onPress={() => router.push(`/(app)/log-center?type=muraja`)}
+            >
+              <Ionicons name="add-circle" size={20} color="white" />
+              <Text className="text-white">
+                 Log Progress
+              </Text>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="flex-1"
+              onPress={() => router.push("/(app)/muraja/create-muraja-plan")}
+            >
+              <Ionicons name="pencil-outline" size={18} color="#276359" />
+              <Text className="text-primary">
+               Edit Plan
+              </Text>
+            </Button>
+          </View>
         </ScreenFooter>
       </Screen>
     );

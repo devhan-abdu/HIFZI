@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { router } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -38,7 +38,6 @@ import { useAlert } from "@/src/hooks/useAlert";
 import { Alert } from "@/src/components/common/Alert";
 
 export default function CreateWeeklyPlan() {
-  const router = useRouter();
   const [showDatePicker, setShowDatePicker] = useState(false);
   const { user } = useSession();
   const { items } = useLoadSurahData();
@@ -138,7 +137,7 @@ export default function CreateWeeklyPlan() {
     <>
       <View className="h-16 px-4 flex-row items-center">
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => router.replace('/(app)/muraja')}
           className="w-10 h-10 items-center justify-center rounded-full active:bg-slate-100"
         >
           <Ionicons name="arrow-back" size={24} color="#0f172a" />
@@ -152,7 +151,10 @@ export default function CreateWeeklyPlan() {
       </View>
       <Screen>
         <ScreenContent>
-          <View className=" p-5 mb-8 ">
+          <View className="mb-10 p-5 bg-slate-50 rounded-[32px] border border-slate-100">
+            <Text className="text-slate-400 text-[10px] uppercase mb-4 ml-1 tracking-widest ">
+              Plan Focus
+            </Text>
             <Controller
               control={control}
               name="week_start_date"
@@ -172,7 +174,7 @@ export default function CreateWeeklyPlan() {
                       </View>
                       <View>
                         <Text
-                          className={`text-base  ${
+                          className={`text-base font-medium ${
                             formattedWeekStart ? "text-slate-900" : (
                               "text-slate-600"
                             )
@@ -182,7 +184,7 @@ export default function CreateWeeklyPlan() {
                         </Text>
                       </View>
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color="#000" />
+                    <Ionicons name="chevron-forward" size={18} color="#0f172a" />
                   </Pressable>
                   <ErrorMessage error={errors.week_start_date} />
                   {showDatePicker && (
@@ -198,38 +200,10 @@ export default function CreateWeeklyPlan() {
                 </View>
               )}
             />
-            <View className="h-[1px] bg-slate-100 my-5" />
-            <Controller
-              name="preferred_time"
-              control={control}
-              render={({ field: { value, onChange } }) => (
-                <HabitTriggerSelector 
-                  value={value} 
-                  onChange={onChange} 
-                  isCustom={useWatch({ control, name: 'is_custom_time' })}
-                  setIsCustom={(val) => setValue('is_custom_time', val)}
-                  error={errors.preferred_time?.message}
-                />
-              )}
-            />
-            <View className="h-[1px] bg-slate-100 my-5" />
-            <Controller
-              name="selectedDays"
-              control={control}
-              render={({ field: { value, onChange } }) => (
-                <View>
-                  <Text className="text-black text-[9px]  uppercase tracking-widest mb-4 ml-1">
-                    Weekly Routine
-                  </Text>
-                  <SelectDays value={value ?? []} onChange={onChange} />
-                  <ErrorMessage error={errors.selectedDays} />
-                </View>
-              )}
-            />
           </View>
 
-          <SectionHeader title="Reading Target" />
-          <View className=" p-5 mb-8 gap-y-4">
+          <SectionHeader title="Target Range" />
+          <View className="p-5 mb-10 bg-slate-50 rounded-[32px] border border-slate-100 gap-y-4">
             <Controller
               control={control}
               name="start_surah"
@@ -279,15 +253,47 @@ export default function CreateWeeklyPlan() {
             />
           </View>
 
-          <SectionHeader title="Details" />
-          <View className=" p-5 mb-10 gap-y-5">
+          {/* STEP 3: TIME & SCHEDULE */}
+          <SectionHeader title="Daily Routine" />
+          <View className="p-5 mb-10 bg-slate-50 rounded-[32px] border border-slate-100">
+            <Controller
+              name="preferred_time"
+              control={control}
+              render={({ field: { value, onChange } }) => (
+                <HabitTriggerSelector 
+                  value={value} 
+                  onChange={onChange} 
+                  isCustom={useWatch({ control, name: 'is_custom_time' })}
+                  setIsCustom={(val) => setValue('is_custom_time', val)}
+                  error={errors.preferred_time?.message}
+                />
+              )}
+            />
+            <View className="h-[1px] bg-slate-200 my-6" />
+            <Controller
+              name="selectedDays"
+              control={control}
+              render={({ field: { value, onChange } }) => (
+                <View>
+                  <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-4 ml-1 ">
+                    Weekly Commitment
+                  </Text>
+                  <SelectDays value={value ?? []} onChange={onChange} />
+                  <ErrorMessage error={errors.selectedDays} />
+                </View>
+              )}
+            />
+          </View>
+
+          <SectionHeader title="Duration & Details" />
+          <View className="p-5 mb-10 bg-slate-50 rounded-[32px] border border-slate-100 gap-y-5">
             <Controller
               control={control}
               name="estimated_time_min"
               render={({ field: { value, onChange } }) => (
                 <View>
                   <Input
-                    label="Daily Duration"
+                    label="Estimated Daily Duration"
                     value={String(value)}
                     setValue={(v) => onChange(Number(v))}
                     keyboardType="numeric"
@@ -295,7 +301,7 @@ export default function CreateWeeklyPlan() {
                       <Ionicons name="time-outline" size={18} color="#94a3b8" />
                     }
                     rightIcon={
-                      <Text className="text-slate-400   text-[10px] uppercase">
+                      <Text className="text-slate-400 text-[10px] uppercase">
                         min
                       </Text>
                     }
@@ -327,8 +333,8 @@ export default function CreateWeeklyPlan() {
               )}
             />
             <View>
-              <Text className="text-black text-[9px]  uppercase tracking-widest mb-2 ml-1">
-                Personal Notes
+              <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-2 ml-1 ">
+                Personal Intentions
               </Text>
               <Controller
                 name="note"
@@ -339,13 +345,12 @@ export default function CreateWeeklyPlan() {
                       style={{
                         fontFamily: "Rosemary",
                       }}
-                      className={`bg-slate-50 rounded-2xl p-4 min-h-[100px] placeholder:text-slate-400 text-slate-900  border ${
+                      className={`bg-white rounded-2xl p-4 min-h-[100px] text-slate-900 border ${
                         errors.note ? "border-red-500" : "border-slate-100"
-                      } 
-                      focus:border-primary/40 focus:bg-white`}
+                      } focus:border-primary/40`}
                       onChangeText={onChange}
                       value={value ?? ""}
-                      placeholder="Set an intention or reminder..."
+                      placeholder="Set a reminder for yourself..."
                       multiline
                       textAlignVertical="top"
                     />

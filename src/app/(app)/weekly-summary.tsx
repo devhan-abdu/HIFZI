@@ -48,7 +48,7 @@ export default function WeeklySummaryScreen() {
           <Text className="text-[10px] uppercase tracking-[1.8px] text-slate-500">
             Sunday Pivot
           </Text>
-          <Text className="mt-2 text-2xl font-bold text-slate-900">Weekly Consultation</Text>
+          <Text className="mt-2 text-2xl  text-slate-900">Weekly Consultation</Text>
         </View>
 
         {report && (
@@ -58,7 +58,7 @@ export default function WeeklySummaryScreen() {
                  <View className="w-10 h-10 rounded-full bg-emerald-800 items-center justify-center">
                    <Ionicons name="sparkles" size={20} color="#fbbf24" />
                  </View>
-                 <Text className="text-emerald-100 font-bold uppercase tracking-widest text-[10px]">
+                 <Text className="text-emerald-100  uppercase tracking-widest text-[10px]">
                    Hifzi AI Coach
                  </Text>
                </View>
@@ -77,8 +77,8 @@ export default function WeeklySummaryScreen() {
             >
               <View className="flex-row justify-between items-center mb-6">
                 <View>
-                  <Text className="text-slate-500 uppercase text-[10px] tracking-widest font-bold">Current Path</Text>
-                  <Text className={`text-2xl font-bold ${
+                  <Text className="text-slate-500 uppercase text-[10px] tracking-widest ">Current Path</Text>
+                  <Text className={`text-2xl  ${
                     report.status === "Elite" ? "text-amber-700" :
                     report.status === "Retake" ? "text-emerald-700" :
                     report.status === "Polishing" ? "text-rose-700" :
@@ -103,17 +103,17 @@ export default function WeeklySummaryScreen() {
               
               <View className="flex-row gap-6 border-t border-black/5 pt-6">
                 <View>
-                  <Text className="text-[10px] text-slate-500 uppercase font-bold">Quality</Text>
-                  <Text className="text-xl font-bold text-slate-900">{report.averageQuality.toFixed(1)}</Text>
+                  <Text className="text-[10px] text-slate-500 uppercase ">Quality</Text>
+                  <Text className="text-xl  text-slate-900">{report.averageQuality.toFixed(1)}</Text>
                 </View>
                 <View>
-                  <Text className="text-[10px] text-slate-500 uppercase font-bold">Done</Text>
-                  <Text className="text-xl font-bold text-slate-900">{report.completionRate.toFixed(0)}%</Text>
+                  <Text className="text-[10px] text-slate-500 uppercase ">Done</Text>
+                  <Text className="text-xl  text-slate-900">{report.completionRate.toFixed(0)}%</Text>
                 </View>
                 {report.testScore !== undefined && (
                   <View>
-                    <Text className="text-[10px] text-slate-500 uppercase font-bold">Exam</Text>
-                    <Text className="text-xl font-bold text-emerald-600">{report.testScore.toFixed(0)}%</Text>
+                    <Text className="text-[10px] text-slate-500 uppercase ">Exam</Text>
+                    <Text className="text-xl  text-emerald-600">{report.testScore.toFixed(0)}%</Text>
                   </View>
                 )}
               </View>
@@ -122,7 +122,7 @@ export default function WeeklySummaryScreen() {
             {/* Test Gateway */}
             {needsTest && (
               <View className="bg-rose-50 border border-rose-200 rounded-[32px] p-6">
-                <Text className="text-rose-800 font-bold">Mandatory Weekly Exam</Text>
+                <Text className="text-rose-800 ">Mandatory Weekly Exam</Text>
                 <Text className="text-rose-600 mt-2 mb-4">
                   To finalize your evaluation and ensure mastery, please take a quick recall test on the {report.testPages?.length} pages covered this week.
                 </Text>
@@ -142,11 +142,11 @@ export default function WeeklySummaryScreen() {
         <View className="mt-8 gap-y-3">
           <View className="rounded-2xl border border-slate-100 bg-white p-4 flex-row justify-between items-center">
             <Text className="text-slate-500 font-medium">Total Minutes Spent</Text>
-            <Text className="text-lg font-bold text-slate-900">{analytics.totalMinutes}m</Text>
+            <Text className="text-lg  text-slate-900">{analytics.totalMinutes}m</Text>
           </View>
           <View className="rounded-2xl border border-slate-100 bg-white p-4 flex-row justify-between items-center">
             <Text className="text-slate-500 font-medium">Pages Completed</Text>
-            <Text className="text-lg font-bold text-slate-900">{analytics.totalPages}</Text>
+            <Text className="text-lg  text-slate-900">{analytics.totalPages}</Text>
           </View>
         </View>
 

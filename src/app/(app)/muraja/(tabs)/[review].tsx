@@ -13,9 +13,8 @@ import { SectionHeader } from "@/src/components/SectionHeader";
 export default function WeeklyReviewPage() {
   const router = useRouter();
   const { review } = useLocalSearchParams<{ review: string }>();
-  const { plan, analytics, isLoading, isError, refetch } = useWeeklyReview(
-    review ? Number(review) : undefined,
-  );
+  const { plan, analytics, progress, isLoading, isError, refetch } =
+    useWeeklyReview(review ? Number(review) : undefined);
 
   if (isLoading) return <ReviewSkeleton />;
 
@@ -63,7 +62,10 @@ export default function WeeklyReviewPage() {
     );
   }
 
-  const weekRange = formatWeekRange(plan?.week_start_date, plan?.week_end_date);
+  const weekRange = formatWeekRange(
+    plan?.week_start_date ?? "",
+    plan?.week_end_date ?? "",
+  );
 
   return (
     <>
@@ -71,11 +73,12 @@ export default function WeeklyReviewPage() {
         <ScreenContent>
           <SectionHeader
             title="Weekly Review"
-            badge={`${plan.weekly_plan_days.length || 0} Sessions`}
+            badge={`${plan.weekly_plan_days?.length || 0} Sessions`}
           />
           <WeeklyReviewView
-            plan={plan}
+            plan={plan as any}
             analytics={analytics}
+            progress={progress}
             weekRange={weekRange}
           />
         </ScreenContent>
