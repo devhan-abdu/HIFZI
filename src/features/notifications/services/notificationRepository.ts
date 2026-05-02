@@ -89,23 +89,33 @@ export const notificationRepository = {
     date: string,
     xpGained: number
   }) {
-    await db.insert(habitEvents)
-      .values({
-        userId,
-        habitType: payload.habitType,
-        status: payload.status,
-        date: payload.date,
-        xpGained: payload.xpGained,
-      })
-      .onConflictDoUpdate({
-        target: [habitEvents.userId, habitEvents.habitType, habitEvents.date],
-        set: {
+    const existing = await db.query.habitEvents.findFirst({
+      where: and(
+        eq(habitEvents.userId, userId),
+        eq(habitEvents.habitType, payload.habitType),
+        eq(habitEvents.date, payload.date)
+      )
+    });
+
+    if (existing) {
+      await db.update(habitEvents)
+        .set({
           status: payload.status,
           xpGained: payload.xpGained,
           syncStatus: 0,
           updatedAt: sql`CURRENT_TIMESTAMP`,
-        }
-      });
+        })
+        .where(eq(habitEvents.id, existing.id));
+    } else {
+      await db.insert(habitEvents)
+        .values({
+          userId,
+          habitType: payload.habitType,
+          status: payload.status,
+          date: payload.date,
+          xpGained: payload.xpGained,
+        });
+    }
   },
 
   async deleteHabitEvent(userId: string, habitType: 'hifz' | 'muraja', date: string) {
