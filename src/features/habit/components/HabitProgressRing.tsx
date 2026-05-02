@@ -68,12 +68,12 @@ export function HabitProgressRing({
              <Text className="text-sm  text-slate-900">Today's Progress</Text>
              {isOverflow && (
                <View className="bg-primary/10 px-1.5 py-0.5 rounded-md">
-                 <Text className="text-[8px] font-black text-primary">+{extraPages} EXTRA</Text>
+                 <Text className="text-[8px]  text-primary">+{extraPages} EXTRA</Text>
                </View>
              )}
           </View>
           
-          <Text className="text-[11px] text-slate-500 leading-4 font-medium">
+          <Text className="text-[11px] text-slate-500 leading-4">
             {isOverflow 
               ? "Amazing! You exceeded your daily goal. Mastery is near." 
               : rawProgress >= 1 
@@ -82,9 +82,9 @@ export function HabitProgressRing({
           </Text>
           
           <View className="mt-4 flex-row items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-100">
-            <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400">Streak</Text>
+            <Text className="text-[10px]  uppercase tracking-widest text-slate-400">Streak</Text>
             <View className="flex-row items-center gap-1">
-               <Text className="text-sm font-black text-slate-900">{streak}</Text>
+               <Text className="text-sm  text-slate-900">{streak}</Text>
                <Text className="text-[10px]  text-slate-400">days</Text>
             </View>
           </View>
