@@ -18,6 +18,7 @@ export function useMurajaOperation() {
             queryClient.invalidateQueries({ queryKey: ["habit-progress", user?.id] });
             queryClient.invalidateQueries({ queryKey: ["latest-notification", user?.id] });
             queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["page-performance-all"] });
             
             if (result.changed) {
                 queryClient.invalidateQueries({ queryKey: ["adaptive-guidance", user?.id] });

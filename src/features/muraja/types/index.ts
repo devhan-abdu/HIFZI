@@ -5,8 +5,8 @@ export interface IWeeklyMurajaPLan {
     id: number;
     remote_id: string | null;
     user_id: string;
-    week_start_date: string;
-    week_end_date: string;
+    week_start_date: string | null;
+    week_end_date: string | null;
     planned_pages_per_day: number;
     start_page: number;
     end_page: number;
@@ -63,12 +63,12 @@ export type IMurajaDashboardData = IWeeklyMurajaPLan & {
 export interface IWeeklyPlanDashboardData {
   totalPage: number,
   totalDays: number,
-  week_start_date: string,
-  week_end_date: string,
-  estimated_time_min: number,
-  planned_pages_per_day: number,
-  start_juz: number,
-  end_juz: number,
+  week_start_date: string | null;
+  week_end_date: string | null;
+  estimated_time_min: number | null,
+  planned_pages_per_day: number | null,
+  start_juz: number | null;
+  end_juz: number | null;
   startSurah: string,
   endSurah: string
 }

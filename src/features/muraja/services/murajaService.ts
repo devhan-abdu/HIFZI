@@ -5,7 +5,7 @@ import { IDailyMurajaLog, IWeeklyMurajaPLan } from "../types";
 import { PerformanceService } from "@/src/services/PerformanceService";
 import { GamificationService } from "@/src/services/GamificationService";
 import { PageMasteryService } from "@/src/services/PageMasteryService";
-import { insertHabitProgressLog, deleteHabitProgressLog } from "../../habits/services/habitProgressService";
+import { upsertHabitProgressLog, deleteHabitProgressLog } from "../../habits/services/habitProgressService";
 import { supabase } from "@/src/lib/supabase";
 import { notificationService } from "../../notifications/services/notificationService";
 
@@ -111,6 +111,70 @@ export const murajaService = {
     };
   },
 
+ 
+  async syncUserAnalytics(tx: any, userId: string, planId: number, displayName?: string) {
+    const allLogs = await tx.query.dailyMurajaLogs.findMany({
+      where: eq(dailyMurajaLogs.planId, planId),
+      orderBy: [desc(dailyMurajaLogs.date)],
+    });
+
+    const plan = await tx.query.weeklyMurajaPlans.findFirst({
+      where: eq(weeklyMurajaPlans.id, planId),
+    });
+
+    if (!plan) return;
+
+    
+    let calculatedStreak = 0;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    for (const entry of allLogs) {
+      if (!entry.date) continue;
+      if (entry.status === "completed" || entry.status === "partial") {
+        calculatedStreak++;
+      } else if (entry.date < todayStr) {
+        break; 
+      }
+    }
+
+    const latestSuccessfulLog = allLogs.find((l: any) => (l.completedPages ?? 0) > 0);
+    const trueLastPage = latestSuccessfulLog 
+      ? (latestSuccessfulLog.startPage ?? 1) + (latestSuccessfulLog.completedPages ?? 0) - 1
+      : (plan.startPage ?? 1) - 1;
+
+    const totalCompletedPages = allLogs.reduce((sum: number, l: any) => sum + (l.completedPages ?? 0), 0);
+
+    await tx.insert(userStats)
+      .values({ 
+        userId, 
+        murajaLastPage: trueLastPage,
+      })
+      .onConflictDoUpdate({
+        target: userStats.userId,
+        set: { 
+          murajaLastPage: trueLastPage,
+          updatedAt: sql`CURRENT_TIMESTAMP`
+        }
+      });
+
+   
+    const todayLog = allLogs.find((l: any) => l.date === todayStr);
+    const status = todayLog ? todayLog.status : "pending";
+    
+    await notificationService.processHabitEvent({
+      userId,
+      habitType: "muraja",
+      status: status as any,
+      date: todayStr,
+      displayName: displayName || "Hafiz",
+    });
+
+  
+    if (calculatedStreak > 0) {
+      const recentQuality = latestSuccessfulLog?.qualityScore ?? 3;
+      await GamificationService.processSessionCompletion(tx, userId, recentQuality, calculatedStreak);
+    }
+  },
+
   async upsertLog(userId: string, log: IDailyMurajaLog, displayName?: string): Promise<LocalMurajaLogWriteResult> {
     let localLogId: number | null = null;
     let changed = false;
@@ -136,30 +200,14 @@ export const murajaService = {
             activityType: 'review',
             localRefId: existing.id
           });
+          
+          await PageMasteryService.syncPageActivityLogs(tx, userId, 'muraja', existing.id, log.date ?? '', null, 'low');
+          await PerformanceService.recomputeAllPerformance(tx, userId);
+          
           await notificationService.removeHabitEvent(userId, 'muraja', log.date ?? '');
-          localLogId = existing.id;
           changed = true;
-          currentStatus = "pending";
         }
-
-        const plan = await tx.query.weeklyMurajaPlans.findFirst({
-          where: eq(weeklyMurajaPlans.id, log.plan_id),
-        });
-
-        const latestLog = await tx.query.dailyMurajaLogs.findFirst({
-          where: and(eq(dailyMurajaLogs.planId, log.plan_id), sql`${dailyMurajaLogs.completedPages} > 0`),
-          orderBy: [desc(dailyMurajaLogs.date)],
-        });
-
-        const fallbackPage = (plan?.startPage ?? 1) - 1;
-        const progressPage = latestLog ? (latestLog.startPage ?? 0) + (latestLog.completedPages ?? 0) - 1 : fallbackPage;
-
-        await tx.insert(userStats)
-          .values({ userId, murajaLastPage: progressPage })
-          .onConflictDoUpdate({
-            target: userStats.userId,
-            set: { murajaLastPage: progressPage }
-          });
+        await this.syncUserAnalytics(tx, userId, log.plan_id, displayName);
         return;
       }
 
@@ -206,71 +254,44 @@ export const murajaService = {
       }
 
       currentStatus = log.status as any;
+      const isMissed = log.status === "missed";
 
-      await tx.insert(userStats)
-        .values({ userId, murajaLastPage: (log.start_page ?? 0) + (log.completed_pages ?? 0) - 1 })
-        .onConflictDoUpdate({
-          target: userStats.userId,
-          set: { murajaLastPage: (log.start_page ?? 0) + (log.completed_pages ?? 0) - 1 }
-        });
-
-      const isMissed = log.status === "missed" || (log.completed_pages ?? 0) === 0;
-      const normalizedUnits = Math.max(0, Math.round(log.completed_pages ?? 0));
-
-      await insertHabitProgressLog(tx as any, {
+      await upsertHabitProgressLog(tx as any, {
         userId,
         date: log.date,
         activityType: "MURAJA",
         minutesSpent: isMissed ? 0 : (log.actual_time_min ?? 0),
-        unitsCompleted: isMissed ? 0 : normalizedUnits,
+        unitsCompleted: isMissed ? 0 : Math.max(0, Math.round(log.completed_pages ?? 0)),
         note: null,
         planId: log.plan_id,
         localRefId: localLogId,
         eventType: isMissed ? "TASK_MISSED" : "MURAJA_COMPLETED",
+        metadata: JSON.stringify({
+          startPage: log.start_page,
+          endPage: (log.start_page ?? 0) + (log.completed_pages ?? 0) - 1,
+          qualityScore: log.quality_score
+        })
       });
 
-      const stats = await tx.query.userStats.findFirst({
-        where: eq(userStats.userId, userId),
-        columns: { murajaCurrentStreak: true }
-      });
-      const currentStreak = stats?.murajaCurrentStreak ?? 0;
+      const qualityScore = log.quality_score ?? PerformanceService.deriveQualityScore(log.mistakes_count ?? 0, log.hesitation_count ?? 0);
+      const quality: 'perfect' | 'medium' | 'low' = qualityScore >= 5 ? 'perfect' : qualityScore <= 2 ? 'low' : 'medium';
+      
+      await PageMasteryService.syncPageActivityLogs(
+        tx,
+        userId,
+        'muraja',
+        localLogId!,
+        log.date!,
+        isMissed ? null : { 
+          start: log.start_page ?? 0, 
+          end: (log.start_page ?? 0) + (log.completed_pages ?? 0) - 1 
+        },
+        quality,
+        log.mistakes_count ?? 0
+      );
 
-      if ((log.completed_pages ?? 0) > 0) {
-        const qualityScore = log.quality_score ?? PerformanceService.deriveQualityScore(log.mistakes_count ?? 0, log.hesitation_count ?? 0);
-        
-        // Map quality score to PageMastery categories
-        let sessionQuality: 'perfect' | 'medium' | 'low' = 'medium';
-        if (qualityScore >= 5) sessionQuality = 'perfect';
-        else if (qualityScore <= 2) sessionQuality = 'low';
-
-        await PageMasteryService.logPageRangeActivity(
-          userId,
-          log.start_page ?? 0,
-          (log.start_page ?? 0) + (log.completed_pages ?? 0) - 1,
-          'muraja',
-          sessionQuality,
-          Math.ceil((log.mistakes_count ?? 0) / Math.max(1, log.completed_pages ?? 1))
-        );
-
-        await PerformanceService.updateRangePerformance(
-          tx as any,
-          log.start_page ?? 0,
-          (log.start_page ?? 0) + (log.completed_pages ?? 0) - 1,
-          qualityScore
-        );
-
-        await GamificationService.processSessionCompletion(tx as any, userId, qualityScore, currentStreak);
-      }
-
-      if (changed && currentStatus !== "pending" && (log.status === "completed" || log.status === "partial" || log.status === "missed")) {
-        await notificationService.processHabitEvent({
-          userId,
-          displayName: displayName || "Hafiz",
-          habitType: "muraja",
-          status: log.status as any,
-          date: log.date,
-        });
-      }
+      await PerformanceService.recomputeAllPerformance(tx, userId);
+      await this.syncUserAnalytics(tx, userId, log.plan_id, displayName);
     });
 
     if (changed) {
