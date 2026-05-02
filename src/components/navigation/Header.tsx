@@ -9,7 +9,7 @@ import { Text } from "@/src/components/common/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
-export const Header = ({ title }: { title: string }) => {
+export const Header = ({ title, userStats }: { title: string; userStats?: { level: number; totalXp: number } | null }) => {
   const insets = useSafeAreaInsets();
   const { user } = useSession();
   const { unreadCount } = useNotifications();
@@ -20,6 +20,8 @@ export const Header = ({ title }: { title: string }) => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const username = user?.user_metadata?.user_name || user?.email;
+
+  const xpProgress = userStats ? (userStats.totalXp % 1000) / 10 : 0;
 
   const handleSignOut = async () => {
     try {
@@ -36,17 +38,33 @@ export const Header = ({ title }: { title: string }) => {
 
   return (
     <View
-      style={{ paddingTop: insets.top + 10 }}
-      className="bg-white px-5 pb-4 border-b border-slate-100 shadow-md"
+      style={{ paddingTop: insets.top + 8 }}
+      className="bg-white px-6 pb-2"
     >
       <View className="flex-row justify-between items-center">
-        <View>
-          <Text className="text-primary text-[16px]   tracking-[2px]">
-            HIFZI
-          </Text>
-          <Text className="text-2xl  text-slate-900 tracking-tight">
-            {title}
-          </Text>
+        <View className="flex-1">
+          <View className="flex-row items-center gap-x-3">
+            <Text className="text-primary text-[12px] font-bold uppercase tracking-[2.5px]">
+              HIFZI
+            </Text>
+            {userStats && (
+              <View className="flex-row items-center bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10">
+                <Ionicons name="sparkles" size={10} color="#276359" />
+                <Text className="text-primary text-[9px]  ml-1">L{userStats.level}</Text>
+                <View className="w-8 h-[2px] bg-primary/20 rounded-full ml-2 overflow-hidden">
+                  <View 
+                    className="h-full bg-primary" 
+                    style={{ width: `${xpProgress}%` }} 
+                  />
+                </View>
+              </View>
+            )}
+          </View>
+          {/* {title !== "Home" && (
+            <Text className="text-2xl  text-slate-900 tracking-tight mt-1">
+              {title}
+            </Text>
+          )} */}
         </View>
 
         <View className="flex-row items-center gap-x-3">

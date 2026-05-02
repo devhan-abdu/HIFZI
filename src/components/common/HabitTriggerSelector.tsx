@@ -44,15 +44,17 @@ export const HabitTriggerSelector = ({ value, onChange, isCustom, setIsCustom, e
 
   return (
     <View className="mb-6">
-      <Text className="text-gray-400 text-[10px] uppercase mb-3 ml-1 tracking-widest font-bold">
-        Habit Trigger (Habit Stacking)
-      </Text>
+      <View className="flex-row items-center mb-4 ml-1">
+        <Text className="text-slate-400 text-[10px] uppercase  tracking-[2px]">
+          Habit Trigger
+        </Text>
+      </View>
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <View className="flex-row gap-3">
+        <View className="flex-row gap-3 px-1">
           {TRIGGERS.map((trigger) => {
             const isSelected = (trigger.id === 'custom' && isCustom) || (value === trigger.id && !isCustom);
             
@@ -60,19 +62,22 @@ export const HabitTriggerSelector = ({ value, onChange, isCustom, setIsCustom, e
               <Pressable
                 key={trigger.id}
                 onPress={() => handleSelect(trigger.id)}
-                className={`flex-row items-center px-4 py-3 rounded-2xl border ${
+                style={({ pressed }) => ({
+                  transform: [{ scale: pressed ? 0.98 : 1 }],
+                })}
+                className={`flex-row items-center px-5 py-3.5 rounded-full ${
                   isSelected 
-                    ? 'bg-primary/10 border-primary' 
-                    : 'bg-white border-gray-100'
+                    ? 'bg-primary' 
+                    : 'bg-slate-100'
                 }`}
               >
                 <Ionicons 
                   name={trigger.icon as any} 
                   size={18} 
-                  color={isSelected ? '#276359' : '#94a3b8'} 
+                  color={isSelected ? '#ffffff' : '#64748b'} 
                 />
-                <Text className={`ml-2 text-sm font-medium ${
-                  isSelected ? 'text-primary' : 'text-slate-600'
+                <Text className={`ml-2 text-sm font-semibold tracking-tight ${
+                  isSelected ? 'text-white' : 'text-slate-600'
                 }`}>
                   {trigger.id === 'custom' && isCustom && value && !TRIGGERS.find(t => t.id === value) 
                     ? value 
@@ -102,7 +107,7 @@ export const HabitTriggerSelector = ({ value, onChange, isCustom, setIsCustom, e
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingHorizontal: 4,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 12,
   }
 });

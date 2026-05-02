@@ -1,6 +1,6 @@
 import { cn } from "@/src/lib/utils";
 import { useState } from "react";
-import { Pressable, PressableProps, Text } from "react-native";
+import { Pressable, PressableProps, Text, View } from "react-native";
 
 type ButtonVariant = "primary" | "outline" | "ghost" | "none";
 
@@ -19,7 +19,6 @@ export function Button({
   disabled = false,
   ...rest
 }: ButtonProps) {
-  const [pressed, setPressed] = useState(false);
 
   const variants: Record<ButtonVariant, string> = {
     primary: "bg-primary",
@@ -32,25 +31,28 @@ export function Button({
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      onPressIn={() => setPressed(true)}
-      onPressOut={() => setPressed(false)}
       className={cn(
-        "rounded-lg px-4 py-3 h-14 items-center justify-center",
+        "rounded-2xl px-6 h-14 flex-row items-center justify-center overflow-hidden",
         variants[variant],
-        pressed && "opacity-80",
         disabled && "opacity-50",
         className,
       )}
       {...rest}
     >
-      <Text
-        className={cn(
-          "",
-          variant === "primary" ? "text-white" : "text-primary",
+      <View className="flex-row items-center justify-center gap-x-3">
+        {typeof children === "string" ? (
+          <Text
+            className={cn(
+              " uppercase tracking-[1.5px] text-[12px]",
+              variant === "primary" ? "text-white" : "text-primary",
+            )}
+          >
+            {children}
+          </Text>
+        ) : (
+          children
         )}
-      >
-        {children}
-      </Text>
+      </View>
     </Pressable>
   );
 }
