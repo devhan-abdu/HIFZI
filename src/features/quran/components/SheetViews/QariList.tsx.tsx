@@ -66,10 +66,10 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
       <View className="rounded-3xl bg-slate-900 p-5  shadow-xl">
         <View className="flex-row items-center justify-between">
           <View className="flex-1 pr-4">
-            <Text className="text-[10px] font-bold uppercase tracking-widest text-teal-400">
+            <Text className="text-[10px]  uppercase tracking-widest text-teal-400">
               {playerState === "playing" ? "Playing Now" : "Recitation"}
             </Text>
-            <Text className="text-lg font-bold text-white" numberOfLines={1}>
+            <Text className="text-lg  text-white" numberOfLines={1}>
               {activeReciter?.name || "Select Reciter"}
             </Text>
             <Text className="mt-1 text-xs text-slate-400">
@@ -125,7 +125,7 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
 
       {expanded && (
         <View className="mt-6">
-          <Text className="mb-4 text-[11px] font-bold uppercase tracking-wider text-slate-400 ml-2">
+          <Text className="mb-4 text-[11px]  uppercase tracking-wider text-slate-400 ml-2">
             Available Reciters
           </Text>
 
@@ -152,7 +152,7 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
                       className={`h-8 w-8 items-center justify-center rounded-full ${isSelected ? "bg-teal-600" : "bg-slate-200"}`}
                     >
                       <Text
-                        className={`text-xs font-bold ${isSelected ? "text-white" : "text-slate-500"}`}
+                        className={`text-xs  ${isSelected ? "text-white" : "text-slate-500"}`}
                       >
                         {item.name[0]}
                       </Text>
@@ -181,7 +181,7 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
       {!expanded && (
         <View className="mt-4 items-center">
           <View className="h-1 w-8 rounded-full bg-slate-200" />
-          <Text className="mt-2 text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+          <Text className="mt-2 text-[10px]  text-slate-300 uppercase tracking-widest">
             Swipe up to change Qari
           </Text>
         </View>

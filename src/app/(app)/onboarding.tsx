@@ -110,7 +110,7 @@ export default function OnboardingBridge() {
               else router.push("/(app)/muraja/create-muraja-plan");
             }}
             className={cn(
-              "h-16 rounded-2xl items-center justify-center transition-all shadow-lg",
+              "h-16 rounded-2xl items-center justify-center transition-all",
               selected ? "bg-primary " : "bg-slate-200",
             )}
           >

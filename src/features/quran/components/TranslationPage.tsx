@@ -114,7 +114,7 @@ export const TranslationPage = ({ pageNumber }: TranslationPageProps) => {
       >
         <View className="flex-row justify-between items-center mb-4">
           <View className="bg-slate-100 px-3 py-1 rounded-full">
-            <Text className="text-[10px] font-bold text-slate-500 uppercase">
+            <Text className="text-[10px]  text-slate-500 uppercase">
               Verse {item.verse_key}
             </Text>
           </View>
@@ -150,7 +150,7 @@ export const TranslationPage = ({ pageNumber }: TranslationPageProps) => {
     return (
       <View className="flex-1 bg-white pt-20 px-4">
         <View className="flex-row justify-between items-center mb-6">
-          <Text className="text-2xl font-bold text-slate-800">
+          <Text className="text-2xl  text-slate-800">
             Translations
           </Text>
           <TouchableOpacity onPress={() => setShowPicker(false)}>
@@ -171,7 +171,7 @@ export const TranslationPage = ({ pageNumber }: TranslationPageProps) => {
               <View className="flex-row justify-between items-center">
                 <View>
                   <Text
-                    className={`text-base ${selectedTranslation === item.id ? "font-bold text-teal-900" : "text-slate-700"}`}
+                    className={`text-base ${selectedTranslation === item.id ? " text-teal-900" : "text-slate-700"}`}
                   >
                     {item.name}
                   </Text>
@@ -200,7 +200,7 @@ export const TranslationPage = ({ pageNumber }: TranslationPageProps) => {
           onPress={() => setShowPicker(true)}
         >
           <Text
-            className="text-xs font-bold text-teal-800 mr-2"
+            className="text-xs  text-teal-800 mr-2"
             numberOfLines={1}
           >
             {activeTranslationName}

@@ -253,7 +253,7 @@ export default function QuranReaderScreen() {
             className="bg-[#276359] flex-row items-center justify-center px-8 py-4 rounded-full shadow-lg"
           >
             <Ionicons name="checkmark-done-circle" size={24} color="white" />
-            <Text className="text-white font-bold ml-3 uppercase tracking-widest text-sm">
+            <Text className="text-white  ml-3 uppercase tracking-widest text-sm">
               Finish {type === 'hifz' ? 'Hifz' : 'Muraja'}
             </Text>
           </Pressable>

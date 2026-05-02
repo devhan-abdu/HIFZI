@@ -70,7 +70,7 @@ export const TafsirContent = () => {
 
   return (
     <BottomSheetScrollView contentContainerStyle={{ padding: 20 }}>
-      <Text className="text-sm text-teal-600 font-bold mb-2">
+      <Text className="text-sm text-teal-600  mb-2">
         {resourceName.toUpperCase()}
       </Text>
       <Text className="text-xs text-gray-400 mb-4">Ayah {ayahLabel}</Text>

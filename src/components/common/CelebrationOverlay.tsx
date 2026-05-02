@@ -3,7 +3,6 @@ import { View, StyleSheet, Dimensions } from 'react-native';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
-  withSpring, 
   withDelay, 
   withSequence, 
   withTiming,
@@ -14,26 +13,24 @@ import { useCelebrationStore } from '@/src/hooks/useCelebrationStore';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-const PARTICLE_COUNT = 30;
+const PARTICLE_COUNT = 12;
 
 const Particle = ({ delay }: { delay: number }) => {
   const x = useSharedValue(0);
   const y = useSharedValue(0);
   const opacity = useSharedValue(1);
-  const scale = useSharedValue(Math.random() * 0.5 + 0.5);
-  
-  const colors = ['#fbbf24', '#f59e0b', '#d97706', '#059669', '#10b981'];
-  const color = colors[Math.floor(Math.random() * colors.length)];
+  const scale = useSharedValue(Math.random() * 0.4 + 0.3);
+  const color = '#276359';
 
   useEffect(() => {
     const angle = Math.random() * Math.PI * 2;
-    const distance = Math.random() * 200 + 100;
+    const distance = Math.random() * 100 + 50;
     
-    x.value = withDelay(delay, withSpring(Math.cos(angle) * distance, { damping: 15 }));
-    y.value = withDelay(delay, withSpring(Math.sin(angle) * distance, { damping: 15 }));
-    opacity.value = withDelay(delay + 500, withTiming(0, { duration: 1000 }));
+    x.value = withDelay(delay, withTiming(Math.cos(angle) * distance, { duration: 1000 }));
+    y.value = withDelay(delay, withTiming(Math.sin(angle) * distance, { duration: 1000 }));
+    opacity.value = withDelay(delay + 400, withTiming(0, { duration: 600 }));
   }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -63,17 +60,17 @@ export const CelebrationOverlay = () => {
   useEffect(() => {
     if (isVisible) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      opacity.value = withTiming(1, { duration: 300 });
+      opacity.value = withTiming(1, { duration: 400 });
       scale.value = withSequence(
-        withSpring(1.2, { damping: 10 }),
-        withSpring(1, { damping: 12 })
+        withTiming(1.05, { duration: 250 }),
+        withTiming(1, { duration: 200 })
       );
 
       const timer = setTimeout(() => {
-        opacity.value = withTiming(0, { duration: 500 }, () => {
+        opacity.value = withTiming(0, { duration: 400 }, () => {
           runOnJS(hide)();
         });
-      }, 2500);
+      }, 2200);
 
       return () => clearTimeout(timer);
     } else {
@@ -82,11 +79,10 @@ export const CelebrationOverlay = () => {
     }
   }, [isVisible]);
 
-  // Memoize particles so they don't re-create during the animation render
   const particles = React.useMemo(() => {
     if (!isVisible) return null;
     return Array.from({ length: PARTICLE_COUNT }).map((_, i) => (
-      <Particle key={i} delay={i * 20} />
+      <Particle key={i} delay={i * 30} />
     ));
   }, [isVisible]);
 
@@ -98,17 +94,17 @@ export const CelebrationOverlay = () => {
       <Animated.View style={styles.card}>
         <View style={styles.iconContainer}>
           <Ionicons 
-            name={type === 'badge' ? "trophy" : "checkmark-circle"} 
-            size={60} 
-            color="#fbbf24" 
+            name={type === 'badge' ? "ribbon-outline" : "checkmark-circle-outline"} 
+            size={42} 
+            color="#276359" 
           />
           {particles}
         </View>
-        <Text className="text-3xl font-bold text-amber-900 mt-4 text-center">
+        <Text className="text-xl text-slate-900 mt-4 text-center tracking-tight">
           {message}
         </Text>
-        <Text className="text-amber-700 font-medium text-center mt-1">
-          {type === 'badge' ? 'New Achievement Unlocked!' : 'Progress Recorded!'}
+        <Text className="text-slate-400 text-[10px] uppercase tracking-[2px] text-center mt-2">
+          {type === 'badge' ? 'Achievement Unlocked' : 'Session Recorded'}
         </Text>
       </Animated.View>
     </Animated.View>
@@ -121,20 +117,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 9999,
-    backgroundColor: 'rgba(255,255,255,0.4)',
+    backgroundColor: 'rgba(15, 23, 42, 0.1)',
   },
   card: {
     backgroundColor: 'white',
-    padding: 40,
-    borderRadius: 40,
+    paddingVertical: 32,
+    paddingHorizontal: 40,
+    borderRadius: 32,
     alignItems: 'center',
-    shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.3,
-    shadowRadius: 30,
-    elevation: 20,
-    borderWidth: 2,
-    borderColor: '#fef3c7',
+    width: width * 0.8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
   },
   iconContainer: {
     justifyContent: 'center',
@@ -142,8 +140,9 @@ const styles = StyleSheet.create({
   },
   particle: {
     position: 'absolute',
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   }
 });
+

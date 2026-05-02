@@ -5,7 +5,7 @@ import { ensureQuranStorageDirectories } from "../storage/quranStorage";
 import { useBookmarkStore } from "../store/bookmarkStore";
 import { useCatalogStore } from "../store/catalogStore";
 import { useDownloadStore } from "../store/downloadStore";
-import { db as stateDb } from "@/src/lib/db/local-client";
+import { db as stateDb, expoDb as userStateRawDb } from "@/src/lib/db/local-client";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import migrations from "@/drizzle/migrations";
 import {
@@ -36,7 +36,18 @@ export function QuranBootstrap({ children }: PropsWithChildren) {
 
     const bootstrap = async () => {
       try {
-        // await initAppDatabase();
+        try {
+          await userStateRawDb.execAsync(`
+            DROP INDEX IF EXISTS unq_user_habit_date;
+            CREATE UNIQUE INDEX IF NOT EXISTS unq_user_habit_date ON habit_events (user_id, habit_type, date);
+            
+            DROP INDEX IF EXISTS unq_user_notification_event;
+            CREATE UNIQUE INDEX IF NOT EXISTS unq_user_notification_event ON notifications (user_id, event_key);
+          `);
+        } catch (e) {
+          console.warn("Database self-healing failed:", e);
+        }
+
         ensureQuranStorageDirectories();
         startHydration();
 

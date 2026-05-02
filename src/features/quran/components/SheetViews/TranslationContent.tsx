@@ -74,7 +74,7 @@ export const TranslationContent = () => {
 
   return (
     <BottomSheetScrollView contentContainerStyle={{ padding: 20 }}>
-      <Text className="text-sm font-bold mb-2 text-teal-700">
+      <Text className="text-sm  mb-2 text-teal-700">
         {resourceName.toUpperCase()}
       </Text>
       <Text className="text-xs text-gray-400 mb-4">Ayah {ayahLabel}</Text>

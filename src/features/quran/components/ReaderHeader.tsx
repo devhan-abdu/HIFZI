@@ -98,7 +98,7 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
           activeOpacity={0.8}
           className="flex-1 items-center justify-center"
         >
-          <Text className="text-lg font-bold text-gray-800 tracking-tight">
+          <Text className="text-lg  text-gray-800 tracking-tight">
             {surahName}
           </Text>
           <Text className="text-xs text-gray-500 font-medium mt-0.5">

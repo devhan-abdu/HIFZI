@@ -55,9 +55,9 @@ export const TallyCounter = ({ onCountsChange, visible }: TallyCounterProps) => 
           onPress={() => handlePress("M")}
           className="w-14 h-14 bg-red-500/80 rounded-2xl items-center justify-center active:scale-95 mb-2"
         >
-          <Text className="text-white font-bold text-lg">M</Text>
+          <Text className="text-white  text-lg">M</Text>
         </Pressable>
-        <Text className="text-white text-xs font-bold">{mistakes}</Text>
+        <Text className="text-white text-xs ">{mistakes}</Text>
       </View>
 
       <View className="bg-black/60 rounded-3xl p-2 items-center backdrop-blur-md border border-white/20">
@@ -65,9 +65,9 @@ export const TallyCounter = ({ onCountsChange, visible }: TallyCounterProps) => 
           onPress={() => handlePress("H")}
           className="w-14 h-14 bg-amber-500/80 rounded-2xl items-center justify-center active:scale-95 mb-2"
         >
-          <Text className="text-white font-bold text-lg">H</Text>
+          <Text className="text-white  text-lg">H</Text>
         </Pressable>
-        <Text className="text-white text-xs font-bold">{hesitations}</Text>
+        <Text className="text-white text-xs ">{hesitations}</Text>
       </View>
     </Animated.View>
   );
