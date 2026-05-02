@@ -9,6 +9,8 @@ export interface IPageActivity {
   userId: string;
   pageId: number;
   source: 'hifz' | 'muraja';
+  localLogId: number;
+  logDate: string;
   sessionQuality: 'perfect' | 'medium' | 'low';
   mistakesCount?: number;
   createdAt?: string;
@@ -23,43 +25,71 @@ export interface IPageMasteryInfo {
 }
 
 export const PageMasteryService = {
-  /**
-   * Phase 1 & 5: Log activity for a specific page
-   */
+
   async logPageActivity(activity: IPageActivity) {
     await db.insert(pageActivityLogs).values({
       userId: activity.userId,
       pageId: activity.pageId,
       source: activity.source,
+      localLogId: activity.localLogId,
+      logDate: activity.logDate,
       sessionQuality: activity.sessionQuality,
       mistakesCount: activity.mistakesCount ?? 0,
     });
-    console.log(`[PageMastery] Logged ${activity.source} activity for page ${activity.pageId}`);
   },
 
-  /**
-   * Log activity for a range of pages (useful for Muraja)
-   */
-  async logPageRangeActivity(userId: string, startPage: number, endPage: number, source: 'hifz' | 'muraja', quality: 'perfect' | 'medium' | 'low', mistakesPerPage: number = 0) {
+  async logPageRangeActivity(
+    tx: any,
+    userId: string, 
+    localLogId: number,
+    logDate: string,
+    startPage: number, 
+    endPage: number, 
+    source: 'hifz' | 'muraja', 
+    quality: 'perfect' | 'medium' | 'low', 
+    mistakesPerPage: number = 0
+  ) {
     const logs = [];
     for (let p = startPage; p <= endPage; p++) {
       logs.push({
         userId,
         pageId: p,
         source,
+        localLogId,
+        logDate,
         sessionQuality: quality,
         mistakesCount: mistakesPerPage,
       });
     }
     if (logs.length > 0) {
-      await db.insert(pageActivityLogs).values(logs);
+      await tx.insert(pageActivityLogs).values(logs);
     }
-    console.log(`[PageMastery] Logged ${source} range activity for pages ${startPage}-${endPage}`);
   },
 
-  /**
-   * Phase 2 & 3: Calculate the mastery status for a single page
-   */
+  
+  async syncPageActivityLogs(
+    tx: any,
+    userId: string,
+    source: 'hifz' | 'muraja',
+    localLogId: number,
+    logDate: string,
+    range: { start: number; end: number } | null,
+    quality: 'perfect' | 'medium' | 'low',
+    mistakes: number = 0
+  ) {
+    await tx.delete(pageActivityLogs).where(and(
+      eq(pageActivityLogs.userId, userId),
+      eq(pageActivityLogs.source, source),
+      eq(pageActivityLogs.localLogId, localLogId)
+    ));
+
+    if (range && range.start > 0 && range.end >= range.start) {
+      const mistakesPerPage = Math.ceil(mistakes / Math.max(1, range.end - range.start + 1));
+      await this.logPageRangeActivity(tx, userId, localLogId, logDate, range.start, range.end, source, quality, mistakesPerPage);
+    }
+  },
+
+
   async getPageStatus(userId: string, pageId: number): Promise<IPageMasteryInfo> {
     const history = await db.query.pageActivityLogs.findMany({
       where: and(eq(pageActivityLogs.userId, userId), eq(pageActivityLogs.pageId, pageId)),
@@ -81,7 +111,6 @@ export const PageMasteryService = {
     const now = new Date();
     const daysSinceLast = Math.floor((now.getTime() - lastActivityDate.getTime()) / (1000 * 60 * 60 * 24));
 
-    // Rule: Weak (Red)
     if (latest.sessionQuality === 'low' || (latest.mistakesCount ?? 0) >= 4) {
       return {
         pageId,
@@ -92,8 +121,7 @@ export const PageMasteryService = {
       };
     }
 
-    // Rule: Gold (Mastered)
-    // 3 perfect sessions in different weeks (at least 7 days apart)
+  
     const perfectSessions = history.filter(h => h.sessionQuality === 'perfect');
     if (perfectSessions.length >= 3) {
       let distinctWeeks = 1;
@@ -120,7 +148,6 @@ export const PageMasteryService = {
       }
     }
 
-    // Rule: Green (Strong)
     if (latest.sessionQuality === 'perfect' && daysSinceLast <= 7) {
       return {
         pageId,
@@ -131,7 +158,6 @@ export const PageMasteryService = {
       };
     }
 
-    // Rule: Orange (Partial)
     if (latest.sessionQuality === 'medium' || daysSinceLast > 14) {
       return {
         pageId,
@@ -151,9 +177,7 @@ export const PageMasteryService = {
     };
   },
 
-  /**
-   * Phase 4: Get full heatmap data for all pages
-   */
+
   async getHeatmapData(userId: string): Promise<Record<number, IPageMasteryInfo>> {
     const allLogs = await db.query.pageActivityLogs.findMany({
       where: eq(pageActivityLogs.userId, userId),
