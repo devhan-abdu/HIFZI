@@ -33,6 +33,7 @@ export interface IHifzPlan {
   status?: "active" | "completed" | "paused";
   preferred_time?: string;
   is_custom_time?: boolean;
+  is_reinforcement_enabled?: boolean;
   hifz_daily_logs?: IHifzLog[]
 }
 export interface HifzQuestion {
@@ -60,6 +61,7 @@ export const HifzPlanSchema = Yup.object({
       
   preferred_time: Yup.string().required("Habit trigger is required").default("fajr"),
   is_custom_time: Yup.boolean().default(false),
+  is_reinforcement_enabled: Yup.boolean().default(true),
 });
 
 

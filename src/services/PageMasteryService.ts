@@ -1,5 +1,6 @@
 import { db } from '@/src/lib/db/local-client';
 import { pageActivityLogs } from '@/src/features/habits/database/habitSchema';
+import { pagePerformance } from '@/src/features/user/database/userSchema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 
 export type PageStatus = 'not_started' | 'weak' | 'partial' | 'strong' | 'mastered';
@@ -13,6 +14,7 @@ export interface IPageActivity {
   logDate: string;
   sessionQuality: 'perfect' | 'medium' | 'low';
   mistakesCount?: number;
+  hesitationsCount?: number;
   createdAt?: string;
 }
 
@@ -47,7 +49,8 @@ export const PageMasteryService = {
     endPage: number, 
     source: 'hifz' | 'muraja', 
     quality: 'perfect' | 'medium' | 'low', 
-    mistakesPerPage: number = 0
+    mistakesPerPage: number = 0,
+    hesitationsPerPage: number = 0
   ) {
     const logs = [];
     for (let p = startPage; p <= endPage; p++) {
@@ -59,6 +62,7 @@ export const PageMasteryService = {
         logDate,
         sessionQuality: quality,
         mistakesCount: mistakesPerPage,
+        hesitationsCount: hesitationsPerPage,
       });
     }
     if (logs.length > 0) {
@@ -75,7 +79,8 @@ export const PageMasteryService = {
     logDate: string,
     range: { start: number; end: number } | null,
     quality: 'perfect' | 'medium' | 'low',
-    mistakes: number = 0
+    mistakes: number = 0,
+    hesitations: number = 0
   ) {
     await tx.delete(pageActivityLogs).where(and(
       eq(pageActivityLogs.userId, userId),
@@ -84,8 +89,10 @@ export const PageMasteryService = {
     ));
 
     if (range && range.start > 0 && range.end >= range.start) {
-      const mistakesPerPage = Math.ceil(mistakes / Math.max(1, range.end - range.start + 1));
-      await this.logPageRangeActivity(tx, userId, localLogId, logDate, range.start, range.end, source, quality, mistakesPerPage);
+      const pageCount = Math.max(1, range.end - range.start + 1);
+      const mistakesPerPage = Math.ceil(mistakes / pageCount);
+      const hesitationsPerPage = Math.ceil(hesitations / pageCount);
+      await this.logPageRangeActivity(tx, userId, localLogId, logDate, range.start, range.end, source, quality, mistakesPerPage, hesitationsPerPage);
     }
   },
 
@@ -179,62 +186,31 @@ export const PageMasteryService = {
 
 
   async getHeatmapData(userId: string): Promise<Record<number, IPageMasteryInfo>> {
-    const allLogs = await db.query.pageActivityLogs.findMany({
-      where: eq(pageActivityLogs.userId, userId),
-      orderBy: [desc(pageActivityLogs.createdAt)],
+    const performances = await db.query.pagePerformance.findMany({
+      where: eq(pagePerformance.userId, userId),
     });
 
     const heatmap: Record<number, IPageMasteryInfo> = {};
-    const pageGroups: Record<number, any[]> = {};
 
-    allLogs.forEach(log => {
-      if (!pageGroups[log.pageId]) pageGroups[log.pageId] = [];
-      pageGroups[log.pageId].push(log);
-    });
-
-    for (const pageIdStr in pageGroups) {
-      const pageId = parseInt(pageIdStr);
-      const history = pageGroups[pageId];
-      const latest = history[0];
-      const lastActivityDate = new Date(latest.createdAt);
-      const now = new Date();
-      const daysSinceLast = Math.floor((now.getTime() - lastActivityDate.getTime()) / (1000 * 60 * 60 * 24));
-
-      let status: PageStatus = 'partial';
-
-      if (latest.sessionQuality === 'low' || (latest.mistakesCount ?? 0) >= 4) {
+    for (const p of performances) {
+      let status: PageStatus = 'not_started';
+      
+      if (p.stability < 2) {
         status = 'weak';
+      } else if (p.stability < 7) {
+        status = 'partial';
+      } else if (p.stability < 30) {
+        status = 'strong';
       } else {
-        const perfectSessions = history.filter(h => h.sessionQuality === 'perfect');
-        let isMastered = false;
-        if (perfectSessions.length >= 3) {
-          let distinctWeeks = 1;
-          let lastRefDate = new Date(perfectSessions[0].createdAt);
-          for (let i = 1; i < perfectSessions.length; i++) {
-            const curDate = new Date(perfectSessions[i].createdAt);
-            if (Math.abs((lastRefDate.getTime() - curDate.getTime()) / (1000 * 60 * 60 * 24)) >= 7) {
-              distinctWeeks++;
-              lastRefDate = curDate;
-            }
-          }
-          if (distinctWeeks >= 3) isMastered = true;
-        }
-
-        if (isMastered) {
-          status = 'mastered';
-        } else if (latest.sessionQuality === 'perfect' && daysSinceLast <= 7) {
-          status = 'strong';
-        } else if (latest.sessionQuality === 'medium' || daysSinceLast > 14) {
-          status = 'partial';
-        }
+        status = (p.consecutivePerfects || 0) >= 3 ? 'mastered' : 'strong';
       }
 
-      heatmap[pageId] = {
-        pageId,
+      heatmap[p.pageNumber] = {
+        pageId: p.pageNumber,
         status,
-        lastActivityAt: latest.createdAt,
-        lastSessionQuality: latest.sessionQuality,
-        totalSessions: history.length,
+        lastActivityAt: p.lastReviewedAt,
+        lastSessionQuality: p.lastSessionQuality,
+        totalSessions: 0, 
       };
     }
 

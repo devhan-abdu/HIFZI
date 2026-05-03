@@ -1,5 +1,5 @@
 import { db as drizzleDb } from "@/src/lib/db/local-client";
-import { pagePerformance } from "@/src/features/user/database/userSchema";
+import { pagePerformance, userStats } from "@/src/features/user/database/userSchema";
 import { pageActivityLogs } from "@/src/features/habits/database/habitSchema";
 import { eq, and, sql, lte, asc } from "drizzle-orm";
 
@@ -144,6 +144,11 @@ export const PerformanceService = {
       orderBy: [asc(pageActivityLogs.logDate), asc(pageActivityLogs.id)],
     });
 
+    const stats = await tx.query.userStats.findFirst({
+      where: eq(userStats.userId, userId),
+    });
+    const currentMemorizedPage = stats?.hifzLastPage || 0;
+
     const lastPerfectDateMap = new Map<number, string>();
 
     for (const log of history) {
@@ -153,45 +158,37 @@ export const PerformanceService = {
 
       const current = await this.getPagePerformance(tx, log.pageId);
       
-      let nextConsecutive = current.consecutive_perfects;
-      if (score >= 5) {
-        const lastDate = lastPerfectDateMap.get(log.pageId);
-        const curDate = new Date(log.logDate);
-        
-        if (!lastDate) {
-          nextConsecutive = 1;
-          lastPerfectDateMap.set(log.pageId, log.logDate);
-        } else {
-          const prevDate = new Date(lastDate);
-          const diffDays = (curDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24);
-          if (diffDays >= 6) { 
-             nextConsecutive += 1;
-             lastPerfectDateMap.set(log.pageId, log.logDate);
-          }
-        }
-      } else if (score < 4) {
-        nextConsecutive = 0;
-        lastPerfectDateMap.delete(log.pageId);
-      }
+      const isMemorized = log.pageId <= currentMemorizedPage;
+      const isHifz = log.source === 'hifz';
 
-      const next = this.calculateNextState(current, score, new Date(log.logDate));
-      
-      await tx.insert(pagePerformance)
-        .values({
-          pageNumber: log.pageId,
-          userId,
-          strength: next.strength,
-          lastReviewedAt: next.last_reviewed_at,
-          nextReviewAt: next.next_review_at,
-          stability: next.stability,
-          difficulty: next.difficulty,
-          consecutivePerfects: nextConsecutive,
-          lastSessionQuality: log.sessionQuality,
-          lastMistakesCount: log.mistakesCount,
-        })
-        .onConflictDoUpdate({
-          target: [pagePerformance.userId, pagePerformance.pageNumber],
-          set: {
+      if (isHifz || isMemorized) {
+        let nextConsecutive = current.consecutive_perfects;
+        if (score >= 5) {
+          const lastDate = lastPerfectDateMap.get(log.pageId);
+          const curDate = new Date(log.logDate);
+          
+          if (!lastDate) {
+            nextConsecutive = 1;
+            lastPerfectDateMap.set(log.pageId, log.logDate);
+          } else {
+            const prevDate = new Date(lastDate);
+            const diffDays = (curDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24);
+            if (diffDays >= 6) { 
+               nextConsecutive += 1;
+               lastPerfectDateMap.set(log.pageId, log.logDate);
+            }
+          }
+        } else if (score < 4) {
+          nextConsecutive = 0;
+          lastPerfectDateMap.delete(log.pageId);
+        }
+
+        const next = this.calculateNextState(current, score, new Date(log.logDate));
+        
+        await tx.insert(pagePerformance)
+          .values({
+            pageNumber: log.pageId,
+            userId,
             strength: next.strength,
             lastReviewedAt: next.last_reviewed_at,
             nextReviewAt: next.next_review_at,
@@ -200,9 +197,44 @@ export const PerformanceService = {
             consecutivePerfects: nextConsecutive,
             lastSessionQuality: log.sessionQuality,
             lastMistakesCount: log.mistakesCount,
-            updatedAt: sql`CURRENT_TIMESTAMP`,
-          },
-        });
+          })
+          .onConflictDoUpdate({
+            target: [pagePerformance.userId, pagePerformance.pageNumber],
+            set: {
+              strength: next.strength,
+              lastReviewedAt: next.last_reviewed_at,
+              nextReviewAt: next.next_review_at,
+              stability: next.stability,
+              difficulty: next.difficulty,
+              consecutivePerfects: nextConsecutive,
+              lastSessionQuality: log.sessionQuality,
+              lastMistakesCount: log.mistakesCount,
+              updatedAt: sql`CURRENT_TIMESTAMP`,
+            },
+          });
+      } else {
+        await tx.insert(pagePerformance)
+          .values({
+            pageNumber: log.pageId,
+            userId,
+            strength: 0,
+            lastReviewedAt: new Date(log.logDate).toISOString(),
+            stability: 0,
+            difficulty: 2.5,
+            consecutivePerfects: 0,
+            lastSessionQuality: log.sessionQuality,
+            lastMistakesCount: log.mistakesCount,
+          })
+          .onConflictDoUpdate({
+            target: [pagePerformance.userId, pagePerformance.pageNumber],
+            set: {
+              lastReviewedAt: new Date(log.logDate).toISOString(),
+              lastSessionQuality: log.sessionQuality,
+              lastMistakesCount: log.mistakesCount,
+              updatedAt: sql`CURRENT_TIMESTAMP`,
+            },
+          });
+      }
     }
   },
 

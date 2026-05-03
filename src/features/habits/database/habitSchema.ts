@@ -67,6 +67,7 @@ export const pageActivityLogs = sqliteTable('page_activity_logs', {
   logDate: text('log_date').notNull().default(''), 
   sessionQuality: text('session_quality', { enum: ['perfect', 'medium', 'low'] }).notNull(),
   mistakesCount: integer('mistakes_count').default(0),
+  hesitationsCount: integer('hesitations_count').default(0),
   createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   pageUserIdx: index('idx_page_activity_user_page').on(table.userId, table.pageId),
