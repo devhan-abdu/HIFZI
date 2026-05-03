@@ -20,6 +20,7 @@ export const hifzPlans = sqliteTable('hifz_plans_local', {
   updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   preferredTime: text('preferred_time'),
   isCustomTime: integer('is_custom_time', { mode: 'boolean' }).default(false),
+  isReinforcementEnabled: integer('is_reinforcement_enabled', { mode: 'boolean' }).default(true),
 }, (table) => ({
   userStatusIdx: index('idx_hifz_plans_local_user').on(table.userId, table.status),
   userIdIdx: index('idx_hifz_plans_local_user_id').on(table.userId),

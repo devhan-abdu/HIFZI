@@ -85,6 +85,13 @@
       "when": 1777753605232,
       "tag": "0011_brave_phantom_reporter",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1777795704284,
+      "tag": "0012_panoramic_gideon",
+      "breakpoints": true
     }
   ]
 }

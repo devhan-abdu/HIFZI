@@ -38,6 +38,7 @@ export const pagePerformance = sqliteTable('page_performance', {
   consecutivePerfects: integer('consecutive_perfects').notNull().default(0),
   lastSessionQuality: text('last_session_quality', { enum: ['perfect', 'medium', 'low'] }),
   lastMistakesCount: integer('last_mistakes_count').default(0),
+  lastHesitationsCount: integer('last_hesitations_count').default(0),
   updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   pk: primaryKey({ columns: [table.userId, table.pageNumber] }),

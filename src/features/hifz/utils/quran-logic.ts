@@ -75,10 +75,8 @@ export const getTodayTask = (
   hifzPlan: IHifzPlan,
   surahData: ISurah[],
   pages: number = hifzPlan.pages_per_day,
-  
 ) => {
   const todayStr = new Date().toISOString().slice(0, 10);
-
 
   const historicalLogs = (hifzPlan.hifz_daily_logs || [])
     .filter(log => log.date < todayStr)
@@ -98,33 +96,83 @@ export const getTodayTask = (
 }
 
 
-export const getPagesFromLog = (log: IHifzLog, direction: 'forward' | 'backward' , surahData: ISurah[]): number[] => {
+export const getPagesFromLog = (log: IHifzLog, direction: 'forward' | 'backward', surahData: ISurah[]): number[] => {
   const pages: number[] = [];
-  const start = log.actual_start_page;
-  const end = log.actual_end_page;
-  let page = start
+  let currentPage = log.actual_start_page;
+  const targetCount = log.actual_pages_completed || 0;
 
-  if (direction === 'forward') {
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-  } else {
-    while (page !== end) {
-      pages.push(start)
-     const currentSurah = getSurah(page, surahData);
-      if (!currentSurah) break;
-      
-      if (page >= currentSurah.endingPage) {
+  if (targetCount === 0 && log.status !== "missed") {
+    return [log.actual_start_page];
+  }
+
+  while (pages.length < targetCount) {
+    if (currentPage > 604 || currentPage < 1) break;
+    pages.push(currentPage);
+
+    if (pages.length >= targetCount) break;
+
+    const currentSurah = getSurah(currentPage, surahData);
+    if (!currentSurah) break;
+
+    if (direction === 'forward') {
+      currentPage++;
+    } else {
+      if (currentPage >= currentSurah.endingPage) {
         const prevSurah = surahData.find(s => s.number === currentSurah.number - 1);
         if (!prevSurah) break;
-        page = prevSurah.startingPage;
+        currentPage = prevSurah.startingPage;
       } else {
-        page++
+        currentPage++;
       }
     }
-
-    pages.push(page)
- 
   }
-  return pages;
+
+  return [...new Set(pages)].filter(p => p >= 1 && p <= 604);
+};
+
+export const getReinforcementRange = (
+  hifzPlan: IHifzPlan,
+  surahData: ISurah[],
+  count: number = 5
+) => {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  
+  const logs = (hifzPlan.hifz_daily_logs || [])
+    .filter(log => log.date < todayStr && (log.status === "completed" || log.status === "partial"))
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  if (logs.length === 0) return null;
+
+  const pages: number[] = [];
+  for (const log of logs) {
+    const logPages = getPagesFromLog(log, hifzPlan.direction, surahData);
+    for (let i = logPages.length - 1; i >= 0; i--) {
+      if (!pages.includes(logPages[i])) {
+        pages.push(logPages[i]);
+      }
+        if (pages.length >= count) break;
+    }
+    if (pages.length >= count) break;
+  }
+
+  if (pages.length === 0) return null;
+
+  const startPage = hifzPlan.direction === 'forward' ? Math.min(...pages) : Math.max(...pages);
+  const endPage = hifzPlan.direction === 'forward' ? Math.max(...pages) : Math.min(...pages);
+  
+  const sSurah = getSurah(startPage, surahData);
+  const eSurah = getSurah(endPage, surahData);
+
+  return {
+    startPage,
+    endPage,
+    startSurah: sSurah?.englishName,
+    endSurah: eSurah?.englishName,
+    pagesCount: pages.length,
+    displaySurah: sSurah?.number === eSurah?.number
+      ? sSurah?.englishName
+      : hifzPlan.direction === 'forward' 
+        ? `${sSurah?.englishName} - ${eSurah?.englishName}`
+        : `${eSurah?.englishName} - ${sSurah?.englishName}`,
+  };
 };
