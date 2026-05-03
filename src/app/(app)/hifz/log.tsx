@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, TextInput } from "react-native";
+import { View, Pressable, TextInput } from "react-native";
+import { Text } from "@/src/components/common/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
@@ -7,9 +8,11 @@ import { StatusTab } from "@/src/features/hifz/components/StatusTab";
 import { useHifzDailyTask } from "@/src/features/hifz/hooks/useHifzDailyTask";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { useAddLog } from "@/src/features/hifz/hooks/useAddLog";
+import { useRetentionLog } from "@/src/features/habits/hooks/useRetentionLog";
 import { useSession } from "@/src/hooks/useSession";
 import { Button } from "@/src/components/ui/Button";
 import { IHifzLog } from "@/src/features/hifz/types";
+import { PerformanceService } from "@/src/services/PerformanceService";
 import Screen from "@/src/components/screen/Screen";
 import {
   ScreenContent,
@@ -19,7 +22,6 @@ import { Alert } from "@/src/components/common/Alert";
 import { LogProgressSkeleton } from "@/src/features/hifz/components/skeleton";
 import { Switch } from "@/src/features/hifz/components/Switch";
 import { getTodayTask } from "@/src/features/hifz/utils/quran-logic";
-import { QualityCounter } from "@/src/components/common/QualityCounter";
 import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
 
 export default function LogProgress() {
@@ -37,7 +39,8 @@ export default function LogProgress() {
     loading: planLoading,
   } = useHifzDailyTask();
   const { items: surahData, loading: quranLoading } = useLoadSurahData();
-  const { addLog, isCreating } = useAddLog();
+  const { addLog, isCreating: isAddingHifz } = useAddLog();
+  const { logRetention, isLogging: isLoggingRetention } = useRetentionLog();
 
   const [pages, setPages] = useState(1);
   const [status, setStatus] = useState<"completed" | "partial" | "missed">(
@@ -128,7 +131,7 @@ export default function LogProgress() {
   const isRestDayLog = !logContext?.isPlannedDay && !hasReviewPrefill;
 
   const handleSave = async () => {
-    if (!plan || isCreating || !plan.id)
+    if (!plan || isAddingHifz || isLoggingRetention || !plan.id)
       return;
 
     try {
@@ -142,20 +145,30 @@ export default function LogProgress() {
         hasReviewPrefill ? reviewStartPage + Math.max(0, pages - 1)
         : actualTask?.endPage ?? actualStartPage;
 
-      const payload: IHifzLog = {
-        hifz_plan_id: plan.id,
-        actual_pages_completed: pages,
-        actual_start_page: actualStartPage,
-        actual_end_page: actualEndPage,
-        status,
-        date: today.toISOString().slice(0, 10),
-        log_day: logDay,
-        notes: notes.trim(),
-        mistakes_count: mistakes,
-        hesitation_count: hesitations,
-      };
+      if (hasReviewPrefill) {
+        await logRetention({
+          startPage: actualStartPage,
+          endPage: actualEndPage,
+          quality: PerformanceService.deriveQualityScore(mistakes, hesitations),
+          date: today.toISOString().slice(0, 10),
+        });
+      } else {
+        const payload: IHifzLog = {
+          hifz_plan_id: plan.id,
+          actual_pages_completed: pages,
+          actual_start_page: actualStartPage,
+          actual_end_page: actualEndPage,
+          status,
+          date: today.toISOString().slice(0, 10),
+          log_day: logDay,
+          notes: notes.trim(),
+          mistakes_count: mistakes,
+          hesitation_count: hesitations,
+        };
 
-      await addLog({ todayLog: payload, userId: user?.id });
+        await addLog({ todayLog: payload, userId: user?.id });
+      }
+      
       router.back();
     } catch (err: any) {
       setErrorMessage(err.message);
@@ -165,167 +178,190 @@ export default function LogProgress() {
 
   return (
     <>
-      <View className="bg-white px-4 pt-12 pb-4 flex-row items-center">
+      <View className="bg-white px-4 pt-4 pb-4 flex-row items-center border-b border-slate-50">
         <Pressable
           onPress={() => router.replace("/(app)/hifz")}
           className="w-10 h-10 items-center justify-center rounded-full active:bg-slate-100"
         >
-          <Ionicons name="arrow-back" size={24} color="#0f172a" />
+          <Ionicons name="arrow-back" size={22} color="#0f172a" />
         </Pressable>
-        <Text className="text-xl  text-slate-900 leading-tight ml-2">
-          Log Progress
-        </Text>
+        <Text className="text-lg text-slate-900 ml-2">Log Progress</Text>
       </View>
       <Screen>
         <ScreenContent>
-          <View className="bg-primary rounded-[40px] p-7 mb-8 shadow-2xl shadow-primary/40 overflow-hidden relative">
+          {/* 1. Session Summary Card - Green Pop (Pro) */}
+          <View className="bg-primary rounded-[40px] p-7 mb-8 shadow-xl shadow-primary/30 overflow-hidden relative">
             <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
             
             <View className="flex-row justify-between items-center mb-6">
-              <View className="flex-1">
-                <Text className="text-white/60 uppercase tracking-[2px] text-[10px] mb-1">
+              <View className="bg-white/10 px-2.5 py-1 rounded-lg border border-white/10">
+                <Text className="text-white text-[10px] uppercase tracking-[2px]">
                   {hasReviewPrefill ? "Revision Session" : 
-                   logContext?.isPlannedDay ? "Scheduled Session" : "Extra Session"}
+                   logContext?.isPlannedDay ? "Scheduled" : "Extra"}
                 </Text>
+              </View>
+              <Text className="text-white/60 text-[10px] uppercase tracking-widest">
+                {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </Text>
+            </View>
+
+            <View className="flex-row items-end justify-between">
+              <View className="flex-1">
                 <Text className="text-white text-3xl tracking-tighter">
                   {hasReviewPrefill ? "Targeted Review" : logContext?.displaySurah}
                 </Text>
-              </View>
-              <View className="bg-white/20 px-3 py-1 rounded-full border border-white/10">
-                <Text className="text-white text-[9px]  uppercase tracking-widest">
-                  {hasReviewPrefill ? `Cycle ${params.reviewCycleDay ?? "1"}` : plan.direction}
+                <Text className="text-white/50 text-xs mt-1">
+                  Range: {hasReviewPrefill ? reviewStartPage : (logContext?.startPage ?? 0)} — {hasReviewPrefill ? reviewEndPage : (logContext?.endPage ?? 0)}
                 </Text>
               </View>
-            </View>
-
-            <View className="w-full h-[2px] bg-white/10 rounded-full mb-8 overflow-hidden" />
-
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1">
-                <Text className="text-white text-2xl tracking-tight leading-7">
-                  {pages}
-                  <Text className="text-white/50 text-xl"> Pgs</Text>
-                </Text>
-                <Text className="text-white/40 text-[9px] uppercase tracking-widest mt-1">
-                  Daily Goal
-                </Text>
-              </View>
-              
-              <View className="h-8 w-px bg-white/10 mx-6" />
-
-              <View className="flex-1">
-                <Text className="text-white text-lg tracking-tight leading-6">
-                  {hasReviewPrefill ? reviewStartPage : (logContext?.startPage ?? 0)} —{" "}
-                  {hasReviewPrefill ? reviewEndPage : (logContext?.endPage ?? 0)}
-                </Text>
-                <Text className="text-white/40 text-[9px] uppercase tracking-widest mt-1">
-                  {hasReviewPrefill ? "Review Range" : `Juz ${logContext?.juz ?? "-"}`}
-                </Text>
+              <View className="items-end">
+                <View className="flex-row items-baseline">
+                  <Text className="text-white text-2xl tracking-tighter">
+                    {pages}
+                  </Text>
+                  <Text className="text-white/40 text-sm ml-1">Pgs</Text>
+                </View>
+                <Text className="text-white/40 text-[9px] uppercase tracking-widest">Progress</Text>
               </View>
             </View>
           </View>
 
-          <View className="bg-white border border-slate-100 p-5 rounded-[32px] mb-6 flex-row items-center justify-between">
-            <View className="flex-1">
-              <Text className="text-slate-900 text-lg ">Revision Done</Text>
-              <Text className="text-slate-400 text-[10px] uppercase tracking-widest mt-1">
-                Last 5 pages revised
-              </Text>
+          <View className="bg-slate-50/50 border border-slate-100 p-4 rounded-2xl mb-8 flex-row items-center justify-between">
+            <View className="flex-row items-center gap-3">
+              <View className={`w-8 h-8 rounded-full items-center justify-center ${reviewed ? 'bg-primary/10' : 'bg-slate-100'}`}>
+                <Ionicons name="refresh" size={16} color={reviewed ? '#276359' : '#94a3b8'} />
+              </View>
+              <View>
+                <Text className="text-slate-900">Revision Done</Text>
+                <Text className="text-slate-400 text-[10px]">Verified previous 5 pages</Text>
+              </View>
             </View>
             <Switch value={reviewed} onValueChange={setReviewed} />
           </View>
 
-          <Text className="text-xl  text-gray-900 mb-4">How did it go?</Text>
-          <View className="flex-row justify-between mb-8">
-            <StatusTab
-              label="Completed"
-              icon="checkmark-circle"
-              active={status === "completed"}
-              onPress={() => handleStatusSelection("completed")}
-            />
-            <StatusTab
-              label="Partial"
-              icon="contrast"
-              active={status === "partial"}
-              onPress={() => handleStatusSelection("partial")}
-            />
-            <StatusTab
-              label="Missed"
-              icon="close-circle"
-              active={status === "missed"}
-              onPress={() => handleStatusSelection("missed")}
-            />
+          <View className="mb-8">
+            <Text className="text-slate-900 text-base mb-4 ml-1">How did it go?</Text>
+            <View className="flex-row justify-between">
+              <StatusTab
+                label="Completed"
+                icon="checkmark-circle"
+                active={status === "completed"}
+                onPress={() => handleStatusSelection("completed")}
+              />
+              <StatusTab
+                label="Partial"
+                icon="contrast"
+                active={status === "partial"}
+                onPress={() => handleStatusSelection("partial")}
+              />
+              <StatusTab
+                label="Missed"
+                icon="close-circle"
+                active={status === "missed"}
+                onPress={() => handleStatusSelection("missed")}
+              />
+            </View>
           </View>
 
           {status !== "missed" && (
-            <View className="mb-8 p-5 bg-slate-50 rounded-[32px] border border-slate-100 gap-y-4">
-              <QualityCounter
-                label="Mistakes"
-                description="Incorrect words or tajweed"
-                value={mistakes}
-                onValueChange={setMistakes}
-                icon="alert-circle-outline"
-                color="#276359"
-              />
-              <QualityCounter
-                label="Hesitations"
-                description="Long pauses or unsureness"
-                value={hesitations}
-                onValueChange={setHesitations}
-                icon="timer-outline"
-                color="#276359"
-              />
+            <View className="mb-8">
+              <Text className="text-slate-900 text-base mb-4 ml-1">Reading Quality</Text>
+              <View className="flex-row gap-4">
+                <View className="flex-1 bg-white border border-slate-100 p-4 rounded-2xl">
+                  <View className="flex-row items-center gap-2 mb-3">
+                    <Ionicons name="alert-circle-outline" size={16} color="#ef4444" />
+                    <Text className="text-slate-700 text-xs">Mistakes</Text>
+                  </View>
+                  <View className="flex-row items-center justify-between">
+                    <Pressable 
+                      onPress={() => setMistakes(Math.max(0, mistakes - 1))}
+                      className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
+                    >
+                      <Ionicons name="remove" size={16} color="#64748b" />
+                    </Pressable>
+                    <Text className="text-lg text-slate-900">{mistakes}</Text>
+                    <Pressable 
+                      onPress={() => setMistakes(mistakes + 1)}
+                      className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
+                    >
+                      <Ionicons name="add" size={16} color="#ef4444" />
+                    </Pressable>
+                  </View>
+                </View>
+
+                <View className="flex-1 bg-white border border-slate-100 p-4 rounded-2xl">
+                  <View className="flex-row items-center gap-2 mb-3">
+                    <Ionicons name="timer-outline" size={16} color="#eab308" />
+                    <Text className="text-slate-700 text-xs">Hesitations</Text>
+                  </View>
+                  <View className="flex-row items-center justify-between">
+                    <Pressable 
+                      onPress={() => setHesitations(Math.max(0, hesitations - 1))}
+                      className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
+                    >
+                      <Ionicons name="remove" size={16} color="#64748b" />
+                    </Pressable>
+                    <Text className="text-lg text-slate-900">{hesitations}</Text>
+                    <Pressable 
+                      onPress={() => setHesitations(hesitations + 1)}
+                      className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
+                    >
+                      <Ionicons name="add" size={16} color="#eab308" />
+                    </Pressable>
+                  </View>
+                </View>
+              </View>
             </View>
           )}
 
-          <View className="bg-slate-50 p-6 rounded-[32px] border border-slate-100 mb-8">
-            <View className="flex-row items-center justify-between mb-6">
-              <View>
-                <Text className=" text-slate-900 text-lg">Pages Memorized</Text>
-                <Text className="text-slate-400 text-[10px] uppercase tracking-widest mt-1">
-                  Actual progress
-                </Text>
+          {/* 5. Progress Adjustment & Notes */}
+          <View className="mb-8">
+            <Text className="text-slate-900 text-base mb-4 ml-1">Actual Progress</Text>
+            <View className="bg-white border border-slate-100 p-5 rounded-3xl">
+              <View className="flex-row items-center justify-between mb-6">
+                <View>
+                  <Text className="text-slate-900">Pages Completed</Text>
+                  <Text className="text-slate-400 text-[10px]">Adjust if you did more/less</Text>
+                </View>
+                <View className="flex-row items-center bg-slate-50 rounded-xl p-1 border border-slate-100">
+                  <Pressable
+                    onPress={() => setPages((prev) => Math.max(0, prev - 1))}
+                    className="w-9 h-9 items-center justify-center active:bg-white rounded-lg"
+                  >
+                    <Ionicons name="remove" size={18} color="#276359" />
+                  </Pressable>
+                  <Text className="text-xl text-slate-900 px-4">{pages}</Text>
+                  <Pressable
+                    onPress={() => setPages((prev) => prev + 1)}
+                    className="w-9 h-9 items-center justify-center active:bg-white rounded-lg"
+                  >
+                    <Ionicons name="add" size={18} color="#276359" />
+                  </Pressable>
+                </View>
               </View>
-              <View className="flex-row items-center bg-white rounded-2xl p-1 border border-slate-200">
-                <Pressable
-                  onPress={() => setPages((prev) => Math.max(0, prev - 1))}
-                  className="w-10 h-10 items-center justify-center active:bg-slate-50 rounded-xl"
-                >
-                  <Ionicons name="remove" size={20} color="#276359" />
-                </Pressable>
-                <Text className="text-2xl  text-slate-900 px-4">{pages}</Text>
-                <Pressable
-                  onPress={() => setPages((prev) => prev + 1)}
-                  className="w-10 h-10 items-center justify-center active:bg-slate-50 rounded-xl"
-                >
-                  <Ionicons name="add" size={20} color="#276359" />
-                </Pressable>
-              </View>
-            </View>
 
-            <Text className="text-slate-400 uppercase text-[10px] mb-2 ml-1 tracking-widest">
-              Reflection or Notes
-            </Text>
-            <TextInput
-              multiline
-              placeholder="Difficulties with specific ayahs?"
-              placeholderTextColor="#94a3b8"
-              value={notes}
-              onChangeText={setNotes}
-              className="bg-white p-5 rounded-[24px] border border-slate-100 h-32 text-slate-900"
-              textAlignVertical="top"
-            />
+              <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-2 ml-1">Notes & Reflection</Text>
+              <TextInput
+                multiline
+                placeholder="Specific difficulties or ayahs to focus on?"
+                placeholderTextColor="#cbd5e1"
+                value={notes}
+                onChangeText={setNotes}
+                className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 h-24 text-slate-900 text-sm"
+                textAlignVertical="top"
+              />
+            </View>
           </View>
         </ScreenContent>
         <ScreenFooter>
           <Button
             onPress={handleSave}
-            disabled={isCreating}
-            className="bg-primary h-14  shadow-lg shadow-primary/30"
+            disabled={isAddingHifz || isLoggingRetention}
+            className="bg-primary h-14 rounded-2xl shadow-sm"
           >
             <View className="flex-row items-center justify-center">
-              <Text className="text-white  text-lg mr-2">Save Progress</Text>
-              <Ionicons name="arrow-forward" size={20} color="white" />
+              <Text className="text-white text-base mr-2">Save Progress</Text>
+              <Ionicons name="arrow-forward" size={18} color="white" />
             </View>
           </Button>
         </ScreenFooter>

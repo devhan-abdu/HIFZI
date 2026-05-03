@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { useSQLiteContext } from "expo-sqlite";
 import { useSession } from "@/src/hooks/useSession";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { getSurahByPage } from "@/src/features/muraja/utils/quranMapping";
 import { ReviewPriority } from "@/src/features/hifz/utils/reviewPriority";
 import { PerformanceService, PagePerformance } from "@/src/services/PerformanceService";
+import { db } from "@/src/lib/db/local-client";
 
 export type ReviewSuggestion = {
   sourceLogId: number; 
@@ -33,7 +33,6 @@ function resolvePriority(overdueDays: number): ReviewPriority {
 }
 
 export function useReviewSuggestions(planId?: number) {
-  const db = useSQLiteContext();
   const { user } = useSession();
   const { items: surah } = useLoadSurahData();
   const userId = user?.id;
@@ -47,26 +46,36 @@ export function useReviewSuggestions(planId?: number) {
 
       const today = new Date();
       const suggestions: ReviewSuggestion[] = [];
-
-      // Group consecutive pages into ranges
+      const sortedPages = [...duePages].sort((a, b) => a.page_number - b.page_number);
+      
       let currentRange: { start: number; end: number; performance: PagePerformance } | null = null;
 
-      for (const page of duePages) {
+      for (const page of sortedPages) {
         if (!currentRange) {
           currentRange = { start: page.page_number, end: page.page_number, performance: page };
-        } else if (page.page_number === currentRange.end + 1) {
-          currentRange.end = page.page_number;
         } else {
-          // Push previous range
-          suggestions.push(formatRange(currentRange, today, surah));
-          currentRange = { start: page.page_number, end: page.page_number, performance: page };
+          const isConsecutive = page.page_number === currentRange.end + 1;
+          const currentCount = currentRange.end - currentRange.start + 1;
+          const isUnderLimit = currentCount < 5;
+          
+          const startSurah = surah.find(s => currentRange!.start >= s.startingPage && currentRange!.start <= s.endingPage);
+          const currentSurah = surah.find(s => page.page_number >= s.startingPage && page.page_number <= s.endingPage);
+          const isSameSurah = startSurah?.number === currentSurah?.number;
+
+          if (isConsecutive && isUnderLimit && isSameSurah) {
+            currentRange.end = page.page_number;
+          } else {
+            suggestions.push(formatRange(currentRange, today, surah));
+            currentRange = { start: page.page_number, end: page.page_number, performance: page };
+          }
         }
       }
+      
       if (currentRange) {
         suggestions.push(formatRange(currentRange, today, surah));
       }
 
-      return suggestions.slice(0, 5);
+      return suggestions.slice(0, 2);
     },
   });
 

@@ -287,7 +287,8 @@ export const murajaService = {
           end: (log.start_page ?? 0) + (log.completed_pages ?? 0) - 1 
         },
         quality,
-        log.mistakes_count ?? 0
+        log.mistakes_count ?? 0,
+        log.hesitation_count ?? 0
       );
 
       await PerformanceService.recomputeAllPerformance(tx, userId);

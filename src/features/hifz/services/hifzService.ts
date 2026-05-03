@@ -43,6 +43,7 @@ export const hifzService = {
         status: planData.status ?? "active",
         preferredTime: planData.preferred_time,
         isCustomTime: planData.is_custom_time ?? false,
+        isReinforcementEnabled: planData.is_reinforcement_enabled ?? true,
         syncStatus: 0,
       }).returning({ id: hifzPlans.id });
 
@@ -110,6 +111,7 @@ export const hifzService = {
       status: localPlan.status as any,
       preferred_time: localPlan.preferredTime ?? undefined,
       is_custom_time: localPlan.isCustomTime ?? undefined,
+      is_reinforcement_enabled: localPlan.isReinforcementEnabled ?? true,
       hifz_daily_logs: logs.map(l => ({
         id: l.id,
         hifz_plan_id: l.hifzPlanId,
@@ -251,7 +253,8 @@ export const hifzService = {
         todayLog.date,
         isMissed ? null : { start: todayLog.actual_start_page, end: todayLog.actual_end_page },
         quality,
-        todayLog.mistakes_count ?? 0
+        todayLog.mistakes_count ?? 0,
+        todayLog.hesitation_count ?? 0
       );
 
       await PerformanceService.recomputeAllPerformance(tx, userId);
@@ -299,6 +302,7 @@ export const hifzService = {
           status: plan.status,
           preferred_time: plan.preferredTime,
           is_custom_time: plan.isCustomTime,
+          is_reinforcement_enabled: plan.isReinforcementEnabled,
         };
 
         const { data, error } = await supabase

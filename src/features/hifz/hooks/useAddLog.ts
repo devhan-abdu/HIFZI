@@ -18,6 +18,7 @@ export function useAddLog() {
             queryClient.invalidateQueries({ queryKey: ["hifz-review-suggestions", user?.id] });
             queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
             queryClient.invalidateQueries({ queryKey: ["page-performance-all"] });
+            queryClient.invalidateQueries({ queryKey: ["page-performance-all"] });
             
             if (result?.changed) {
                 queryClient.invalidateQueries({ queryKey: ["adaptive-guidance", user?.id] });

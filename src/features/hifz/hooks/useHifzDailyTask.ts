@@ -4,6 +4,8 @@ import { getTargetPage } from "../utils/getTargetPage";
 import { getTodayTask } from "../utils/quran-logic";
 import { hifzStatus } from "../utils/plan-status";
 import { useHifzPlan } from "./useHifzPlan";
+import { getReinforcementRange } from "../utils/quran-logic";
+import { useReviewSuggestions } from "./useReviewSuggestions";
 
 export function useHifzDailyTask() {
   const { hifz, isLoading, error, refetch } = useHifzPlan();
@@ -46,6 +48,7 @@ export function useHifzDailyTask() {
       };
     }
 
+    // explain how it work what is target info why we use it 
     return {
       ...task,
       ...targetInfo,
@@ -54,9 +57,18 @@ export function useHifzDailyTask() {
     };
   }, [hifz, surah, analytics]);
 
+  const { suggestions: srsSuggestions } = useReviewSuggestions(hifz?.id);
+
+  const reinforcementTask = useMemo(() => {
+    if (!hifz || !surah.length || !hifz.is_reinforcement_enabled) return null;
+    return getReinforcementRange(hifz, surah, 5);
+  }, [hifz, surah]);
+
   return {
     hifz,
     todayTask,
+    reinforcementTask,
+    srsSuggestions,
     analytics,
     loading: isLoading || surahLoading,
     error,

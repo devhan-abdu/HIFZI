@@ -17,7 +17,6 @@ import Screen from "@/src/components/screen/Screen";
 import { StatusTab } from "@/src/features/hifz/components/StatusTab";
 import { useAlert } from "@/src/hooks/useAlert";
 import { Alert } from "@/src/components/common/Alert";
-import { QualityCounter } from "@/src/components/common/QualityCounter";
 
 type StatusType = "pending" | "completed" | "partial" | "missed";
 
@@ -115,14 +114,14 @@ export default function LogPage() {
   return (
     <>
       <Screen>
-      <View className="bg-white px-4 pt-12 pb-4 flex-row items-center">
+      <View className="bg-white px-4 pt-4 pb-4 flex-row items-center border-b border-slate-50">
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => router.replace("/(app)/muraja")}
           className="w-10 h-10 items-center justify-center rounded-full active:bg-slate-100"
         >
-          <Ionicons name="arrow-back" size={24} color="#0f172a" />
+          <Ionicons name="arrow-back" size={22} color="#0f172a" />
         </Pressable>
-        <Text className="text-xl  text-slate-900 leading-tight ml-2">
+        <Text className="text-lg text-slate-900 ml-2">
           {formattedDate}
         </Text>
       </View>
@@ -140,14 +139,27 @@ export default function LogPage() {
             </View>
           )}
 
-          <View className="bg-primary rounded-[40px] p-7 mb-8 shadow-2xl shadow-primary/40 overflow-hidden relative">
+          <View className="bg-primary rounded-[40px] p-7 mb-8 shadow-xl shadow-primary/30 overflow-hidden relative">
             <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
             
             <View className="flex-row justify-between items-center mb-6">
-              <View className="flex-1">
-                <Text className="text-white/60 uppercase tracking-[2px] text-[10px] mb-1">
+              <View className="bg-white/10 px-2.5 py-1 rounded-lg border border-white/10">
+                <Text className="text-white text-[10px] uppercase tracking-[2px]">
                   {isRestDay ? "Extra Session" : "Today's Target"}
                 </Text>
+              </View>
+              <View className="flex-row items-center gap-2">
+                {todayTask?.isCatchup && (
+                  <View className="bg-orange-400 px-2 py-0.5 rounded-md">
+                    <Text className="text-white text-[9px] uppercase">Catchup</Text>
+                  </View>
+                )}
+                <Text className="text-white/60 text-[10px] uppercase tracking-widest">Muraja</Text>
+              </View>
+            </View>
+
+            <View className="flex-row items-end justify-between">
+              <View className="flex-1">
                 <Text className="text-white text-3xl tracking-tighter">
                   {todayTask ? (
                     todayTask.startSurah === todayTask.endSurah ?
@@ -155,158 +167,173 @@ export default function LogPage() {
                     : `${todayTask.startSurah} – ${todayTask.endSurah}`
                   ) : "Extra Revision"}
                 </Text>
-              </View>
-              <View className="bg-white/20 px-3 py-1 rounded-full border border-white/10">
-                <Text className="text-white text-[9px]  uppercase tracking-widest">
-                  {todayTask?.isCatchup ? "Catchup" : "Muraja"}
+                <Text className="text-white/50 text-xs mt-1">
+                  Range: {todayTask ? `${todayTask.startPage}—${todayTask.endPage}` : "Extra"}
                 </Text>
               </View>
-            </View>
-
-            <View className="w-full h-[2px] bg-white/10 rounded-full mb-8 overflow-hidden" />
-
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1">
-                <Text className="text-white text-2xl tracking-tight leading-7">
-                  {todayTask ? `${todayTask.endPage - todayTask.startPage + 1} Pages` : "Manual"}
-                </Text>
-                <Text className="text-white/50 text-[9px] uppercase tracking-widest mt-1">
-                  Volume
-                </Text>
-              </View>
-              
-              <View className="h-8 w-px bg-white/10 mx-6" />
-
-              <View className="flex-1">
-                <Text className="text-white text-lg tracking-tight leading-6">
-                  {todayTask ? `${todayTask.startPage}—${todayTask.endPage}` : "Extra"}
-                </Text>
-                <Text className="text-white/50 text-[9px] uppercase tracking-widest mt-1">
-                  Range
-                </Text>
+              <View className="items-end">
+                <View className="flex-row items-baseline">
+                  <Text className="text-white text-2xl tracking-tighter">
+                    {todayTask ? `${todayTask.endPage - todayTask.startPage + 1}` : "0"}
+                  </Text>
+                  <Text className="text-white/40 text-sm ml-1">Pgs</Text>
+                </View>
+                <Text className="text-white/40 text-[9px] uppercase tracking-widest">Target Volume</Text>
               </View>
             </View>
           </View>
 
-          <Text className="text-xl text-gray-900 mb-4 ">How did it go?</Text>
-          <View className="flex-row justify-between mb-8">
-            <StatusTab
-              label="Completed"
-              icon="checkmark-circle"
-              active={status === "completed"}
-              onPress={() => {
-                setStatus("completed");
-                if (todayTask) {
-                  setPages(todayTask.endPage - todayTask.startPage + 1);
-                }
-              }}
-            />
-            <StatusTab
-              label="Partial"
-              icon="contrast"
-              active={status === "partial"}
-              onPress={() => {
-                setStatus("partial");
-                if (todayTask) {
-                  setPages(
-                    Math.floor((todayTask.endPage - todayTask.startPage + 1) / 2),
-                  );
-                }
-              }}
-            />
-            <StatusTab
-              label="Missed"
-              icon="close-circle"
-              active={status === "missed"}
-              onPress={() => {
-                setStatus("missed");
-                setPages(0);
-              }}
-            />
+          {/* 3. Status Selection */}
+          <View className="mb-8">
+            <Text className="text-slate-900 text-base mb-4 ml-1">How did it go?</Text>
+            <View className="flex-row justify-between">
+              <StatusTab
+                label="Completed"
+                icon="checkmark-circle"
+                active={status === "completed"}
+                onPress={() => {
+                  setStatus("completed");
+                  if (todayTask) {
+                    setPages(todayTask.endPage - todayTask.startPage + 1);
+                  }
+                }}
+              />
+              <StatusTab
+                label="Partial"
+                icon="contrast"
+                active={status === "partial"}
+                onPress={() => {
+                  setStatus("partial");
+                  if (todayTask) {
+                    setPages(
+                      Math.floor((todayTask.endPage - todayTask.startPage + 1) / 2),
+                    );
+                  }
+                }}
+              />
+              <StatusTab
+                label="Missed"
+                icon="close-circle"
+                active={status === "missed"}
+                onPress={() => {
+                  setStatus("missed");
+                  setPages(0);
+                }}
+              />
+            </View>
           </View>
 
+          {/* 4. Quality Metrics - Inline Design */}
           {showDetails && (
-            <View className="mb-8 p-5 bg-slate-50 rounded-[32px] border border-slate-100 gap-y-4">
-              <QualityCounter
-                label="Mistakes"
-                description="Incorrect words or tajweed"
-                value={mistakes}
-                onValueChange={setMistakes}
-                icon="alert-circle-outline"
-                color="#276359"
-              />
-              <QualityCounter
-                label="Hesitations"
-                description="Long pauses or unsureness"
-                value={hesitations}
-                onValueChange={setHesitations}
-                icon="timer-outline"
-                color="#276359"
-              />
+            <View className="mb-8">
+              <Text className="text-slate-900 text-base mb-4 ml-1">Reading Quality</Text>
+              <View className="flex-row gap-4">
+                <View className="flex-1 bg-white border border-slate-100 p-4 rounded-2xl">
+                  <View className="flex-row items-center gap-2 mb-3">
+                    <Ionicons name="alert-circle-outline" size={16} color="#ef4444" />
+                    <Text className="text-slate-700 text-xs">Mistakes</Text>
+                  </View>
+                  <View className="flex-row items-center justify-between">
+                    <Pressable 
+                      onPress={() => setMistakes(Math.max(0, mistakes - 1))}
+                      className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
+                    >
+                      <Ionicons name="remove" size={16} color="#64748b" />
+                    </Pressable>
+                    <Text className="text-lg text-slate-900">{mistakes}</Text>
+                    <Pressable 
+                      onPress={() => setMistakes(mistakes + 1)}
+                      className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
+                    >
+                      <Ionicons name="add" size={16} color="#ef4444" />
+                    </Pressable>
+                  </View>
+                </View>
+
+                <View className="flex-1 bg-white border border-slate-100 p-4 rounded-2xl">
+                  <View className="flex-row items-center gap-2 mb-3">
+                    <Ionicons name="timer-outline" size={16} color="#eab308" />
+                    <Text className="text-slate-700 text-xs">Hesitations</Text>
+                  </View>
+                  <View className="flex-row items-center justify-between">
+                    <Pressable 
+                      onPress={() => setHesitations(Math.max(0, hesitations - 1))}
+                      className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
+                    >
+                      <Ionicons name="remove" size={16} color="#64748b" />
+                    </Pressable>
+                    <Text className="text-lg text-slate-900">{hesitations}</Text>
+                    <Pressable 
+                      onPress={() => setHesitations(hesitations + 1)}
+                      className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
+                    >
+                      <Ionicons name="add" size={16} color="#eab308" />
+                    </Pressable>
+                  </View>
+                </View>
+              </View>
             </View>
           )}
-          
+                  {/* 5. Progress Adjustment & Notes */}
+          <View className="mb-8">
+            <Text className="text-slate-900 text-base mb-4 ml-1">Actual Progress</Text>
+            <View className="bg-white border border-slate-100 p-5 rounded-3xl">
+              <View className="flex-row items-center justify-between mb-6">
+                <View>
+                  <Text className="text-slate-900">Pages Completed</Text>
+                  <Text className="text-slate-400 text-[10px]">Adjust if you did more/less</Text>
+                </View>
+                <View className="flex-row items-center bg-slate-50 rounded-xl p-1 border border-slate-100">
+                  <Pressable
+                    onPress={() => setPages((p: number) => Math.max(0, p - 1))}
+                    className="w-9 h-9 items-center justify-center active:bg-white rounded-lg"
+                  >
+                    <Ionicons name="remove" size={18} color="#276359" />
+                  </Pressable>
+                  <Text className="text-xl text-slate-900 px-4">{pages}</Text>
+                  <Pressable
+                    onPress={() => setPages((p: number) => p + 1)}
+                    className="w-9 h-9 items-center justify-center active:bg-white rounded-lg"
+                  >
+                    <Ionicons name="add" size={18} color="#276359" />
+                  </Pressable>
+                </View>
+              </View>
 
-          <View className="mb-12 gap-6">
-          <View className="bg-slate-50 p-6 rounded-[32px] border border-slate-100 mb-8">
-            <View className="flex-row items-center justify-between mb-6">
+              {showDetails && (
+                <View className="mb-5">
+                  <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-2 ml-1">
+                    Time Spent (min)
+                  </Text>
+                  <TextInput
+                    placeholder="Minutes"
+                    placeholderTextColor="#cbd5e1"
+                    keyboardType="numeric"
+                    value={min}
+                    onChangeText={setMin}
+                    className="bg-slate-50/50 px-4 h-12 rounded-xl border border-slate-100 text-slate-900 text-sm"
+                  />
+                </View>
+              )}
+
               <View>
-                <Text className="text-slate-900 text-lg ">Pages Done</Text>
-                <Text className="text-slate-400 text-[10px] uppercase tracking-widest mt-1">
-                  Adjust progress
-                </Text>
-              </View>
-              <View className="flex-row items-center bg-white rounded-2xl p-1 border border-slate-200">
-                <Pressable
-                  onPress={() => setPages((p: number) => Math.max(0, p - 1))}
-                  className="w-10 h-10 items-center justify-center active:bg-slate-50 rounded-xl"
-                >
-                  <Ionicons name="remove" size={20} color="#276359" />
-                </Pressable>
-                <Text className="text-2xl text-slate-900 px-4 ">{pages}</Text>
-                <Pressable
-                  onPress={() => setPages((p: number) => p + 1)}
-                  className="w-10 h-10 items-center justify-center active:bg-slate-50 rounded-xl"
-                >
-                  <Ionicons name="add" size={20} color="#276359" />
-                </Pressable>
-              </View>
-            </View>
-
-            {showDetails && (
-              <View className="mb-5">
-                <Text className="text-slate-400 uppercase text-[10px] mb-2 ml-1 tracking-widest ">
-                  Time Spent (min)
+                <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-2 ml-1">
+                  Notes & Reflection
                 </Text>
                 <TextInput
-                  placeholder="Minutes"
-                  placeholderTextColor="#94a3b8"
-                  keyboardType="numeric"
-                  value={min}
-                  onChangeText={setMin}
-                  className="bg-white px-5 h-14 rounded-[20px] border border-slate-100 text-slate-900"
+                  multiline
+                  placeholder="Any specific difficulties?"
+                  placeholderTextColor="#cbd5e1"
+                  value={note}
+                  onChangeText={setNote}
+                  className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 h-24 text-slate-900 text-sm"
+                  textAlignVertical="top"
                 />
               </View>
-            )}
-
-            <View>
-              <Text className="text-slate-400 uppercase text-[10px] mb-2 ml-1 tracking-widest ">
-                Notes
-              </Text>
-              <TextInput
-                multiline
-                placeholder="Any difficult ayahs?"
-                placeholderTextColor="#94a3b8"
-                value={note}
-                onChangeText={setNote}
-                className="bg-white p-5 rounded-[24px] border border-slate-100 h-24 text-slate-900"
-                textAlignVertical="top"
-              />
             </View>
-          </View>
-          {error && (
-            <Text className="text-red-500 mb-4 text-center">{error}</Text>
-          )}
+            {error && (
+              <Text className="text-red-500 mt-4 text-center text-xs">{error}</Text>
+            )}
           </View>
         </ScreenContent>
 
@@ -314,11 +341,11 @@ export default function LogPage() {
           <Button
             onPress={handleSave}
             disabled={isUpdating}
-            className="bg-primary h-14 shadow-lg shadow-primary/30"
+            className="bg-primary h-14 rounded-2xl shadow-sm"
           >
             <View className="flex-row items-center justify-center">
-              <Text className="text-white text-lg mr-2 ">Save Progress</Text>
-              <Ionicons name="arrow-forward" size={20} color="white" />
+              <Text className="text-white text-base mr-2">Save Progress</Text>
+              <Ionicons name="arrow-forward" size={18} color="white" />
             </View>
           </Button>
         </ScreenFooter>

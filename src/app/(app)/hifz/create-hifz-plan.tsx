@@ -133,22 +133,22 @@ export default function CreateHifzPlan() {
       <Screen>
         <ScreenContent>
           <View className="mb-10">
-            <Text className="text-gray-400 text-[10px] uppercase mb-3 ml-1 tracking-widest ">
-              Step 1: Choose Direction
+            <Text className="text-gray-400 text-[10px] uppercase mb-3 ml-1 tracking-widest">
+              Choose Direction
             </Text>
             <Controller
               control={control}
               name="direction"
               render={({ field: { value, onChange } }) => (
-                <View className="flex-row bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+                <View className="flex-row bg-slate-100 rounded-xl border border-slate-200">
                   <Button
                     onPress={() => onChange("forward")}
-                    className={`flex-1 py-3 rounded-xl ${
-                      value === "forward" ? "bg-primary shadow-sm" : "bg-transparent"
+                    className={`flex-1  py-2 rounded-xl ${
+                      value === "forward" ? "bg-primary" : "bg-transparent"
                     }`}
                   >
                     <Text
-                      className={`text-center  text-xs uppercase tracking-widest ${
+                      className={`text-center text-xs uppercase tracking-widest ${
                         value === "forward" ? "text-white" : "text-slate-500"
                       }`}
                     >
@@ -157,12 +157,12 @@ export default function CreateHifzPlan() {
                   </Button>
                   <Button
                     onPress={() => onChange("backward")}
-                    className={`flex-1 py-3 rounded-xl ${
-                      value === "backward" ? "bg-primary shadow-sm" : "bg-transparent"
+                    className={`flex-1 py-2 rounded-xl ${
+                      value === "backward" ? "bg-primary" : "bg-transparent"
                     }`}
                   >
                     <Text
-                      className={`text-center  text-xs uppercase tracking-widest ${
+                      className={`text-center text-xs uppercase tracking-widest ${
                         value === "backward" ? "text-white" : "text-slate-500"
                       }`}
                     >
@@ -175,29 +175,44 @@ export default function CreateHifzPlan() {
           </View>
 
           <View className="mb-10">
-            <Text className="text-gray-400 text-[10px] uppercase mb-4 ml-1 tracking-widest ">
-              Step 2: Define Range
+            <Text className="text-gray-400 text-[10px] uppercase mb-4 ml-1 tracking-widest">
+              Start Date
+            </Text>
+            <Controller
+              control={control}
+              name="start_date"
+              render={({ field: { value, onChange } }) => (
+                <Pressable
+                  onPress={() => setShowDatePicker(true)}
+                  className={`bg-slate-50 border p-4 rounded-2xl flex-row justify-between items-center ${
+                    errors.start_date ? "border-red-200" : "border-slate-100"
+                  }`}
+                >
+                  <Text className="text-slate-700 font-medium">
+                    {new Date(value).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  </Text>
+                  <Ionicons name="calendar-outline" size={20} color="#276359" />
+                  {showDatePicker && (
+                    <DateTimePicker
+                      value={new Date(value)}
+                      onChange={(e, d) => {
+                        setShowDatePicker(false);
+                        if (d) onChange(d.toISOString().split("T")[0]);
+                      }}
+                    />
+                  )}
+                </Pressable>
+              )}
+            />
+          </View>
+
+          <View className="mb-10">
+            <Text className="text-gray-400 text-[10px] uppercase mb-4 ml-1 tracking-widest">
+              Define Range & Rate
             </Text>
             
-            <View className="mb-6">
-              <Controller
-                control={control}
-                name="pages_per_day"
-                render={({ field: { value, onChange } }) => (
-                  <Input
-                    label="PAGES PER DAY"
-                    value={String(value)}
-                    setValue={(v) => onChange(Number(v))}
-                    keyboardType="numeric"
-                    leftIcon={<Ionicons name="document-text-outline" size={18} color="#94a3b8" />}
-                    error={errors.pages_per_day?.message}
-                  />
-                )}
-              />
-            </View>
-
-            <View className="flex-row gap-4">
-              <View className="flex-1">
+            <View className="flex-col gap-4 mb-6">
+              <View>
                 <Text className="text-slate-400 text-[10px] uppercase mb-2 ml-1 tracking-tight">
                   Start Surah
                 </Text>
@@ -216,7 +231,7 @@ export default function CreateHifzPlan() {
                   )}
                 />
               </View>
-              <View className="flex-1">
+              <View>
                 <Text className="text-slate-400 text-[10px] uppercase mb-2 ml-1 tracking-tight">
                   Start Page
                 </Text>
@@ -240,49 +255,29 @@ export default function CreateHifzPlan() {
                 />
               </View>
             </View>
+
+            <Controller
+              control={control}
+              name="pages_per_day"
+              render={({ field: { value, onChange } }) => (
+                <Input
+                  label="PAGES PER DAY"
+                  value={String(value)}
+                  setValue={(v) => onChange(Number(v))}
+                  keyboardType="numeric"
+                  leftIcon={<Ionicons name="document-text-outline" size={18} color="#94a3b8" />}
+                  error={errors.pages_per_day?.message}
+                />
+              )}
+            />
           </View>
 
           <View className="mb-10">
-            <Text className="text-gray-400 text-[10px] uppercase mb-4 ml-1 tracking-widest ">
-              Step 3: Schedule & Routine
+            <Text className="text-gray-400 text-[10px] uppercase mb-4 ml-1 tracking-widest">
+              Weekly Commitment
             </Text>
 
             <View className="mb-8">
-              <Text className="text-slate-400 text-[10px] uppercase mb-2 ml-1 tracking-tight">
-                Start Date
-              </Text>
-              <Controller
-                control={control}
-                name="start_date"
-                render={({ field: { value, onChange } }) => (
-                  <Pressable
-                    onPress={() => setShowDatePicker(true)}
-                    className={`bg-slate-50 border p-4 rounded-2xl flex-row justify-between items-center ${
-                      errors.start_date ? "border-red-200" : "border-slate-100"
-                    }`}
-                  >
-                    <Text className="text-slate-700 font-medium">
-                      {new Date(value).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                    </Text>
-                    <Ionicons name="calendar-outline" size={20} color="#276359" />
-                    {showDatePicker && (
-                      <DateTimePicker
-                        value={new Date(value)}
-                        onChange={(e, d) => {
-                          setShowDatePicker(false);
-                          if (d) onChange(d.toISOString().split("T")[0]);
-                        }}
-                      />
-                    )}
-                  </Pressable>
-                )}
-              />
-            </View>
-
-            <View className="mb-8">
-              <Text className="text-slate-400 text-[10px] uppercase mb-4 ml-1 tracking-tight">
-                Weekly Commitment
-              </Text>
               <Controller
                 name="selectedDays"
                 control={control}
@@ -314,12 +309,13 @@ export default function CreateHifzPlan() {
             />
           </View>
 
-          <View className="mb-6">
-            <Text className="text-gray-400 text-[10px] uppercase mb-4 ml-1 tracking-widest ">
-              Step 4: Review & Launch
+          <View className="mt-4">
+            <Text className="text-gray-400 text-[10px] uppercase mb-4 ml-1 tracking-widest">
+              Plan Summary
             </Text>
             <StatsSummary control={control} />
           </View>
+        
         </ScreenContent>
 
         <ScreenFooter>
