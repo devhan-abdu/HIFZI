@@ -50,7 +50,9 @@ export const TodayTasksSection = ({
         {hasHifzTask && hifzTodayTask && (
           <HifzActionCard 
             hifz={hifz!} 
-            todayTask={hifzTodayTask} 
+            task={hifzTodayTask} 
+            title={hifzTodayTask.displaySurah}
+            subTitle={`Target: ${hifzTodayTask.totalTarget} pages • Juz ${hifzTodayTask.juz}`}
             onStart={() => hifz?.id && onStartHifz(hifzTodayTask, hifz.id)}
             onResume={() => hifz?.id && onResumeHifz(hifzTodayTask, hifz.id)}
             onDetails={onLogHifz}

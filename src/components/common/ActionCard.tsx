@@ -41,7 +41,7 @@ export const ActionTaskCard = ({
 
     return (
         <Pressable 
-            onPress={isResumable ? onResume : onStart}
+            onPress={(isResumable && onResume) ? onResume : onStart}
             disabled={isLoading}
             className="overflow-hidden rounded-[32px] shadow-sm active:scale-[0.98] transition-all bg-white border border-slate-100 p-6"
         >
@@ -80,7 +80,7 @@ export const ActionTaskCard = ({
           <Text className="text-2xl tracking-tight mb-1 text-slate-900">
             {title}
           </Text>
-          <Text className="text-sm font-medium text-slate-500">
+          <Text className="text-sm text-slate-500">
             {subTitle}
           </Text>
         </View>
@@ -100,7 +100,7 @@ export const ActionTaskCard = ({
           ) : (
             <>
               <Text style={{ color: isFinished ? '#94a3b8' : accentColor }} className="uppercase tracking-widest text-[10px]">
-                {isFinished ? (isCompleted ? "Review Activity" : "Resume Session") : isResumable ? "Resume Session" : "Open Mushaf"}
+                {isFinished ? (isCompleted ? "Open Mushaf" : "Resume Session") : isResumable ? "Resume Session" : "Open Mushaf"}
               </Text>
               <Ionicons 
                 name={isFinished ? "arrow-forward" : "chevron-forward"} 

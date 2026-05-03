@@ -13,7 +13,7 @@ export function FeatureRow({
 }) {
   return (
     <View className="flex-row items-start px-2">
-      <View className="bg-gray-50 p-3 rounded-xl mr-4 border border-gray-100">
+      <View className="bg-gray-50 p-3 rounded-full mr-4 border border-gray-100">
         <Ionicons name={icon} size={22} color="#276359" />
       </View>
       <View className="flex-1">

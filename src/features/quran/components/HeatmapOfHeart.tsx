@@ -88,11 +88,10 @@ export const HeatmapOfHeart = () => {
 
   const handleNavigate = (page: number) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    router.push({
-      pathname: "/(app)/mushaf",
-      params: { page: page.toString() }
-    });
+     router.push(`/(app)/quran/reader?page=${page.toString()}`);
   };
+
+ 
 
   const strengthInfo = selectedPage ? getStrengthInfo(selectedPage) : null;
   const surahName = selectedPage ? getSurahByPage(selectedPage, surahs as any) : null;
@@ -101,10 +100,10 @@ export const HeatmapOfHeart = () => {
     <View className="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm">
       <View className="flex-row justify-between items-center mb-5 px-1">
         <View>
-          <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] font-bold">
+          <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] ">
             Heatmap of the Heart
           </Text>
-          <Text className="text-[9px] text-slate-300 font-medium">Tap to explore • Long-press to open</Text>
+          <Text className="text-[9px] text-slate-300 ">Tap to explore • Long-press to open</Text>
         </View>
         {selectedPage && (
           <Pressable
@@ -114,7 +113,7 @@ export const HeatmapOfHeart = () => {
             }}
             className="bg-slate-50 px-2 py-1 rounded-lg"
           >
-            <Text className="text-primary text-[10px] font-bold uppercase tracking-wider">Clear</Text>
+            <Text className="text-primary text-[10px]  uppercase tracking-wider">Clear</Text>
           </Pressable>
         )}
       </View>
@@ -133,15 +132,15 @@ export const HeatmapOfHeart = () => {
               style={{
                 width: 7,
                 height: 7,
-                backgroundColor: isSelected ? "#0f172a" : info.hex,
+                backgroundColor: isSelected ? info.border : info.hex,
                 borderRadius: 1.5,
-                borderWidth: isSelected ? 0 : (info.label !== "New" ? 0.5 : 0),
+                borderWidth: 0.5,
                 borderColor: info.border,
                 transform: [{ scale: isSelected ? 1.8 : 1 }],
                 zIndex: isSelected ? 10 : 1,
-                shadowColor: isSelected ? "#000" : "transparent",
+                shadowColor: isSelected ? info.border : "transparent",
                 shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isSelected ? 0.3 : 0,
+                shadowOpacity: isSelected ? 0.5 : 0,
                 shadowRadius: 4,
                 elevation: isSelected ? 4 : 0,
               }}
@@ -156,17 +155,17 @@ export const HeatmapOfHeart = () => {
           <View className="flex-row items-center justify-between bg-slate-50/50 p-4 rounded-[24px] border border-slate-100">
             <View className="flex-1 mr-4">
               <View className="flex-row items-center gap-2 mb-1">
-                <Text className="text-lg font-black text-slate-900 leading-tight">Page {selectedPage}</Text>
+                <Text className="text-lg  text-slate-900 leading-tight">Page {selectedPage}</Text>
                 <View
                   style={{ backgroundColor: strengthInfo?.color ? `${strengthInfo.color}15` : 'transparent' }}
                   className="px-2 py-0.5 rounded-full border border-slate-200"
                 >
-                  <Text style={{ color: strengthInfo?.color }} className="text-[9px] font-black uppercase tracking-wider">
+                  <Text style={{ color: strengthInfo?.color }} className="text-[9px]  uppercase tracking-wider">
                     {strengthInfo?.label}
                   </Text>
                 </View>
               </View>
-              <Text className="text-slate-500 text-sm font-medium">{surahName || "Surah Unknown"}</Text>
+              <Text className="text-slate-500 text-sm ">{surahName || "Surah Unknown"}</Text>
               {strengthInfo?.label !== "New" && (
                 <View className="flex-row items-center mt-1.5 gap-1.5">
                   <View className="h-1 flex-1 bg-slate-200 rounded-full overflow-hidden">
@@ -178,17 +177,17 @@ export const HeatmapOfHeart = () => {
                       className="h-full rounded-full"
                     />
                   </View>
-                  <Text className="text-[10px] font-bold text-slate-400">{strengthInfo?.percentage}%</Text>
+                  <Text className="text-[10px]  text-slate-400">{strengthInfo?.percentage}%</Text>
                 </View>
               )}
             </View>
 
             <Pressable
               onPress={() => handleNavigate(selectedPage)}
-              className="bg-primary px-5 py-3.5 rounded-2xl flex-row items-center shadow-lg shadow-primary/20 active:scale-[0.9] transition-all"
+              className="flex-row items-center gap-1 active:opacity-60"
             >
-              <Text className="text-white font-bold mr-2 text-xs">Open</Text>
-              <Ionicons name="book-outline" size={14} color="white" />
+              <Text className="text-primary text-xs">Open Mushaf</Text>
+              <Ionicons name="arrow-forward" size={12} color="#276359" />
             </Pressable>
           </View>
         ) : (
@@ -212,7 +211,7 @@ const LegendItem = ({ color, label, border }: { color: string, label: string, bo
       style={{ backgroundColor: color, borderColor: border || color, borderWidth: border ? 1 : 0 }} 
       className="w-2.5 h-2.5 rounded-sm mr-1.5 shadow-sm shadow-black/5" 
     />
-    <Text className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">{label}</Text>
+    <Text className="text-[9px] text-slate-400  uppercase tracking-tighter">{label}</Text>
   </View>
 );
 

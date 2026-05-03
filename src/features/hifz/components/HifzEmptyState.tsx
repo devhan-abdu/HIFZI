@@ -1,28 +1,27 @@
-import { View, Text, Pressable, Image } from "react-native";
+import { View, Pressable, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import Screen from "@/src/components/screen/Screen";
+import { Text } from "@/src/components/common/ui/Text";
 import { FeatureRow } from "@/src/components/FeatureRow";
+
 
 export default function HifzEmptyState() {
   const router = useRouter();
 
   return (
     <Screen>
-      <View className="flex-1 px-6 justify-center bg-white">
-        <View className="items-center mb-10">
-          <View className="w-24 h-24 bg-primary/10 rounded-full items-center justify-center mb-6">
-            <Ionicons name="book-outline" size={48} color="#276359" />
-          </View>
-          <Text className="text-3xl  text-gray-900 text-center px-4">
+      <View className="flex-1 px-8 justify-center bg-white">
+        <View className="items-center mb-12">
+          <Text className="text-2xl  text-slate-900 text-center">
             Start Your Hifz Journey
           </Text>
-          <Text className="text-gray-500 text-center mt-3 text-base leading-6 px-6">
+          <Text className="text-slate-500 text-center mt-3 text-sm leading-relaxed px-4">
             "The best of you are those who learn the Quran and teach it."
           </Text>
         </View>
 
-        <View className="gap-y-6 mb-12">
+        <View className="gap-y-8 mb-16">
           <FeatureRow
             icon="calendar-outline"
             title="Personalized Schedule"
@@ -40,17 +39,19 @@ export default function HifzEmptyState() {
           />
         </View>
 
-        <Pressable
-          onPress={() => router.push("/(app)/hifz/create-hifz-plan")}
-          className="bg-primary h-16 rounded-2xl flex-row items-center justify-center shadow-lg shadow-primary/30 active:scale-[0.98]"
-        >
-          <Text className="text-white  text-lg mr-2">Create My Plan</Text>
-          <Ionicons name="arrow-forward" size={20} color="white" />
-        </Pressable>
+        <View>
+          <Pressable
+            onPress={() => router.push("/(app)/hifz/create-hifz-plan")}
+            className="bg-primary h-14 rounded-xl flex-row items-center justify-center shadow-sm active:opacity-90 active:scale-[0.98]"
+          >
+            <Text className="text-white  text-base mr-2">Create My Plan</Text>
+            <Ionicons name="arrow-forward" size={18} color="white" />
+          </Pressable>
 
-        <Text className="text-center text-gray-400 text-xs mt-6 uppercase tracking-widest">
-          It only takes 30 seconds
-        </Text>
+          <Text className="text-center text-slate-400 text-[10px] mt-4 uppercase tracking-[2px]">
+            It only takes 30 seconds
+          </Text>
+        </View>
       </View>
     </Screen>
   );

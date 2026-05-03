@@ -30,9 +30,15 @@ import { notificationRepository } from "@/src/features/notifications/services/no
 import { useNotifications } from "@/src/hooks/useNotifications";
 import { sendTestNotification } from "@/src/utils/testNotifications";
 export default function Hifz() {
-  const { hifz, isLoading, error, refetch } = useHifzPlan();
-  const { todayTask } = useHifzDailyTask();
-  const { suggestions } = useReviewSuggestions(hifz?.id);
+  const { 
+    hifz, 
+    loading: isLoading, 
+    error, 
+    refetch, 
+    reinforcementTask, 
+    todayTask, 
+    srsSuggestions: suggestions 
+  } = useHifzDailyTask();
   const { user } = useSession();
   
   const session = useReaderSessionStore();
@@ -42,7 +48,6 @@ export default function Hifz() {
     await sendTestNotification(user.id, "xp");
   };
 
-  const { unreadCount } = useNotifications();
   const { items: surah } = useLoadSurahData();
   const latestNotificationQuery = useQuery({
     queryKey: ["latest-notification", user?.id],
@@ -69,7 +74,9 @@ export default function Hifz() {
           <Text className="text-center text-gray-500 mb-4">
             Failed to load plan
           </Text>
-          <Button onPress={() => refetch()}>Retry</Button>
+          <Button onPress={() => refetch()}>
+            <Text className="text-white">Retry</Text>
+          </Button>
         </View>
       </Screen>
     );
@@ -85,41 +92,18 @@ export default function Hifz() {
     <>
       <Screen>
         <ScreenContent>
-          <View className="flex-row items-center justify-between mb-4">
-            <View>
-              <Text className="text-gray-400 uppercase tracking-[2px] text-[10px]">
-                HIFZI
-              </Text>
-              <Text className="text-2xl text-slate-900">Hifz</Text>
-            </View>
-            <Pressable
-              onPress={() => router.push("/(app)/notifications" as never)}
-              className="w-11 h-11 rounded-full bg-white border border-slate-200 items-center justify-center"
-            >
-              <Ionicons
-                name="notifications-outline"
-                size={20}
-                color="#0f172a"
-              />
-              {unreadCount > 0 && (
-                <View className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 items-center justify-center">
-                  <Text className="text-white text-[10px]">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </Text>
-                </View>
-              )}
-            </Pressable>
-          </View>
           <View className="bg-primary rounded-[40px] p-7 shadow-2xl shadow-primary/40 overflow-hidden relative">
             <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
             
-            <View className="flex-row items-center justify-between mb-6">
+            <View className="flex-row items-center justify-between mb-5">
               <View className="flex-1">
-                <Text className="text-white/60 uppercase tracking-[2px] text-[10px] mb-1">
-                  Current Plan
-                </Text>
-                <Text className="text-white text-3xl tracking-tighter">Daily Hifz</Text>
+                  <Text className="text-white/70 text-[10px] uppercase tracking-widest mb-2">Quran Journey</Text>
 
+                <View className="flex-row items-center gap-2 ">
+                  <Text className="text-white text-xl tracking-tighter leading-tight">
+                    {analytics?.startSurah?.replace(/^Surah\s+/i, '')} — {analytics?.endSurah?.replace(/^Surah\s+/i, '')}
+                  </Text>
+                </View>
                 <View className={`flex-row items-center px-2 py-0.5 rounded-full mr-auto mt-2 ${config.bg} border border-white/10`}>
                   <View className={`w-1 h-1 rounded-full mr-1.5 ${config.dot}`} />
                   <Text className={`text-[9px]  uppercase tracking-wider ${config.color}`}>
@@ -144,7 +128,7 @@ export default function Hifz() {
                   {analytics.todayTarget}
                 </Text>
                 <Text className="text-white/50 text-[9px] uppercase tracking-widest mt-1">
-                  Daily Pages
+                  Daily Target
                 </Text>
               </View>
 
@@ -153,26 +137,27 @@ export default function Hifz() {
                   {analytics.targetEndDate}
                 </Text>
                 <Text className="text-white/50 text-[9px] uppercase tracking-widest mt-1">
-                  Target End
+                  Est. Completion
                 </Text>
               </View>
             </View>
           </View>
-          <View className="mt-10">
-            <Text className="text-gray-400   uppercase tracking-[2px] text-[10px] mb-2 px-1">
-              Focus
+          
+          <View className="mt-10 px-1">
+            <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
+              Active Task
             </Text>
             <Text className="text-xl  text-gray-900 mb-4 px-1">Today Hifz</Text>
             {todayTask ?
               <HifzActionCard 
                 hifz={hifz} 
-                todayTask={todayTask} 
+                task={todayTask} 
                 onStart={() => {
                   session.openSession(todayTask.startPage);
                   router.push(`/(app)/quran/reader?page=${todayTask.startPage}&planId=${hifz.id}&type=hifz&start=${todayTask.startPage}&end=${todayTask.endPage}`);
                 }}
                 onResume={() => {
-                  router.push(`/(app)/quran/reader?page=${session.currentPage}&planId=${hifz.id}&type=hifz&start=${todayTask.startPage}&end=${todayTask.endPage}`);
+                  router.push(`/(app)/quran/reader?page=${session.currentPage}&planId=${hifz?.id}&type=hifz&start=${todayTask.startPage}&end=${todayTask.endPage}`);
                 }}
                 onDetails={() => router.push("/(app)/hifz/log")}
               />
@@ -180,36 +165,94 @@ export default function Hifz() {
                 <View className="w-12 h-12 bg-slate-50 rounded-full items-center justify-center mb-4">
                   <Ionicons name="cafe-outline" size={24} color="#276359" />
                 </View>
-                <Text className="text-slate-900 text-base text-center mb-1">Rest Day for Hifz</Text>
+                <Text className="text-slate-900 text-base text-center mb-1">Rest Day</Text>
                 <Text className="text-slate-500 text-xs text-center mb-6 px-4">
-                  No Hifz tasks today. You can take a break or log an extra session to keep your momentum.
+                  No new tasks scheduled today. Focus on reviews or reinforcement below.
                 </Text>
                 <Button 
                   variant="outline" 
                   className="w-full border-slate-100 bg-slate-50"
                   onPress={() => router.push("/(app)/hifz/log")}
                 >
-                  <Text style={{ color: '#276359' }} className="text-xs uppercase tracking-widest ">Log Extra Hifz</Text>
+                  <Text style={{ color: '#276359' }} className="text-xs uppercase tracking-widest ">Log Extra Session</Text>
                 </Button>
               </View>
             }
           </View>
 
-          <View className="mt-8 px-1">
-            <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
-              Review
-            </Text>
-            <Text className="text-xl text-gray-900 mb-4">
-               Review for Today
-            </Text>
-            {suggestions.length > 0 ?
+          {reinforcementTask && (
+            <View className="mt-10 px-1">
+              <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
+                Reinforcement
+              </Text>
+              <Text className="text-xl text-gray-900 mb-4">Short-term Retention</Text>
+              <HifzActionCard
+                hifz={hifz!}
+                task={reinforcementTask}
+                title={reinforcementTask.displaySurah}
+                subTitle={`Review last ${reinforcementTask.pagesCount} memorized pages`}
+                typeLabel="Reinforce"
+                onStart={() => {
+                  session.openSession(reinforcementTask.startPage);
+                  router.push(`/(app)/quran/reader?page=${reinforcementTask.startPage}&planId=${hifz?.id}&type=hifz&start=${reinforcementTask.startPage}&end=${reinforcementTask.endPage}`);
+                }}
+                onDetails={() => router.push("/(app)/hifz/log")}
+              />
+            </View>
+          )}
+
+          {suggestions.length > 0 && (
+            <View className="mt-10 px-1">
+              <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
+                SRS Review
+              </Text>
+              <Text className="text-xl text-gray-900 mb-4">Spaced Repetition</Text>
               <View className="gap-y-3">
-                {suggestions.slice(0, 5).map((item) => {
+                {suggestions.slice(0, 3).map((item) => {
                   const color = getReviewPriorityColor(item.priority);
                   return (
                     <Pressable
                       key={`${item.sourceLogId}-${item.cycleDay}`}
-                      className="rounded-2xl border border-slate-200 bg-white p-4"
+                      className="rounded-[24px] border border-slate-100 bg-white p-5 flex-row items-center justify-between shadow-sm active:scale-[0.98]"
+                      onPress={() =>
+                        router.push(
+                          `/(app)/hifz/log?reviewStartPage=${item.startPage}&reviewEndPage=${item.endPage}&reviewCycleDay=${item.cycleDay}` as never,
+                        )
+                      }
+                    >
+                      <View>
+                        <Text className="text-slate-900 text-base mb-1">
+                          {item.startSurah === item.endSurah ? item.startSurah : `${item.startSurah} - ${item.endSurah}`}
+                        </Text>
+                        <Text className="text-slate-500 text-[10px] uppercase tracking-wider">
+                          Pages {item.startPage}-{item.endPage} · {item.overdueDays > 0 ? `${item.overdueDays}d overdue` : 'Due today'}
+                        </Text>
+                      </View>
+                      <View className={`px-3 py-1 rounded-full ${color.badge}`}>
+                        <Text className={`text-[9px] uppercase tracking-widest ${color.text}`}>
+                          {item.priority}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* Remaining SRS suggestions (Step 5 - Optional) */}
+          {suggestions.length > 3 && (
+             <View className="mt-10 px-1">
+              <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
+                Upcoming Reviews
+              </Text>
+              <View className="gap-y-3">
+                {suggestions.slice(3, 6).map((item) => {
+                  const color = getReviewPriorityColor(item.priority);
+                  return (
+                    <Pressable
+                      key={`${item.sourceLogId}-${item.cycleDay}`}
+                      className="rounded-2xl border border-slate-100 bg-white p-4"
                       onPress={() =>
                         router.push(
                           `/(app)/hifz/log?reviewStartPage=${item.startPage}&reviewEndPage=${item.endPage}&reviewCycleDay=${item.cycleDay}` as never,
@@ -218,35 +261,23 @@ export default function Hifz() {
                     >
                       <View className="flex-row items-center justify-between mb-2">
                         <Text className="text-slate-900 text-sm">
-                          {item.startSurah === item.endSurah ?
-                            item.startSurah
-                          : `${item.startSurah} - ${item.endSurah}`}
+                          {item.startSurah === item.endSurah ? item.startSurah : `${item.startSurah} - ${item.endSurah}`}
                         </Text>
-                        <View
-                          className={`px-2 py-1 rounded-full ${color.badge}`}
-                        >
-                          <Text
-                            className={`text-[10px] uppercase tracking-wide ${color.text}`}
-                          >
+                        <View className={`px-2 py-1 rounded-full ${color.badge}`}>
+                          <Text className={`text-[10px] uppercase tracking-wide ${color.text}`}>
                             {item.priority}
                           </Text>
                         </View>
                       </View>
                       <Text className="text-slate-600 text-xs">
-                        Pages {item.startPage}-{item.endPage} · Cycle{" "}
-                        {item.cycleDay} · Due {item.dueDate}
+                        Pages {item.startPage}-{item.endPage} · Due {item.dueDate}
                       </Text>
                     </Pressable>
                   );
                 })}
               </View>
-            : <View className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-                <Text className="text-emerald-700 text-sm">
-                  You&apos;re all caught up 🎉
-                </Text>
-              </View>
-            }
-          </View>
+            </View>
+          )}
 
           {latestNotificationQuery.data && (
             <View className="mt-8 px-1">
@@ -322,10 +353,12 @@ export default function Hifz() {
           <View className="flex-row gap-x-3">
             <Button
               className="flex-1 shadow-lg shadow-primary/20"
-              onPress={() => router.push(`/(app)/log-center?type=hifz`)}
+              onPress={() => router.push("/(app)/hifz/log")}
             >
-              <Ionicons name="add-circle" size={20} color="white" />
-              Log Progress
+              <Ionicons name="add-circle-outline" size={20} color="white" />
+              <Text className="text-white">
+            Log Progress
+              </Text>
             </Button>
 
             <Button
@@ -334,7 +367,9 @@ export default function Hifz() {
               onPress={() => router.push("/(app)/hifz/create-hifz-plan")}
             >
               <Ionicons name="create-outline" size={18} color="#276359" />
-              Edit Plan
+              <Text>
+                Edit Plan
+              </Text> 
             </Button>
           </View>
         </ScreenFooter>

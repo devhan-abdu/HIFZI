@@ -22,6 +22,10 @@ import { useState } from "react";
 import { SuggestionsSheet } from "@/src/features/habit/components/SuggestionsSheet";
 import { useAdaptiveGuidance } from "@/src/features/habit/hooks/useAdaptiveGuidance";
 import { useHifzPlan } from "@/src/features/hifz/hooks/useHifzPlan";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { runHifzSeedingScenario } from "@/src/features/hifz/utils/seed-hifz-logic";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 import { useUserStats } from "@/src/hooks/useUserStats";
 import { useUserBadges } from "@/src/hooks/useUserBadges";
@@ -30,6 +34,7 @@ import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionS
 
 export default function Dashboard() {
   const { user } = useSession();
+  const queryClient = useQueryClient();
   const session = useReaderSessionStore();
   const { items: surah, loading } = useLoadSurahData();
   const { hifz: hifzPlan, isLoading: loadingHifz } = useHifzPlan();
@@ -64,6 +69,20 @@ export default function Dashboard() {
     if (!hifzPlan || !surah.length) return null;
     return hifzStatus(hifzPlan, surah);
   }, [hifzPlan, surah]);
+
+  useEffect(() => {
+    if (__DEV__ && user?.id && surah.length > 0) {
+      const initSeeding = async () => {
+        const hasSeeded = await AsyncStorage.getItem("SEED_V1");
+        if (!hasSeeded) {
+          await runHifzSeedingScenario(user.id, surah, "inconsistent_user");
+          await AsyncStorage.setItem("SEED_V1", "true");
+          queryClient.invalidateQueries();
+        }
+      };
+      initSeeding();
+    }
+  }, [user?.id, surah.length]);
 
  
 

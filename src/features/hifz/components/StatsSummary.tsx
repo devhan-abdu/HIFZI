@@ -22,6 +22,9 @@ const StatsSummary = ({
     direction: formData.direction ?? "forward",
     selectedDays: formData.selectedDays ?? [0, 1, 2, 3],
     pages_per_day: formData.pages_per_day ?? 2,
+    preferred_time: formData.preferred_time ?? "fajr",
+    is_custom_time: formData.is_custom_time ?? false,
+    is_reinforcement_enabled: formData.is_reinforcement_enabled ?? true,
   };
   const stats = useMemo(
     () => calculatePlanStats(safeFormData),
@@ -44,13 +47,13 @@ const StatsSummary = ({
   }, [formData.start_surah, surah]);
 
   return (
-    <View className="bg-primary p-6 rounded-[32px] mb-8 shadow-2xl shadow-primary/30">
+    <View className="bg-slate-50 p-6 rounded-[24px] mb-8 border border-slate-100">
       <View className="flex-row justify-between items-start mb-6">
         <View>
-          <Text className="text-white/70 text-[10px] uppercase  tracking-[2px] mb-1">
+          <Text className="text-slate-400 text-[10px] uppercase tracking-[1.5px] mb-1">
             Estimated Completion
           </Text>
-          <Text className="text-white text-3xl  tracking-tight">
+          <Text className="text-primary text-2xl tracking-tight">
             {stats.finishDate.toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
@@ -58,46 +61,46 @@ const StatsSummary = ({
             })}
           </Text>
         </View>
-        <View className="bg-white/20 px-3 py-1.5 rounded-xl border border-white/20">
-          <Text className="text-white text-[10px]  uppercase tracking-wider">
-            {formData.direction === "backward" ? "Backward" : "Forward"}
+        <View className="bg-white px-3 py-1 rounded-full border border-slate-200">
+          <Text className="text-slate-500 text-[9px] uppercase tracking-wider">
+            {formData.direction === "backward" ? "Juz Amma First" : "Traditional"}
           </Text>
         </View>
       </View>
 
-      <View className="bg-white/10 rounded-2xl p-4 mb-6 flex-row items-center justify-between border border-white/10">
+      <View className="flex-row items-center justify-between py-4 border-y border-slate-100 mb-6">
         <View className="flex-1">
-          <Text className="text-white/50 text-[9px]  uppercase mb-1">From</Text>
-          <Text className="text-white   text-sm" numberOfLines={1}>
+          <Text className="text-slate-400 text-[9px] uppercase mb-1">Start</Text>
+          <Text className="text-slate-900 text-sm" numberOfLines={1}>
             {startSurahName}
           </Text>
         </View>
 
-        <View className="px-3 bg-white/20 py-1 rounded-full mx-2">
-          <Ionicons name="arrow-forward" size={14} color="white" />
+        <View className="w-8 h-8 items-center justify-center bg-white rounded-full border border-slate-100 mx-4">
+          <Ionicons name="chevron-forward" size={14} color="#276359" />
         </View>
 
         <View className="flex-1 items-end">
-          <Text className="text-white/50 text-[9px]  uppercase mb-1">To</Text>
-          <Text className="text-white   text-sm" numberOfLines={1}>
+          <Text className="text-slate-400 text-[9px] uppercase mb-1">Target</Text>
+          <Text className="text-slate-900 text-sm" numberOfLines={1}>
             {stats.targetSurah}
           </Text>
         </View>
       </View>
 
-      <View className="flex-row border-t border-white/10 pt-5 justify-between">
+      <View className="flex-row justify-between">
         <View>
-          <Text className="text-white/60 text-[10px]  uppercase tracking-widest mb-1">
-            Total Pages
+          <Text className="text-slate-400 text-[9px] uppercase tracking-widest mb-1">
+            Volume
           </Text>
-          <Text className="text-white text-xl ">{stats.totalPages} Pages</Text>
+          <Text className="text-slate-700 text-lg">{stats.totalPages} Pages</Text>
         </View>
 
         <View className="items-end">
-          <Text className="text-white/60 text-[10px]  uppercase tracking-widest mb-1">
-            Journey Length
+          <Text className="text-slate-400 text-[9px] uppercase tracking-widest mb-1">
+            Duration
           </Text>
-          <Text className="text-white text-xl ">
+          <Text className="text-slate-700 text-lg">
             {stats.daysNeeded >= 30 ?
               `~${Math.round(stats.daysNeeded / 30)} Months`
             : `${stats.daysNeeded} Days`}

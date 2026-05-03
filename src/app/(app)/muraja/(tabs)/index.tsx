@@ -187,7 +187,7 @@ export default function MurajaIndex() {
           <View className="flex-row gap-x-3">
             <Button
               className="flex-1 shadow-lg shadow-primary/20"
-              onPress={() => router.push(`/(app)/log-center?type=muraja`)}
+              onPress={() => router.push(`/(app)/muraja/log`)}
             >
               <Ionicons name="add-circle" size={20} color="white" />
               <Text className="text-white">
