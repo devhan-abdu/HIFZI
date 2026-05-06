@@ -138,6 +138,7 @@ export const hifzService = {
     let changed = false;
     let created = false;
     let previousStatus: IHifzLog["status"] | null = null;
+    let rewards = null;
 
     await db.transaction(async (tx) => {
       const existing = await tx.query.hifzLogs.findFirst({
@@ -278,7 +279,7 @@ export const hifzService = {
       }
       
       const { currentStreak } = await habitAnalyticsService.recalculateStreaks(userId);
-      await GamificationService.processSessionCompletion(tx as any, userId, qualityScore, currentStreak);
+      rewards = await GamificationService.processSessionCompletion(tx as any, userId, qualityScore, currentStreak);
 
       if (changed && (todayLog.status === "completed" || todayLog.status === "partial" || todayLog.status === "missed")) {
         await notificationService.processHabitEvent({
@@ -296,7 +297,7 @@ export const hifzService = {
       void new HabitRepository().syncPendingLogs(userId).catch(e => console.warn(e));
     }
 
-    return { id: localId, changed, created, previousStatus, currentStatus: todayLog.status };
+    return { id: localId, changed, created, previousStatus, currentStatus: todayLog.status, rewards };
   },
 
   async syncPending(userId: string) {

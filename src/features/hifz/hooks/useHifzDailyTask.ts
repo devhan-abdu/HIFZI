@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { getTargetPage } from "../utils/getTargetPage";
 import { getTodayTask } from "../utils/quran-logic";
@@ -48,7 +49,6 @@ export function useHifzDailyTask() {
       };
     }
 
-    // explain how it work what is target info why we use it 
     return {
       ...task,
       ...targetInfo,
@@ -64,10 +64,32 @@ export function useHifzDailyTask() {
     return getReinforcementRange(hifz, surah, 5);
   }, [hifz, surah]);
 
+  const { data: isReinforcementDone } = useQuery({
+    queryKey: ['reinforcement-status', hifz?.user_id],
+    queryFn: async () => {
+      if (!hifz?.user_id) return false;
+      const { db } = await import("@/src/lib/db/local-client");
+      const { pageActivityLogs } = await import("@/src/features/habits/database/habitSchema");
+      const { and, gte, eq } = await import("drizzle-orm");
+      
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const rows = await db.query.pageActivityLogs.findMany({
+        where: and(
+          eq(pageActivityLogs.userId, hifz.user_id),
+          eq(pageActivityLogs.source, 'muraja'),
+          gte(pageActivityLogs.logDate, todayStr)
+        )
+      });
+      return rows.length > 0;
+    },
+    enabled: !!hifz?.user_id && !!reinforcementTask
+  });
+
   return {
     hifz,
     todayTask,
     reinforcementTask,
+    isReinforcementDone: !!isReinforcementDone,
     srsSuggestions,
     analytics,
     loading: isLoading || surahLoading,

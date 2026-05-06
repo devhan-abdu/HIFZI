@@ -16,6 +16,7 @@ export type HabitLogMetadata = {
   status?: "completed" | "missed" | "undone";
   reference?: string | null;
   recordedAt?: string;
+  isReinforcement?: boolean;
 };
 
 export type HabitHistoryEntry = {

@@ -6,6 +6,7 @@ import { PageMasteryService } from "@/src/services/PageMasteryService";
 import { PerformanceService } from "@/src/services/PerformanceService";
 import { GamificationService } from "@/src/services/GamificationService";
 import { habitProgressService } from "@/src/features/habits/services/habitProgressService";
+import { habitAnalyticsService } from "@/src/features/habits/services/habitAnalyticsService";
 import { userStats } from "@/src/features/user/database/userSchema";
 import { eq } from "drizzle-orm";
 
@@ -21,6 +22,8 @@ export function useRetentionLog() {
 
   const mutation = useMutation({
     mutationFn: async (payload: RetentionPayload) => {
+        console.log('useRetentionLog' , payload.pages);
+
       if (!user?.id || !payload.pages.length) return;
 
       const quality: 'perfect' | 'medium' | 'low' = 
@@ -59,7 +62,6 @@ export function useRetentionLog() {
           localRefId: -100 
         });
 
-        // 4. Award XP and process rewards
         const stats = await tx.query.userStats.findFirst({
           where: eq(userStats.userId, user.id!)
         });
@@ -71,6 +73,8 @@ export function useRetentionLog() {
           payload.quality,
           currentStreak
         );
+
+        await habitAnalyticsService.recalculateStreaks(user.id!);
       });
 
       return { success: true };
@@ -80,6 +84,8 @@ export function useRetentionLog() {
       queryClient.invalidateQueries({ queryKey: ["page-performance-all"] });
       queryClient.invalidateQueries({ queryKey: ["hifz-review-suggestions", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["hifz", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["reinforcement-status", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["user-stats", user?.id] });
     },
   });
 

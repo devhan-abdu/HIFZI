@@ -36,7 +36,7 @@ export const habitAnalyticsService = {
       finalBySource.set(sourceKey, { ...log, eventType, sourceDate });
 
       if (sourceDate === today) {
-        if (eventType.includes("_COMPLETED")) {
+        if (eventType.includes("_COMPLETED") && !meta.isReinforcement) {
           completedPagesToday += log.unitsCompleted || 0;
         }
       }
