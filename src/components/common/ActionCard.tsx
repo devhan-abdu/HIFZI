@@ -15,6 +15,7 @@ interface ActionCardProps {
   onResume?: () => void;
   isResumable?: boolean;
   onDetails: () => void;
+  hideActionButtons?: boolean;
 }
 
 export const ActionTaskCard = ({
@@ -29,6 +30,7 @@ export const ActionTaskCard = ({
   onResume,
   isResumable,
   onDetails,
+  hideActionButtons,
 }: ActionCardProps) => {
     const isCompleted = status === "completed";
     const isPartial = status === "partial";
@@ -93,38 +95,40 @@ export const ActionTaskCard = ({
         </Pressable>
       </View>
 
-      <View className="mt-8 flex-row items-center justify-between">
-        <View className="flex-row items-center">
-          {isLoading ? (
-            <ActivityIndicator size="small" color={accentColor} />
-          ) : (
-            <>
-              <Text style={{ color: isFinished ? '#94a3b8' : accentColor }} className="uppercase tracking-widest text-[10px]">
-                {isFinished ? (isCompleted ? "Open Mushaf" : "Resume Session") : isResumable ? "Resume Session" : "Open Mushaf"}
-              </Text>
-              <Ionicons 
-                name={isFinished ? "arrow-forward" : "chevron-forward"} 
-                size={12} 
-                color={isFinished ? "#94a3b8" : accentColor} 
-                style={{ marginLeft: 6 }} 
-              />
-            </>
+      {!hideActionButtons && (
+        <View className="mt-8 flex-row items-center justify-between">
+          <View className="flex-row items-center">
+            {isLoading ? (
+              <ActivityIndicator size="small" color={accentColor} />
+            ) : (
+              <>
+                <Text style={{ color: isFinished ? '#94a3b8' : accentColor }} className="uppercase tracking-widest text-[10px]">
+                  {isFinished ? (isCompleted ? "Open Mushaf" : "Resume Session") : isResumable ? "Resume Session" : "Open Mushaf"}
+                </Text>
+                <Ionicons 
+                  name={isFinished ? "arrow-forward" : "chevron-forward"} 
+                  size={12} 
+                  color={isFinished ? "#94a3b8" : accentColor} 
+                  style={{ marginLeft: 6 }} 
+                />
+              </>
+            )}
+          </View>
+
+          {!isCompleted && (
+            <Pressable 
+              onPress={(e) => {
+                e.stopPropagation();
+                onDone();
+              }}
+              className="h-10 px-4 rounded-lg flex-row items-center bg-slate-50 border border-slate-100 active:bg-slate-100"
+            >
+              <Ionicons name="checkmark-circle-outline" size={16} color={accentColor} />
+              <Text style={{ color: accentColor }} className="uppercase tracking-widest text-[9px] ml-2">Mark Done</Text>
+            </Pressable>
           )}
         </View>
-
-        {!isCompleted && (
-          <Pressable 
-            onPress={(e) => {
-              e.stopPropagation();
-              onDone();
-            }}
-            className="h-10 px-4 rounded-lg flex-row items-center bg-slate-50 border border-slate-100 active:bg-slate-100"
-          >
-            <Ionicons name="checkmark-circle-outline" size={16} color={accentColor} />
-            <Text style={{ color: accentColor }} className="uppercase tracking-widest text-[9px] ml-2">Mark Done</Text>
-          </Pressable>
-        )}
-      </View>
+      )}
     </Pressable>
   );
 };

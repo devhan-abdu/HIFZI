@@ -98,31 +98,11 @@ export const HifzActionCard = ({
   const handleStatusChange = async (status: "completed" | "pending" | "missed", quality?: number) => {
     if (!hifz || !task || isLoading || !hifz.id) return;
 
-    const logDay = (new Date().getDay() + 6) % 7;
-    const duration = quality ? session.getDurationMinutes() : undefined;
-    const pagesViewed = session.pagesViewed;
-    
-    const actualEnd = pagesViewed.length > 0 ? Math.max(...pagesViewed) : task.endPage;
-    const actualCount = pagesViewed.length > 0 ? pagesViewed.length : (task.target || hifz.pages_per_day);
-
-    const payload = {
-      hifz_plan_id: hifz.id!,
-      actual_pages_completed: status === "completed" ? actualCount : 0,
-      actual_start_page: task.startPage,
-      actual_end_page: status === "completed" ? actualEnd : task.endPage,
-      status: status,
-      date: todayStr,
-      log_day: logDay,
-      quality_score: quality,
-      actual_minutes_spent: duration,
-    };
-
     try {
       if (isReinforcement) {
         if (status === "completed") {
           await logRetention({
-            startPage: task.startPage,
-            endPage: task.endPage,
+            pages: task.actualPages || [],
             quality: quality || 5,
             date: todayStr
           });
@@ -130,6 +110,25 @@ export const HifzActionCard = ({
         }
         return;
       }
+
+      const logDay = (new Date().getDay() + 6) % 7;
+      const duration = quality ? session.getDurationMinutes() : undefined;
+      const pagesViewed = session.pagesViewed;
+      
+      const actualEnd = pagesViewed.length > 0 ? Math.max(...pagesViewed) : task.endPage;
+      const actualCount = pagesViewed.length > 0 ? pagesViewed.length : (task.target || hifz.pages_per_day);
+
+      const payload = {
+        hifz_plan_id: hifz.id!,
+        actual_pages_completed: status === "completed" ? actualCount : 0,
+        actual_start_page: task.startPage,
+        actual_end_page: status === "completed" ? actualEnd : task.endPage,
+        status: status,
+        date: todayStr,
+        log_day: logDay,
+        quality_score: quality,
+        actual_minutes_spent: duration,
+      };
 
       await addLog({ todayLog: payload as any, userId: user?.id });
       
@@ -169,7 +168,7 @@ export const HifzActionCard = ({
         isCatchup={task.isCatchup}
         status={currentStatus}
         isLoading={isLoading}
-        onDone={() => {
+        onDone={isReinforcement && currentStatus === "completed" ? undefined : () => {
           if (currentStatus === "completed") {
             handleStatusChange("pending");
           } else {
@@ -180,6 +179,7 @@ export const HifzActionCard = ({
         onResume={onResume}
         isResumable={isResumable}
         onDetails={onDetails}
+        hideActionButtons={isReinforcement && currentStatus === "completed"}
       />
 
       <QualityModal
