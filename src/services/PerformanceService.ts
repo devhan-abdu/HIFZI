@@ -245,9 +245,22 @@ export const PerformanceService = {
     endPage: number,
     qualityScore: number
   ) {
+    const pages = [];
+    for (let p = startPage; p <= endPage; p++) {
+      pages.push(p);
+    }
+    await this.updatePagesPerformance(db, userId, pages, qualityScore);
+  },
+
+  async updatePagesPerformance(
+    db: any,
+    userId: string,
+    pages: number[],
+    qualityScore: number
+  ) {
     const tx = db || drizzleDb;
     const today = new Date();
-    for (let p = startPage; p <= endPage; p++) {
+    for (const p of pages) {
       await this.updatePagePerformance(tx, userId, p, qualityScore, today);
     }
   },

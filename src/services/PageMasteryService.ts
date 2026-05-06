@@ -52,19 +52,35 @@ export const PageMasteryService = {
     mistakesPerPage: number = 0,
     hesitationsPerPage: number = 0
   ) {
-    const logs = [];
+    const pages = [];
     for (let p = startPage; p <= endPage; p++) {
-      logs.push({
-        userId,
-        pageId: p,
-        source,
-        localLogId,
-        logDate,
-        sessionQuality: quality,
-        mistakesCount: mistakesPerPage,
-        hesitationsCount: hesitationsPerPage,
-      });
+      pages.push(p);
     }
+    await this.logPagesActivity(tx, userId, localLogId, logDate, pages, source, quality, mistakesPerPage, hesitationsPerPage);
+  },
+
+  async logPagesActivity(
+    tx: any,
+    userId: string,
+    localLogId: number,
+    logDate: string,
+    pages: number[],
+    source: 'hifz' | 'muraja',
+    quality: 'perfect' | 'medium' | 'low',
+    mistakesPerPage: number = 0,
+    hesitationsPerPage: number = 0
+  ) {
+    const logs = pages.map(p => ({
+      userId,
+      pageId: p,
+      source,
+      localLogId,
+      logDate,
+      sessionQuality: quality,
+      mistakesCount: mistakesPerPage,
+      hesitationsCount: hesitationsPerPage,
+    }));
+
     if (logs.length > 0) {
       await tx.insert(pageActivityLogs).values(logs);
     }
@@ -77,7 +93,7 @@ export const PageMasteryService = {
     source: 'hifz' | 'muraja',
     localLogId: number,
     logDate: string,
-    range: { start: number; end: number } | null,
+    pages: number[] | null,
     quality: 'perfect' | 'medium' | 'low',
     mistakes: number = 0,
     hesitations: number = 0
@@ -88,11 +104,11 @@ export const PageMasteryService = {
       eq(pageActivityLogs.localLogId, localLogId)
     ));
 
-    if (range && range.start > 0 && range.end >= range.start) {
-      const pageCount = Math.max(1, range.end - range.start + 1);
+    if (pages && pages.length > 0) {
+      const pageCount = pages.length;
       const mistakesPerPage = Math.ceil(mistakes / pageCount);
       const hesitationsPerPage = Math.ceil(hesitations / pageCount);
-      await this.logPageRangeActivity(tx, userId, localLogId, logDate, range.start, range.end, source, quality, mistakesPerPage, hesitationsPerPage);
+      await this.logPagesActivity(tx, userId, localLogId, logDate, pages, source, quality, mistakesPerPage, hesitationsPerPage);
     }
   },
 

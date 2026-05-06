@@ -16,6 +16,8 @@ import { HabitRepository } from "@/src/features/habits/services/habitRepository"
 import { habitStackingService } from "@/src/features/habits/services/habitStackingService";
 
 import { PageMasteryService } from "@/src/services/PageMasteryService";
+import { useCatalogStore } from "../../quran/store/catalogStore";
+import { getPagesFromLog } from "../utils/quran-logic";
 
 export const hifzService = {
   async createPlan(planData: Omit<IHifzPlan, "hifz_daily_logs" | "id"> & { user_id: string }) {
@@ -245,19 +247,35 @@ export const hifzService = {
       const qualityScore = todayLog.quality_score ?? PerformanceService.deriveQualityScore(todayLog.mistakes_count ?? 0, todayLog.hesitation_count ?? 0);
       const quality: 'perfect' | 'medium' | 'low' = qualityScore >= 5 ? 'perfect' : qualityScore <= 2 ? 'low' : 'medium';
 
+      const surahData = useCatalogStore.getState().surahs;
+      const plan = await tx.query.hifzPlans.findFirst({
+        where: eq(hifzPlans.id, todayLog.hifz_plan_id)
+      });
+      const direction = (plan?.direction as 'forward' | 'backward') || 'forward';
+      const pages = isMissed ? [] : getPagesFromLog(todayLog, direction, surahData);
+
       await PageMasteryService.syncPageActivityLogs(
         tx,
         userId,
         'hifz',
         localId,
         todayLog.date,
-        isMissed ? null : { start: todayLog.actual_start_page, end: todayLog.actual_end_page },
+        isMissed ? null : pages,
         quality,
         todayLog.mistakes_count ?? 0,
         todayLog.hesitation_count ?? 0
       );
 
-      await PerformanceService.recomputeAllPerformance(tx, userId);
+      if (!isMissed && pages.length > 0) {
+        await PerformanceService.updatePagesPerformance(
+          tx,
+          userId,
+          pages,
+          qualityScore
+        );
+      } else {
+        await PerformanceService.recomputeAllPerformance(tx, userId);
+      }
       
       const { currentStreak } = await habitAnalyticsService.recalculateStreaks(userId);
       await GamificationService.processSessionCompletion(tx as any, userId, qualityScore, currentStreak);

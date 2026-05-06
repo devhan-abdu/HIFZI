@@ -150,15 +150,16 @@ export const getReinforcementRange = (
       if (!pages.includes(logPages[i])) {
         pages.push(logPages[i]);
       }
-        if (pages.length >= count) break;
+      if (pages.length >= count) break;
     }
     if (pages.length >= count) break;
   }
 
   if (pages.length === 0) return null;
 
-  const startPage = hifzPlan.direction === 'forward' ? Math.min(...pages) : Math.max(...pages);
-  const endPage = hifzPlan.direction === 'forward' ? Math.max(...pages) : Math.min(...pages);
+  const actualPages = [...pages].reverse();
+  const startPage = actualPages[0];
+  const endPage = actualPages[actualPages.length - 1];
   
   const sSurah = getSurah(startPage, surahData);
   const eSurah = getSurah(endPage, surahData);
@@ -166,13 +167,12 @@ export const getReinforcementRange = (
   return {
     startPage,
     endPage,
+    actualPages,
     startSurah: sSurah?.englishName,
     endSurah: eSurah?.englishName,
-    pagesCount: pages.length,
+    pagesCount: actualPages.length,
     displaySurah: sSurah?.number === eSurah?.number
       ? sSurah?.englishName
-      : hifzPlan.direction === 'forward' 
-        ? `${sSurah?.englishName} - ${eSurah?.englishName}`
-        : `${eSurah?.englishName} - ${sSurah?.englishName}`,
+      : `${sSurah?.englishName} – ${eSurah?.englishName}`,
   };
 };
