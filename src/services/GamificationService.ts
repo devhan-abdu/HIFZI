@@ -54,6 +54,15 @@ export const GamificationService = {
       badgeType: type,
       metadata: metadata ? JSON.stringify(metadata) : null,
     });
+
+    // Create a persistent notification for the badge
+    await notificationRepository.createNotification(userId, {
+      type: 'badge',
+      title: 'New Badge Earned!',
+      message: `Mubarak! You've earned the ${type.replace(/_/g, ' ')} badge.`,
+      eventKey: `badge_${type}_${Date.now()}`
+    });
+
     return badgeId;
   },
 

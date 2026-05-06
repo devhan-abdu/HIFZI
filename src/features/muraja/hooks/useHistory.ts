@@ -1,7 +1,7 @@
 import {  useMemo } from "react"
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "@/src/hooks/useSession";
-import { murajaServices } from "../services/murajaServices";
+import { murajaService } from "../services/murajaService";
 import { calculateStreak } from "../utils/calculateStreak";
 
 
@@ -12,7 +12,7 @@ export const useHistory = (year:number , month:number) => {
         queryKey: ["muraja-history", year, month],
         queryFn: () => {
             if (!user?.id) return null;
-            return murajaServices.getMonthlyHistory(year, month, user.id);
+            return murajaService.getMonthlyHistory(year, month, user.id);
         },
         enabled: !!user?.id && !!year && !!month , 
     });
@@ -22,28 +22,22 @@ export const useHistory = (year:number , month:number) => {
         if (!plans) return  { userHistory: [], weekHistory: [] };;
         
        const history = plans.flatMap((week) =>
-       week.weekly_plan_days.flatMap((day) =>
-        day.daily_muraja_logs.map((log) => ({
-        date: log.date,
-        status: log.status,
-         }))))
+        week.daily_muraja_logs.map((log) => ({
+          date: log.date,
+          status: log.status,
+        })));
         
        const reviews = plans
-           .map((p) =>( {
-           id: p.id,
-            week_start_date: p.week_start_date,
-            week_end_date: p.week_end_date,
-            start_surah: p.start_surah,
-            end_surah: p.end_surah,
-            start_page: p.start_page,
-            end_page: p.end_page,
-            start_juz: p.start_juz,
-            end_juz: p.end_juz,
-            planned_pages: p.planned_pages,
-            estimated_time_min: p.estimated_time_min,
-            status:p.status
-       }))
-      .filter((p) => p.status === "completed"); 
+            .map((p) => ({
+                id: p.id,
+                week_start_date: p.weekStartDate,
+                week_end_date: p.weekEndDate,
+                start_page: p.startPage,
+                end_page: p.endPage,
+                planned_pages: p.plannedPagesPerDay,
+                estimated_time_min: p.estimatedTimeMin,
+                status: p.isActive ? "active" : "completed"
+            }));
         
         return { userHistory: history, weekHistory: reviews };
         
@@ -67,19 +61,15 @@ export const useHistory = (year:number , month:number) => {
         
 
         plans.forEach(plan => {
-            plan.weekly_plan_days.forEach(day => {
-                
+            plan.daily_muraja_logs.forEach(log => {
                 totalPlannedDays++;
-                allPlannedDates.add(day.date);
+                if (log.date) allPlannedDates.add(log.date);
 
-
-                const log = day.daily_muraja_logs[0]
-                if (log && log?.status === "completed" || log?.status === "partial") {
-                    completedDates.add(log.date)
+                if (log.status === "completed" || log.status === "partial") {
+                    completedDates.add(log.date!)
                     completedDays++;
-                    totalPages += (log.completed_pages || 0)
-                    totalMinutes += (log.actual_time_min || 0)
-                    
+                    totalPages += (log.completedPages || 0)
+                    totalMinutes += (log.actualTimeMin || 0)
                 }
             })
         })

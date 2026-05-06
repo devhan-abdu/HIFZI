@@ -18,6 +18,7 @@ export type LocalMurajaLogWriteResult = {
   created: boolean;
   previousStatus: IDailyMurajaLog["status"] | null;
   currentStatus: IDailyMurajaLog["status"] | "pending" | null;
+  rewards?: any;
 };
 
 export const murajaService = {
@@ -113,6 +114,7 @@ export const murajaService = {
 
  
   async syncUserAnalytics(tx: any, userId: string, planId: number, displayName?: string) {
+    let rewards = null;
     const allLogs = await tx.query.dailyMurajaLogs.findMany({
       where: eq(dailyMurajaLogs.planId, planId),
       orderBy: [desc(dailyMurajaLogs.date)],
@@ -171,8 +173,10 @@ export const murajaService = {
   
     if (calculatedStreak > 0) {
       const recentQuality = latestSuccessfulLog?.qualityScore ?? 3;
-      await GamificationService.processSessionCompletion(tx, userId, recentQuality, calculatedStreak);
+      rewards = await GamificationService.processSessionCompletion(tx, userId, recentQuality, calculatedStreak);
     }
+
+    return { rewards };
   },
 
   async upsertLog(userId: string, log: IDailyMurajaLog, displayName?: string): Promise<LocalMurajaLogWriteResult> {
@@ -181,6 +185,7 @@ export const murajaService = {
     let created = false;
     let previousStatus: IDailyMurajaLog["status"] | null = null;
     let currentStatus: IDailyMurajaLog["status"] | "pending" | null = null;
+    let rewards = null;
 
     await db.transaction(async (tx) => {
       const existing = await tx.query.dailyMurajaLogs.findFirst({
@@ -282,24 +287,25 @@ export const murajaService = {
         'muraja',
         localLogId!,
         log.date!,
-        isMissed ? null : { 
-          start: log.start_page ?? 0, 
-          end: (log.start_page ?? 0) + (log.completed_pages ?? 0) - 1 
-        },
+        isMissed ? null : Array.from(
+          { length: Math.max(0, (log.completed_pages ?? 0)) },
+          (_, i) => (log.start_page ?? 1) + i
+        ),
         quality,
         log.mistakes_count ?? 0,
         log.hesitation_count ?? 0
       );
 
       await PerformanceService.recomputeAllPerformance(tx, userId);
-      await this.syncUserAnalytics(tx, userId, log.plan_id, displayName);
+      const analytics = await this.syncUserAnalytics(tx, userId, log.plan_id, displayName);
+      rewards = analytics?.rewards;
     });
 
     if (changed) {
       void this.syncPending(userId);
     }
 
-    return { localLogId, changed, created, previousStatus, currentStatus };
+    return { localLogId, changed, created, previousStatus, currentStatus, rewards };
   },
 
   async syncPending(userId: string) {
@@ -423,5 +429,23 @@ export const murajaService = {
         quality_score: l.qualityScore,
       })),
     };
+  },
+
+  async getMonthlyHistory(year: number, month: number, userId: string) {
+    const startOfMonth = `${year}-${String(month).padStart(2, '0')}-01`;
+    const endOfMonth = `${year}-${String(month).padStart(2, '0')}-31`;
+
+    const plans = await db.query.weeklyMurajaPlans.findMany({
+      where: and(
+        eq(weeklyMurajaPlans.userId, userId),
+        sql`${weeklyMurajaPlans.weekStartDate} <= ${endOfMonth}`,
+        sql`${weeklyMurajaPlans.weekEndDate} >= ${startOfMonth}`
+      ),
+      with: {
+        daily_muraja_logs: true
+      }
+    });
+
+    return plans;
   }
 };

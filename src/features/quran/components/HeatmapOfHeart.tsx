@@ -1,14 +1,12 @@
 import React, { useState } from "react";
 import { View, Pressable, Dimensions } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
-import { useQuery } from "@tanstack/react-query";
-import { db } from "@/src/lib/db/local-client";
-import { pagePerformance } from "@/src/features/user/database/userSchema";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from 'expo-haptics';
 import { getSurahByPage } from "../../muraja/utils/quranMapping";
 import { useCatalogStore } from "../../quran/store/catalogStore";
+import { usePagePerformance, calculateRetrievability } from "../../user/hooks/usePagePerformance";
 
 const TOTAL_PAGES = 604;
 const { width: screenWidth } = Dimensions.get('window');
@@ -17,39 +15,7 @@ export const HeatmapOfHeart = () => {
   const [selectedPage, setSelectedPage] = useState<number | null>(null);
   const surahs = useCatalogStore(s => s.surahs);
 
-  const { data: performanceData, isLoading } = useQuery({
-    queryKey: ["page-performance-all"],
-    queryFn: async () => {
-      const rows = await db.select({
-        pageNumber: pagePerformance.pageNumber,
-        stability: pagePerformance.stability,
-        lastReviewedAt: pagePerformance.lastReviewedAt,
-        consecutivePerfects: pagePerformance.consecutivePerfects,
-        lastSessionQuality: pagePerformance.lastSessionQuality,
-        lastMistakesCount: pagePerformance.lastMistakesCount,
-      }).from(pagePerformance);
-      
-      const map = new Map<number, any>();
-      rows.forEach((r) => map.set(r.pageNumber, r));
-      return map;
-    },
-  });
-
-  // if (isLoading) return (
-  //   <View className="h-40 items-center justify-center bg-white rounded-[32px] border border-slate-100">
-  //     <Text className="text-slate-400 font-medium">Loading Heatmap...</Text>
-  //   </View>
-  // );
-
-  const calculateRetrievability = (stability: number, lastReviewedAt: string | null) => {
-    if (!lastReviewedAt || stability === 0) return 0;
-    const now = new Date();
-    const lastReview = new Date(lastReviewedAt);
-    const daysSince = (now.getTime() - lastReview.getTime()) / (1000 * 60 * 60 * 24);
-    
-    // R = e^(ln(0.9) * t / S)
-    return Math.pow(Math.E, Math.log(0.9) * daysSince / stability);
-  };
+  const { data: performanceData } = usePagePerformance();
 
   const pages = Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1);
 
