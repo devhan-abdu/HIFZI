@@ -1,86 +1,59 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSession } from "@/src/hooks/useSession";
-import { notificationRepository } from "../features/notifications/services/notificationRepository";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { notificationRepository } from "@/src/features/notifications/services/notificationRepository";
+import { useSession } from "./useSession";
+import { useMemo } from "react";
 
 export function useNotifications() {
-  const queryClient = useQueryClient();
   const { user } = useSession();
-  const userId = user?.id;
-  const notificationsKey = ["notifications", userId] as const;
-  const latestNotificationKey = ["latest-notification", userId] as const;
+  const queryClient = useQueryClient();
 
   const notificationsQuery = useQuery({
-    queryKey: notificationsKey,
-    enabled: !!userId,
-    queryFn: () => notificationRepository.getNotifications(userId!),
-    refetchInterval: 15000,
+    queryKey: ["notifications", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      if (!user?.id) return [];
+      return await notificationRepository.getNotifications(user.id);
+    },
+    staleTime: 1000 * 30, 
   });
-
-  const unreadNotifications = (notificationsQuery.data ?? []).filter((item) => item.isRead === 0);
-  const unreadCount = unreadNotifications.length;
 
   const markAsReadMutation = useMutation({
-    mutationFn: async (id: number) => {
-      if (!userId) return;
-      await notificationRepository.markAsRead(userId, id);
-    },
-    onMutate: async (id: number) => {
-      await queryClient.cancelQueries({ queryKey: notificationsKey });
-      const previous = queryClient.getQueryData<any[]>(notificationsKey);
-
-      queryClient.setQueryData(
-        notificationsKey,
-        (current: any[] = []) =>
-          current.map((item) => item.id === id ? { ...item, isRead: 1 } : item),
-      );
-
-      return { previous };
-    },
-    onError: (_error, _id, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(notificationsKey, context.previous);
-      }
+    mutationFn: async (notificationId: number) => {
+      if (!user?.id) return;
+      await notificationRepository.markAsRead(user.id, notificationId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificationsKey });
-      queryClient.invalidateQueries({ queryKey: latestNotificationKey });
-    },
+      queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+    }
   });
 
-  const markAllMutation = useMutation({
+  const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      if (!userId) return;
-      await notificationRepository.markAllAsRead(userId);
-    },
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: notificationsKey });
-      const previous = queryClient.getQueryData<any[]>(notificationsKey);
-
-      queryClient.setQueryData(
-        notificationsKey,
-        (current: any[] = []) =>
-          current.map((item) => ({ ...item, isRead: 1 })),
-      );
-
-      return { previous };
-    },
-    onError: (_error, _variables, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(notificationsKey, context.previous);
-      }
+      if (!user?.id) return;
+      await notificationRepository.markAllAsRead(user.id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificationsKey });
-      queryClient.invalidateQueries({ queryKey: latestNotificationKey });
-    },
+      queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+    }
   });
+
+  const notifications = notificationsQuery.data || [];
+
+  const unreadCount = useMemo(() => {
+    return notifications.filter(n => n.isRead === 0).length;
+  }, [notifications]);
+
+  const latestUnread = useMemo(() => {
+    return notifications.find(n => n.isRead === 0) || null;
+  }, [notifications]);
 
   return {
-    notifications: unreadNotifications,
+    notifications,
+    latestUnread,
     unreadCount,
-    loading: notificationsQuery.isLoading,
-    refresh: notificationsQuery.refetch,
-    markAsRead: (id: number) => markAsReadMutation.mutateAsync(id),
-    markAllAsRead: () => markAllMutation.mutateAsync(),
+    isLoading: notificationsQuery.isLoading,
+    refetch: notificationsQuery.refetch,
+    markAsRead: markAsReadMutation.mutate,
+    markAllAsRead: markAllAsReadMutation.mutate,
   };
 }

@@ -2,21 +2,12 @@ import React, { useState } from "react";
 import { View, Text } from "react-native";
 import { useAddLog } from "@/src/features/hifz/hooks/useAddLog";
 import { IHifzPlan } from "@/src/features/hifz/types";
-import { useRetentionLog } from "@/src/features/habits/hooks/useRetentionLog";
-import { useQuery } from "@tanstack/react-query";
-import { pageActivityLogs } from "@/src/features/habits/database/habitSchema";
-import { and, gte } from "drizzle-orm";
 import { useSession } from "@/src/hooks/useSession";
 import { ActionTaskCard } from "../common/ActionCard";
 import { Alert } from "../common/Alert";
 import { QualityModal } from "../common/QualityModal";
 import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
-
-import { GamificationService } from "@/src/services/GamificationService";
 import { useCelebrationStore } from "@/src/hooks/useCelebrationStore";
-import { db } from "@/src/lib/db/local-client";
-import { userStats } from "@/src/features/user/database/userSchema";
-import { eq } from "drizzle-orm";
 
 export const HifzActionCard = ({
   hifz,
@@ -38,31 +29,9 @@ export const HifzActionCard = ({
   typeLabel?: string;
 }) => {
   const { addLog, isCreating: isAddingHifz } = useAddLog();
-  const { logRetention, isLogging: isLoggingRetention } = useRetentionLog();
   const { user } = useSession();
   const session = useReaderSessionStore();
   const trigger = useCelebrationStore((s) => s.trigger);
-
-  const isReinforcement = typeLabel === "Reinforce";
-
-  // Check if reinforcement was done today
-  const { data: retentionDoneToday } = useQuery({
-    queryKey: ['retention-status', task.startPage, task.endPage],
-    queryFn: async () => {
-      if (!isReinforcement || !user?.id) return false;
-      const today = new Date().toISOString().slice(0, 10);
-      const rows = await db.query.pageActivityLogs.findMany({
-        where: and(
-          eq(pageActivityLogs.userId, user.id),
-          eq(pageActivityLogs.source, 'muraja'),
-          gte(pageActivityLogs.logDate, today)
-        )
-      });
-      // Simple check: if any log exists for today with source muraja, we consider it "done" for the UI hint
-      return rows.length > 0;
-    },
-    enabled: isReinforcement && !!user?.id
-  });
 
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -72,16 +41,10 @@ export const HifzActionCard = ({
   const today = new Date();
   const todayStr = today.toISOString().slice(0, 10);
   
-  // Hifz status comes from daily logs
   const todaysLog = hifz.hifz_daily_logs?.find((log) => log.date === todayStr);
-  const hifzStatus = todaysLog?.status || "pending";
-  
-  // Final status for the UI
-  const currentStatus = isReinforcement 
-    ? (retentionDoneToday ? "completed" : "pending")
-    : hifzStatus;
+  const currentStatus = todaysLog?.status || "pending";
 
-  const isLoading = isAddingHifz || isLoggingRetention;
+  const isLoading = isAddingHifz;
 
   const isResumable = session.currentPage >= task.startPage && session.currentPage <= task.endPage;
 
@@ -99,18 +62,6 @@ export const HifzActionCard = ({
     if (!hifz || !task || isLoading || !hifz.id) return;
 
     try {
-      if (isReinforcement) {
-        if (status === "completed") {
-          await logRetention({
-            pages: task.actualPages || [],
-            quality: quality || 5,
-            date: todayStr
-          });
-          trigger("Retention updated!", "success");
-        }
-        return;
-      }
-
       const logDay = (new Date().getDay() + 6) % 7;
       const duration = quality ? session.getDurationMinutes() : undefined;
       const pagesViewed = session.pagesViewed;
@@ -130,24 +81,13 @@ export const HifzActionCard = ({
         actual_minutes_spent: duration,
       };
 
-      await addLog({ todayLog: payload as any, userId: user?.id });
+      const result = await addLog({ todayLog: payload as any, userId: user?.id });
       
-      if (status === "completed") {
-        const stats = await db.query.userStats.findFirst({
-          where: eq(userStats.userId, user?.id!)
-        });
-        const currentStreak = stats?.hifzCurrentStreak || 0;
-
-        const result = await GamificationService.processSessionCompletion(
-          db,
-          user?.id!,
-          quality!,
-          currentStreak + 1
-        );
-
-        if (result.rewards.length > 0) {
-          trigger(`Mubarak! New Badge: ${result.rewards[0].replace('BADGE_', '')}`, "badge");
-        } else if (result.isPerfect) {
+      if (status === "completed" && result?.rewards) {
+        const rewards = result.rewards;
+        if (rewards.rewards.length > 0) {
+          trigger(`Mubarak! New Badge: ${rewards.rewards[0].replace('BADGE_', '')}`, "badge");
+        } else if (rewards.isPerfect) {
           trigger("MashAllah! Perfect Session!", "success");
         } else {
           trigger("Alhamdulillah! Progress Saved", "success");
@@ -168,7 +108,7 @@ export const HifzActionCard = ({
         isCatchup={task.isCatchup}
         status={currentStatus}
         isLoading={isLoading}
-        onDone={isReinforcement && currentStatus === "completed" ? undefined : () => {
+        onDone={() => {
           if (currentStatus === "completed") {
             handleStatusChange("pending");
           } else {
@@ -179,7 +119,6 @@ export const HifzActionCard = ({
         onResume={onResume}
         isResumable={isResumable}
         onDetails={onDetails}
-        hideActionButtons={isReinforcement && currentStatus === "completed"}
       />
 
       <QualityModal

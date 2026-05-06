@@ -1,4 +1,5 @@
 import { HifzActionCard } from "@/src/components/dashboard/HifzActionCard";
+import { ReinforcementCard } from "@/src/components/dashboard/ReinforcementCard";
 import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
 import { NotificationCard } from "@/src/components/NotificationCard";
 import Screen from "@/src/components/screen/Screen";
@@ -12,9 +13,7 @@ import HifzEmptyState from "@/src/features/hifz/components/HifzEmptyState";
 import HifzOverViewCard from "@/src/features/hifz/components/HifzOverviewCard";
 import { HifzTrackerSkeleton } from "@/src/features/hifz/components/skeleton";
 import StatCard from "@/src/features/hifz/components/StatCard";
-import { useHifzPlan } from "@/src/features/hifz/hooks/useHifzPlan";
 import { useHifzDailyTask } from "@/src/features/hifz/hooks/useHifzDailyTask";
-import { useReviewSuggestions } from "@/src/features/hifz/hooks/useReviewSuggestions";
 import { getReviewPriorityColor } from "@/src/features/hifz/utils/reviewPriority";
 import { getPerformance } from "@/src/features/hifz/utils/plan-calculations";
 import { hifzStatus } from "@/src/features/hifz/utils/plan-status";
@@ -24,9 +23,7 @@ import { router } from "expo-router";
 import { useMemo } from "react";
 import { Pressable, View } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
-import { useQuery } from "@tanstack/react-query";
 import { useSession } from "@/src/hooks/useSession";
-import { notificationRepository } from "@/src/features/notifications/services/notificationRepository";
 import { useNotifications } from "@/src/hooks/useNotifications";
 import { sendTestNotification } from "@/src/utils/testNotifications";
 export default function Hifz() {
@@ -36,6 +33,7 @@ export default function Hifz() {
     error, 
     refetch, 
     reinforcementTask, 
+    isReinforcementDone,
     todayTask, 
     srsSuggestions: suggestions 
   } = useHifzDailyTask();
@@ -49,15 +47,7 @@ export default function Hifz() {
   };
 
   const { items: surah } = useLoadSurahData();
-  const latestNotificationQuery = useQuery({
-    queryKey: ["latest-notification", user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const all = await notificationRepository.getNotifications(user!.id);
-      return all.find(n => n.isRead === 0) || null;
-    },
-    staleTime: 1000 * 20,
-  });
+  const { latestUnread } = useNotifications();
 
   const analytics = useMemo(() => {
     if (!hifz || !surah) return null;
@@ -183,20 +173,16 @@ export default function Hifz() {
           {reinforcementTask && (
             <View className="mt-10 px-1">
               <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
-                Reinforcement
+                Memory Refresh
               </Text>
-              <Text className="text-xl text-gray-900 mb-4">Short-term Retention</Text>
-              <HifzActionCard
-                hifz={hifz!}
+              <Text className="text-xl text-gray-900 mb-4">Keep it Fresh</Text>
+              <ReinforcementCard
                 task={reinforcementTask}
-                title={reinforcementTask.displaySurah}
-                subTitle={`Review last ${reinforcementTask.pagesCount} memorized pages`}
-                typeLabel="Reinforce"
+                isCompleted={isReinforcementDone}
                 onStart={() => {
                   session.openSession(reinforcementTask.startPage);
                   router.push(`/(app)/quran/reader?page=${reinforcementTask.startPage}&planId=${hifz?.id}&type=hifz&start=${reinforcementTask.startPage}&end=${reinforcementTask.endPage}`);
                 }}
-                onDetails={() => router.push("/(app)/hifz/log")}
               />
             </View>
           )}
@@ -204,9 +190,9 @@ export default function Hifz() {
           {suggestions.length > 0 && (
             <View className="mt-10 px-1">
               <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
-                SRS Review
+                Priority Review
               </Text>
-              <Text className="text-xl text-gray-900 mb-4">Spaced Repetition</Text>
+              <Text className="text-xl text-gray-900 mb-4">Strengthen Your Heart</Text>
               <View className="gap-y-3">
                 {suggestions.slice(0, 3).map((item) => {
                   const color = getReviewPriorityColor(item.priority);
@@ -240,7 +226,6 @@ export default function Hifz() {
             </View>
           )}
 
-          {/* Remaining SRS suggestions (Step 5 - Optional) */}
           {suggestions.length > 3 && (
              <View className="mt-10 px-1">
               <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
@@ -279,15 +264,15 @@ export default function Hifz() {
             </View>
           )}
 
-          {latestNotificationQuery.data && (
+          {latestUnread && (
             <View className="mt-8 px-1">
               <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
                 Live Progress
               </Text>
               <NotificationCard
-                title={latestNotificationQuery.data.title}
-                message={latestNotificationQuery.data.message}
-                type={latestNotificationQuery.data.type}
+                title={latestUnread.title}
+                message={latestUnread.message}
+                type={latestUnread.type as any}
               />
             </View>
           )}

@@ -5,13 +5,7 @@ import { Alert } from "../common/Alert";
 import { ActionTaskCard } from "../common/ActionCard";
 import { QualityModal } from "../common/QualityModal";
 import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
-
-import { GamificationService } from "@/src/services/GamificationService";
 import { useCelebrationStore } from "@/src/hooks/useCelebrationStore";
-import { db } from "@/src/lib/db/local-client";
-import { useSession } from "@/src/hooks/useSession";
-import { userStats } from "@/src/features/user/database/userSchema";
-import { eq } from "drizzle-orm";
 
 export const MurajaActionCard = ({
   todayPlan,
@@ -29,7 +23,6 @@ export const MurajaActionCard = ({
   const { updateLog, isUpdating } = useMurajaOperation();
   const { alertConfig, hideAlert } = useAlert();
   const session = useReaderSessionStore();
-  const { user } = useSession();
   const trigger = useCelebrationStore(s => s.trigger);
   const [qualityModalVisible, setQualityModalVisible] = useState(false);
 
@@ -43,7 +36,7 @@ export const MurajaActionCard = ({
     const actualCount = pagesViewed.length > 0 ? pagesViewed.length : (todayPlan.endPage - todayPlan.startPage + 1);
 
     try {
-      await updateLog({
+      const result = await updateLog({
         plan_id: weeklyPlan?.id,
         date: todayStr,
         start_page: todayPlan.startPage,
@@ -57,22 +50,11 @@ export const MurajaActionCard = ({
         quality_score: quality,
       });
 
-      if (isCompleted) {
-        const stats = await db.query.userStats.findFirst({
-          where: eq(userStats.userId, user?.id!)
-        });
-        const currentStreak = stats?.murajaCurrentStreak || 0;
-
-        const result = await GamificationService.processSessionCompletion(
-          db,
-          user?.id!,
-          quality!,
-          currentStreak + 1
-        );
-
-        if (result.rewards.length > 0) {
-          trigger(`Mubarak! New Badge: ${result.rewards[0].replace('BADGE_', '')}`, "badge");
-        } else if (result.isPerfect) {
+      if (isCompleted && result?.rewards) {
+        const rewards = result.rewards;
+        if (rewards.rewards.length > 0) {
+          trigger(`Mubarak! New Badge: ${rewards.rewards[0].replace('BADGE_', '')}`, "badge");
+        } else if (rewards.isPerfect) {
           trigger("MashAllah! Perfect Session!", "success");
         } else {
           trigger("Alhamdulillah! Progress Saved", "success");

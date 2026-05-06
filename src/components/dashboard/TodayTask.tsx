@@ -4,8 +4,10 @@ import { useWeeklyMuraja } from "@/src/features/muraja/hooks/useWeeklyMuraja";
 import { useHifzDailyTask } from "@/src/features/hifz/hooks/useHifzDailyTask";
 import { HifzActionCard } from "./HifzActionCard";
 import { MurajaActionCard } from "./MurajaActionCard";
+import { ReinforcementCard } from "./ReinforcementCard";
 import { CardSkeleton } from "./Skeleton";
 import { Ionicons } from "@expo/vector-icons";
+import { useSession } from "@/src/hooks/useSession";
 
 export const TodayTasksSection = ({ 
   onLogHifz, 
@@ -30,9 +32,13 @@ export const TodayTasksSection = ({
   const {
     hifz,
     todayTask: hifzTodayTask,
+    reinforcementTask,
+    isReinforcementDone,
     analytics: hifzAnalytics,
     loading: hifzLoading,
   } = useHifzDailyTask();
+
+  const { user } = useSession();
 
   if (murajaLoading || hifzLoading) {
     return [1, 2].map((index) => <CardSkeleton key={index} />);
@@ -56,6 +62,14 @@ export const TodayTasksSection = ({
             onStart={() => hifz?.id && onStartHifz(hifzTodayTask, hifz.id)}
             onResume={() => hifz?.id && onResumeHifz(hifzTodayTask, hifz.id)}
             onDetails={onLogHifz}
+          />
+        )}
+        
+        {reinforcementTask && (
+          <ReinforcementCard 
+            task={reinforcementTask}
+            isCompleted={isReinforcementDone}
+            onStart={() => hifz?.id && onStartHifz(reinforcementTask, hifz.id)}
           />
         )}
         {hasMurajaTask && todayPlan && (
