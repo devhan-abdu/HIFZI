@@ -119,7 +119,7 @@ export default function AppLayout() {
         />
 
         <Tabs.Screen
-          name="weekly-summary"
+          name="evaluation"
           options={{
             href: null,
             headerShown: false,

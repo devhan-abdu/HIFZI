@@ -34,10 +34,11 @@ export interface IHifzPlan {
   preferred_time?: string;
   is_custom_time?: boolean;
   is_reinforcement_enabled?: boolean;
+  evaluationDay?: number;
   hifz_daily_logs?: IHifzLog[]
 }
 export interface HifzQuestion {
- type: 'SEQUENCE' | 'BOUNDARY';
+ type: 'SEQUENCE' | 'BOUNDARY' | 'CHOICE';
   question: string;
   answer: any;
   hint?: string;
@@ -62,6 +63,7 @@ export const HifzPlanSchema = Yup.object({
   preferred_time: Yup.string().required("Habit trigger is required").default("fajr"),
   is_custom_time: Yup.boolean().default(false),
   is_reinforcement_enabled: Yup.boolean().default(true),
+  evaluation_day: Yup.number().required("Evaluation day is required").min(0).max(6).default(5),
 });
 
 

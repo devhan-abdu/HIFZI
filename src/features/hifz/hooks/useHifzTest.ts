@@ -3,6 +3,7 @@ import { useSQLiteContext } from "expo-sqlite";
 import { useEffect, useState } from "react";
 import { HifzQuestion } from "../types";
 import { generateHifzTest } from "../services/test";
+import { getAssetDb } from "@/src/lib/db/asset-client";
 
 export const  useHifzTest = (pages: number[]) => {
     const db = useSQLiteContext()
@@ -23,7 +24,8 @@ export const  useHifzTest = (pages: number[]) => {
             
             try {
                 setLoading(true)
-                const data = await generateHifzTest(db, pages)
+                const assetDb = getAssetDb(db);
+                const data = await generateHifzTest(assetDb, pages)
                 setQuestions(data)
             } catch (e) {
                setError("Failed to generate test");

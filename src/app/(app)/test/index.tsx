@@ -8,7 +8,7 @@ import { useRouter } from "expo-router";
 import { Button } from "@/src/components/ui/Button";
 import { CustomDropdown } from "@/src/features/muraja/components/SurahDropdown";
 
-export default function Home() {
+export default function ExamIndex() {
   const router = useRouter();
   const [fromPage, setFromPage] = useState(1);
   const [toPage, setToPage] = useState(604);

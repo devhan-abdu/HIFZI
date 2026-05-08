@@ -5,11 +5,11 @@ import {
 } from "@/src/components/screen/ScreenContent";
 import { useHifzTest } from "@/src/features/hifz/hooks/useHifzTest";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { View, Pressable } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
 import { Text as QuranText } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, router } from "expo-router";
 import { useSession } from "@/src/hooks/useSession";
 import { TestService } from "@/src/features/test/services/testService";
 import { useEffect } from "react";
@@ -17,7 +17,10 @@ import { useEffect } from "react";
 export default function Test() {
   const { pages } = useLocalSearchParams()
   
-  const parsedPages = pages ? JSON.parse(pages as string) : []
+  const parsedPages = useMemo(() => {
+    return pages ? JSON.parse(pages as string) : []
+  }, [pages]);
+
   const { questions, loading, refresh } = useHifzTest(parsedPages);
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -83,22 +86,37 @@ export default function Test() {
             Your Score: {score} / {questions.length}
           </Text>
 
-          <View className="flex-row gap-4 mt-10">
-            <Pressable
-              onPress={resetUI}
-              className="bg-slate-100 py-2 px-4 rounded-lg"
-            >
-              <Text className="text-lg ">Retake</Text>
-            </Pressable>
+          <View className="gap-y-4 mt-10 w-full px-10">
             <Pressable
               onPress={() => {
-                resetUI();
-                refresh();
+
+                router.replace("/(app)/evaluation");
+                  resetUI();
+                  refresh();
               }}
-              className="bg-primary py-2  px-4 rounded-lg"
+              className="bg-primary py-3 rounded-xl items-center justify-center shadow-lg shadow-primary/20"
             >
-              <Text className="text-white  text-lg">New Test</Text>
+              <Text className="text-white  text-lg">Return to Evaluation</Text>
             </Pressable>
+
+            <View className="flex-row gap-4">
+              <Pressable
+                onPress={() => {
+                  resetUI();
+                  refresh();
+                }}
+                className="flex-1 bg-white border-2 border-slate-100 py-3 rounded-xl items-center justify-center"
+              >
+                <Text className="text-slate-700 font-medium">New Test</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={resetUI}
+                className="flex-1 bg-slate-50 py-3 rounded-xl items-center justify-center"
+              >
+                <Text className="text-slate-500 font-medium">Retake</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </Screen>
@@ -147,7 +165,31 @@ export default function Test() {
             </Text>
           </View>
 
-          {revealed && (
+          {currentQuestion.type === "CHOICE" ? (
+            <View className="mt-8 gap-y-4">
+              {currentQuestion.answer.options.map((opt: string, idx: number) => (
+                <Pressable
+                  key={idx}
+                  onPress={() => {
+                    const isCorrect = opt === currentQuestion.answer.correct;
+                    handleGrade(isCorrect ? 1 : 0);
+                  }}
+                  className="bg-white border-2 border-slate-100 p-4 rounded-2xl active:bg-slate-50"
+                >
+                  <QuranText
+                    className="text-lg text-right"
+                    style={{
+                      fontFamily: "Uthman",
+                      textAlign: "right",
+                      lineHeight: 32,
+                    }}
+                  >
+                    {opt}
+                  </QuranText>
+                </Pressable>
+              ))}
+            </View>
+          ) : revealed && (
             <View className="mt-8 pt-8 border-t border-slate-100 flex-col gap-4">
               <View className="flex-col gap-4">
                 <Text className="text-xl" style={{ fontFamily: "Rosemary" }}>
@@ -188,40 +230,41 @@ export default function Test() {
         </View>
       </ScreenContent>
       <ScreenFooter>
-        {!revealed ?
-          <Pressable
-            onPress={() => setRevealed(true)}
-            className="w-full bg-primary h-14 rounded-2xl flex-row items-center justify-center shadow-lg shadow-primary/20"
-          >
-            <Text className="text-white  text-lg">REVEAL ANSWER</Text>
-          </Pressable>
-        : <View className="flex-row gap-4 w-full">
+        {currentQuestion.type !== "CHOICE" && (
+          !revealed ?
             <Pressable
-              onPress={() => handleGrade(0)}
-              className="flex-1 bg-white h-14 rounded-md items-center justify-center border-2 border-slate-100 shadow-sm "
+              onPress={() => setRevealed(true)}
+              className="w-full bg-primary h-14 rounded-2xl flex-row items-center justify-center shadow-lg shadow-primary/20"
             >
-              <View className="bg-red-500 p-2 rounded-full">
-                <Ionicons name="close" size={16} color="white" />
-              </View>
+              <Text className="text-white  text-lg">REVEAL ANSWER</Text>
             </Pressable>
+          : <View className="flex-row gap-4 w-full">
+              <Pressable
+                onPress={() => handleGrade(0)}
+                className="flex-1 bg-white h-14 rounded-md items-center justify-center border-2 border-slate-100 shadow-sm "
+              >
+                <View className="bg-red-500 p-2 rounded-full">
+                  <Ionicons name="close" size={16} color="white" />
+                </View>
+              </Pressable>
 
-            <Pressable
-              onPress={() => handleGrade(0.5)}
-              className="flex-1 bg-white h-14 rounded-md items-center justify-center border-2 border-slate-100  shadow-sm"
-            >
-              <Text className="text-xl  text-slate-400"> 1/2</Text>
-            </Pressable>
+              <Pressable
+                onPress={() => handleGrade(0.5)}
+                className="flex-1 bg-white h-14 rounded-md items-center justify-center border-2 border-slate-100  shadow-sm"
+              >
+                <Text className="text-xl  text-slate-400"> 1/2</Text>
+              </Pressable>
 
-            <Pressable
-              onPress={() => handleGrade(1)}
-              className="flex-1 bg-white h-14 rounded-md items-center justify-center border-2 border-slate-100 shadow-sm "
-            >
-              <View className="bg-emerald-500 p-2 rounded-full">
-                <Ionicons name="checkmark" size={16} color="white" />
-              </View>
-            </Pressable>
-          </View>
-        }
+              <Pressable
+                onPress={() => handleGrade(1)}
+                className="flex-1 bg-white h-14 rounded-md items-center justify-center border-2 border-slate-100 shadow-sm "
+              >
+                <View className="bg-emerald-500 p-2 rounded-full">
+                  <Ionicons name="checkmark" size={16} color="white" />
+                </View>
+              </Pressable>
+            </View>
+        )}
       </ScreenFooter>
     </Screen>
   );
