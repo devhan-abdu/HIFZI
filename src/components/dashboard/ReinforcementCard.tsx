@@ -12,6 +12,9 @@ interface ReinforcementCardProps {
     endPage: number;
     actualPages: number[];
     displaySurah?: string;
+    priority?: string;
+    badgeColor?: { badge: string; text: string };
+    label?: string;
   };
   onStart: () => void;
   isCompleted?: boolean;
@@ -48,7 +51,7 @@ export const ReinforcementCard = ({
           </View>
           <View>
             <Text className="text-emerald-900 font-medium text-sm">Retention Secured</Text>
-            <Text className="text-emerald-600/70 text-[10px] uppercase tracking-widest">Memory Refreshed · {task.displaySurah || 'Quran Review'}</Text>
+            <Text className="text-emerald-600/70 text-[10px] uppercase tracking-widest">{task.label || 'Memory Refreshed'} · {task.displaySurah || 'Quran Review'}</Text>
           </View>
         </View>
         <Ionicons name="checkmark-circle" size={24} color="#059669" />
@@ -60,7 +63,16 @@ export const ReinforcementCard = ({
     <View className="bg-slate-50 border border-slate-100 rounded-[28px] p-5">
       <View className="flex-row justify-between items-start mb-4">
         <View className="flex-1">
-          <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-1">Optional Review</Text>
+          <View className="flex-row items-center mb-1">
+            {task.priority && task.badgeColor && (
+              <View className={`px-2 py-0.5 rounded-full ${task.badgeColor.badge} mr-2`}>
+                <Text className={`text-[8px] uppercase tracking-widest  ${task.badgeColor.text}`}>
+                  {task.priority}
+                </Text>
+              </View>
+            )}
+            <Text className="text-slate-400 text-[10px] uppercase tracking-widest">{task.label || 'Optional Review'}</Text>
+          </View>
           <Text className="text-lg font-semibold text-slate-900">{task.displaySurah || 'Quran Review'}</Text>
           <Text className="text-slate-500 text-xs">Pages {task.startPage} – {task.endPage}</Text>
         </View>

@@ -4,10 +4,11 @@ import { useWeeklyMuraja } from "@/src/features/muraja/hooks/useWeeklyMuraja";
 import { useHifzDailyTask } from "@/src/features/hifz/hooks/useHifzDailyTask";
 import { HifzActionCard } from "./HifzActionCard";
 import { MurajaActionCard } from "./MurajaActionCard";
-import { ReinforcementCard } from "./ReinforcementCard";
 import { CardSkeleton } from "./Skeleton";
 import { Ionicons } from "@expo/vector-icons";
-import { useSession } from "@/src/hooks/useSession";
+import { router } from "expo-router";
+
+import { DuePlanInfo } from "@/src/features/habits/services/habitSummaryService";
 
 export const TodayTasksSection = ({ 
   onLogHifz, 
@@ -16,6 +17,7 @@ export const TodayTasksSection = ({
   onResumeHifz,
   onStartMuraja,
   onResumeMuraja,
+  duePlans = [],
 }: { 
   onLogHifz: () => void; 
   onLogMuraja: () => void;
@@ -23,6 +25,7 @@ export const TodayTasksSection = ({
   onResumeHifz: (task: any, planId: number) => void;
   onStartMuraja: (task: any, planId: number) => void;
   onResumeMuraja: (task: any, planId: number) => void;
+  duePlans?: DuePlanInfo[];
 }) => {
   const {
     todayTask: todayPlan,
@@ -32,13 +35,10 @@ export const TodayTasksSection = ({
   const {
     hifz,
     todayTask: hifzTodayTask,
-    reinforcementTask,
-    isReinforcementDone,
     analytics: hifzAnalytics,
     loading: hifzLoading,
   } = useHifzDailyTask();
 
-  const { user } = useSession();
 
   if (murajaLoading || hifzLoading) {
     return [1, 2].map((index) => <CardSkeleton key={index} />);
@@ -49,90 +49,86 @@ export const TodayTasksSection = ({
   const hasAnyPlan = !!(hifz || weeklyPlan);
 
   if (!hasAnyPlan) return null;
-
-  if (hasHifzTask || hasMurajaTask) {
-    return (
-      <View className="gap-y-4">
-        {hasHifzTask && hifzTodayTask && (
-          <HifzActionCard 
-            hifz={hifz!} 
-            task={hifzTodayTask} 
-            title={hifzTodayTask.displaySurah}
-            subTitle={`Target: ${hifzTodayTask.totalTarget} pages • Juz ${hifzTodayTask.juz}`}
-            onStart={() => hifz?.id && onStartHifz(hifzTodayTask, hifz.id)}
-            onResume={() => hifz?.id && onResumeHifz(hifzTodayTask, hifz.id)}
-            onDetails={onLogHifz}
-          />
-        )}
-        
-        {reinforcementTask && (
-          <ReinforcementCard 
-            task={reinforcementTask}
-            isCompleted={isReinforcementDone}
-            onStart={() => hifz?.id && onStartHifz(reinforcementTask, hifz.id)}
-          />
-        )}
-        {hasMurajaTask && todayPlan && (
-          <MurajaActionCard 
-            todayPlan={todayPlan} 
-            weeklyPlan={weeklyPlan} 
-            onStart={() => weeklyPlan?.id && onStartMuraja(todayPlan, weeklyPlan.id)}
-            onResume={() => weeklyPlan?.id && onResumeMuraja(todayPlan, weeklyPlan.id)}
-            onDetails={onLogMuraja}
-          />
-        )}
-      </View>
-    );
-  }
+  console.log("duePlans", duePlans, hifz?.id, weeklyPlan?.id);
+  const isHifzDue = hifz?.id ? duePlans.some(p => p.activityType === 'HIFZ' && p.localRefId === hifz.id) : false;
+  const isMurajaDue = weeklyPlan?.id ? duePlans.some(p => p.activityType === 'MURAJA' && p.localRefId === weeklyPlan.id) : false;
 
   return (
-    <RestDayCard 
-      onLogHifz={onLogHifz} 
-      onLogMuraja={onLogMuraja}
-      hasHifzPlan={!!hifz}
-      hasMurajaPlan={!!weeklyPlan}
-    />
+    <View className="gap-y-4">
+      {isHifzDue ? (
+          <EvaluationRequiredCard type="hifz" />
+      ) : hasHifzTask && hifzTodayTask ? (
+        <HifzActionCard 
+          hifz={hifz!} 
+          task={hifzTodayTask} 
+          title={hifzTodayTask.displaySurah}
+          subTitle={`Target: ${hifzTodayTask.totalTarget} pages • Juz ${hifzTodayTask.juz}`}
+          onStart={() => hifz?.id && onStartHifz(hifzTodayTask, hifz.id)}
+          onResume={() => hifz?.id && onResumeHifz(hifzTodayTask, hifz.id)}
+          onDetails={onLogHifz}
+        />
+      ) : !!hifz && (
+        <RestDayCardSingle type="hifz" onLog={onLogHifz} />
+      )}
+      
+      {isMurajaDue ? (
+          <EvaluationRequiredCard type="muraja" />
+      ) : hasMurajaTask && todayPlan ? (
+        <MurajaActionCard 
+          todayPlan={todayPlan} 
+          weeklyPlan={weeklyPlan} 
+          onStart={() => weeklyPlan?.id && onStartMuraja(todayPlan, weeklyPlan.id)}
+          onResume={() => weeklyPlan?.id && onResumeMuraja(todayPlan, weeklyPlan.id)}
+          onDetails={onLogMuraja}
+        />
+      ) : !!weeklyPlan && (
+        <RestDayCardSingle type="muraja" onLog={onLogMuraja} />
+      )}
+    </View>
   );
 };
 
-const RestDayCard = ({ 
-  onLogHifz, 
-  onLogMuraja,
-  hasHifzPlan,
-  hasMurajaPlan
-}: { 
-  onLogHifz: () => void; 
-  onLogMuraja: () => void;
-  hasHifzPlan: boolean;
-  hasMurajaPlan: boolean;
-}) => (
-  <View className="bg-white border border-slate-100 rounded-[32px] p-8 items-center shadow-sm">
-    <View className="w-16 h-16 bg-slate-50 rounded-full items-center justify-center mb-4">
-      <Ionicons name="cafe-outline" size={32} color="#276359" />
-    </View>
-    <Text className="text-slate-900 text-lg text-center mb-1">It's a Rest Day!</Text>
-    <Text className="text-slate-500 text-sm text-center mb-8 px-4">
-      No tasks scheduled for today. Take a well-deserved break or log an extra session to stay ahead.
-    </Text>
-    
-    <View className="flex-row gap-3">
-      {hasHifzPlan && (
-        <Pressable 
-          onPress={onLogHifz} 
-          className="flex-1 bg-slate-50 border border-slate-100 py-4 rounded-2xl items-center active:bg-slate-100"
-        >
-          <Text style={{ color: '#276359' }} className="text-xs  uppercase tracking-widest">Extra Hifz</Text>
-        </Pressable>
-      )}
-      {hasMurajaPlan && (
-        <Pressable 
-          onPress={onLogMuraja} 
-          className="flex-1 bg-slate-50 border border-slate-100 py-4 rounded-2xl items-center active:bg-slate-100"
-        >
-          <Text style={{ color: '#0891b2' }} className="text-xs  uppercase tracking-widest">Extra Muraja</Text>
-        </Pressable>
-      )}
-    </View>
-  </View>
+export const EvaluationRequiredCard = ({ type }: { type: 'hifz' | 'muraja' }) => (
+    <Pressable 
+        onPress={() => router.push("/evaluation")}
+        className="bg-white border border-[#276359]/10 rounded-2xl p-6 shadow-sm overflow-hidden"
+    >
+        <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-4">
+                <View className="w-12 h-12 bg-[#276359]/10 rounded-full items-center justify-center">
+                    <Ionicons name="lock-closed-outline" size={24} color="#276359" />
+                </View>
+                <View>
+                    <Text className="">{type === 'hifz' ? 'Hifz Review Required' : 'Muraja Review Required'}</Text>
+                    <Text className="text-slate-500 text-xs">Finish evaluation to unlock new tasks</Text>
+                </View>
+            </View>
+            <View className="bg-primary px-3 py-1 rounded-full">
+                <Text className="text-[10px] text-white  uppercase">Test</Text>
+            </View>
+        </View>
+    </Pressable>
 );
+
+
+export const RestDayCardSingle = ({ type, onLog }: { type: 'hifz' | 'muraja', onLog: () => void }) => (
+    <Pressable 
+        onPress={onLog}
+        className="bg-white border border-[#276359]/10  shadow-sm rounded-2xl p-6 flex-row items-center justify-between"
+    >
+        <View className="flex-row items-center gap-4">
+            <View className={`w-12 h-12 rounded-full items-center justify-center ${type === 'hifz' ? 'bg-primary/5' : 'bg-cyan-50'}`}>
+                <Ionicons name="cafe-outline" size={24} color={type === 'hifz' ? '#276359' : '#0891b2'} />
+            </View>
+            <View>
+                <Text className="text-slate-900 font-semibold">{type === 'hifz' ? 'Hifz Rest Day' : 'Muraja Rest Day'}</Text>
+                <Text className="text-slate-400 text-xs">No tasks for today</Text>
+            </View>
+        </View>
+        <Ionicons name="add-circle" size={24} color="#CBD5E1" />
+    </Pressable>
+)
+
+
+
 

@@ -8,7 +8,8 @@ import { GamificationService } from "@/src/services/GamificationService";
 import { habitProgressService } from "@/src/features/habits/services/habitProgressService";
 import { habitAnalyticsService } from "@/src/features/habits/services/habitAnalyticsService";
 import { userStats } from "@/src/features/user/database/userSchema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import { notificationService } from "@/src/features/notifications/services/notificationService";
 
 interface RetentionPayload {
   pages: number[];
@@ -22,12 +23,12 @@ export function useRetentionLog() {
 
   const mutation = useMutation({
     mutationFn: async (payload: RetentionPayload) => {
-        console.log('useRetentionLog' , payload.pages);
-
       if (!user?.id || !payload.pages.length) return;
 
       const quality: 'perfect' | 'medium' | 'low' = 
         payload.quality >= 5 ? 'perfect' : payload.quality <= 2 ? 'low' : 'medium';
+
+      let xpResult: any = null;
 
       await db.transaction(async (tx) => {
         await PerformanceService.updatePagesPerformance(
@@ -67,7 +68,7 @@ export function useRetentionLog() {
         });
         const currentStreak = stats?.hifzCurrentStreak || 0;
 
-        await GamificationService.processSessionCompletion(
+        xpResult = await GamificationService.processSessionCompletion(
           tx,
           user.id!,
           payload.quality,
@@ -76,6 +77,22 @@ export function useRetentionLog() {
 
         await habitAnalyticsService.recalculateStreaks(user.id!);
       });
+
+      if (xpResult && user?.id) {
+        const totalXp = (await db.select({ total: userStats.totalXp }).from(userStats).where(eq(userStats.userId, user.id)))[0]?.total ?? 0;
+        const level = Math.floor(totalXp / 1000);
+        const nextLevelXp = (level + 1) * 1000;
+        const remaining = nextLevelXp - totalXp;
+
+        await notificationService.triggerXPReward(
+          user.id, 
+          'muraja', 
+          'completed', 
+          payload.date, 
+          xpResult.xpAwarded, 
+          remaining
+        );
+      }
 
       return { success: true };
     },

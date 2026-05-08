@@ -3,54 +3,76 @@ import { weeklySummarySeen, activityPlans } from "../database/habitSchema";
 import { and, eq } from "drizzle-orm";
 
 
+export interface DuePlanInfo {
+  id: number;
+  activityType: 'HIFZ' | 'MURAJA' | 'NORMAL_READING';
+  localRefId: number | null;
+}
+
 export const habitSummaryService = {
   
  
-  async shouldShowWeeklySummary(userId: string, now = new Date()): Promise<boolean> {
-    const activePlan = await db.query.activityPlans.findFirst({
+  async getDueEvaluationPlans(userId: string, now = new Date()): Promise<DuePlanInfo[]> {
+    const activePlans = await db.query.activityPlans.findMany({
       where: and(eq(activityPlans.userId, userId), eq(activityPlans.status, 'active')),
       orderBy: (plans, { desc }) => [desc(plans.startDate)]
     });
 
-    if (!activePlan?.startDate) return false;
+    if (activePlans.length === 0) return [];
 
-    const startDate = new Date(activePlan.startDate);
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayDayOfWeek = now.getDay();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const dateKey = `${year}-${month}-${day}`;
     
-    const diffTime = Math.abs(today.getTime() - startDate.getTime());
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const duePlans: DuePlanInfo[] = [];
 
-    const isNewWeekDay = diffDays > 0 && diffDays % 7 === 0;
-    if (!isNewWeekDay) return false;
+    for (const plan of activePlans) {
+      const targetEvalDay = plan.evaluationDay ?? 5;
+      if (todayDayOfWeek === targetEvalDay) {
+        const weekKey = `plan-${plan.id}-eval-${dateKey}`;
+        const result = await db.query.weeklySummarySeen.findFirst({
+          where: and(eq(weeklySummarySeen.userId, userId), eq(weeklySummarySeen.weekKey, weekKey)),
+        });
+        if (!result) {
+            duePlans.push({
+              id: plan.id,
+              activityType: plan.activityType as any,
+              localRefId: plan.localRefId
+            });
+        }
+      }
+    }
 
-    const weekNumber = Math.floor(diffDays / 7);
-    const weekKey = `plan-${activePlan.id}-week-${weekNumber}`;
+    return duePlans;
+  },
 
-    const result = await db.query.weeklySummarySeen.findFirst({
-      where: and(eq(weeklySummarySeen.userId, userId), eq(weeklySummarySeen.weekKey, weekKey)),
-    });
-
-    return !result;
+  async shouldShowWeeklySummary(userId: string, now = new Date()): Promise<boolean> {
+    const due = await this.getDueEvaluationPlans(userId, now);
+    return due.length > 0;
   },
 
 
   async markWeeklySummarySeen(userId: string, now = new Date()) {
-    const activePlan = await db.query.activityPlans.findFirst({
+    const activePlans = await db.query.activityPlans.findMany({
       where: and(eq(activityPlans.userId, userId), eq(activityPlans.status, 'active')),
-      orderBy: (plans, { desc }) => [desc(plans.startDate)]
     });
 
-    if (!activePlan?.startDate) return;
+    const todayDayOfWeek = now.getDay();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const dateKey = `${year}-${month}-${day}`;
 
-    const startDate = new Date(activePlan.startDate);
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const diffDays = Math.floor(Math.abs(today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    
-    const weekNumber = Math.floor(diffDays / 7);
-    const weekKey = `plan-${activePlan.id}-week-${weekNumber}`;
-
-    await db.insert(weeklySummarySeen)
-      .values({ userId, weekKey })
-      .onConflictDoNothing();
+    for (const plan of activePlans) {
+        const targetEvalDay = plan.evaluationDay ?? 5;
+        if (todayDayOfWeek === targetEvalDay) {
+            const weekKey = `plan-${plan.id}-eval-${dateKey}`;
+            await db.insert(weeklySummarySeen)
+                .values({ userId, weekKey })
+                .onConflictDoNothing();
+        }
+    }
   }
 };

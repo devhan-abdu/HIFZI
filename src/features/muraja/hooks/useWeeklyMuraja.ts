@@ -40,6 +40,9 @@ export const useWeeklyMuraja = () => {
 
         const today = new Date();
         const todayStr = today.toISOString().slice(0, 10);
+        const evaluationDay = data.evaluationDay ?? 5;
+        const isEvaluationDay = today.getDay() === evaluationDay;
+
         const activeDays = typeof selected_days === "string" ? JSON.parse(selected_days) as number[] : selected_days as unknown as number[];
 
         const expectedPages = calculateExpectedPages(
@@ -49,7 +52,7 @@ export const useWeeklyMuraja = () => {
         const pageDiff = totalCompletedPages - expectedPages;
         const performanceStatus = getPerformanceStatus(pageDiff);
 
-        const todayTask = calculateTodayTask({
+        const todayTask = isEvaluationDay ? null : calculateTodayTask({
             today,
             weekStartDate: week_start_date ?? "",
             weekEndDate: week_end_date ?? "",
@@ -88,7 +91,8 @@ export const useWeeklyMuraja = () => {
                 pageDiff,
                 performanceStatus,
                 streak: muraja_current_streak,
-                overAllProgress: ((totalCompletedPages / ((end_page ?? 1) - (start_page ?? 1) + 1)) * 100).toFixed(1)
+                overAllProgress: ((totalCompletedPages / ((end_page ?? 1) - (start_page ?? 1) + 1)) * 100).toFixed(1),
+                isEvaluationDay,
             },
             todayTask,
             weekProgress: generateWeeklyProgress(week_start_date ?? "", todayStr, activeDays, daily_logs)
