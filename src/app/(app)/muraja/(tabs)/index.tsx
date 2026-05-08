@@ -22,8 +22,10 @@ import MurajaEmptyState from "@/src/features/muraja/components/MurajaEmptyState"
 import StatCard from "@/src/features/hifz/components/StatCard";
 import { DayByDay } from "@/src/features/muraja/components/DayByDay";
 import { ActionTaskCard } from "@/src/components/common/ActionCard";
+import { EvaluationRequiredCard, RestDayCardSingle } from "@/src/components/dashboard/TodayTask";
 import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
 import { Ionicons } from "@expo/vector-icons";
+import { useWeeklyEvaluationTrigger } from "@/src/features/habits/hooks/useWeeklyEvaluationTrigger";
 
 export default function MurajaIndex() {
   const {
@@ -35,6 +37,8 @@ export default function MurajaIndex() {
     error,
     refetch,
   } = useWeeklyMuraja();
+  const { duePlanIds } = useWeeklyEvaluationTrigger();
+  const isDue = weeklyPlan?.id ? duePlanIds.includes(weeklyPlan.id) : false;
   const session = useReaderSessionStore();
 
   const {
@@ -101,7 +105,9 @@ export default function MurajaIndex() {
 
             <View className="mt-6 mb-4">
               <SectionHeader title="Today's Muraja'a" />
-              {todayTask ?
+              {isDue ? (
+                <EvaluationRequiredCard type="muraja" />
+              ) : todayTask ? (
                 <ActionTaskCard
                   typeLabel="Muraja'a"
                   title={title ?? ''}
@@ -127,23 +133,9 @@ export default function MurajaIndex() {
                   isResumable={session.currentPage >= todayTask.startPage && session.currentPage <= todayTask.endPage}
                   onDetails={() => router.push("/(app)/muraja/log")}
                 />
-              : <View className="bg-white border border-slate-100 rounded-[32px] p-8 items-center shadow-sm">
-                  <View className="w-12 h-12 bg-slate-50 rounded-full items-center justify-center mb-4">
-                    <Ionicons name="cafe-outline" size={24} color="#0891b2" />
-                  </View>
-                  <Text className="text-slate-900 text-base text-center mb-1">Rest Day for Muraja'a</Text>
-                  <Text className="text-slate-500 text-xs text-center mb-6 px-4">
-                    No Muraja tasks today. Feel free to rest or log some extra revision pages.
-                  </Text>
-                  <Button 
-                    variant="outline" 
-                    className="w-full border-slate-100 bg-slate-50"
-                    onPress={() => router.push("/(app)/muraja/log")}
-                  >
-                    <Text className="text-xs uppercase tracking-widest text-primary ">Log Extra Muraja</Text>
-                  </Button>
-                </View>
-              }
+              ) : (
+                <RestDayCardSingle type="muraja" onLog={() => router.push("/(app)/muraja/log")} />
+              )}
             </View>
 
             <View className="mt-6">
@@ -186,12 +178,13 @@ export default function MurajaIndex() {
         <ScreenFooter>
           <View className="flex-row gap-x-3">
             <Button
-              className="flex-1 shadow-lg shadow-primary/20"
-              onPress={() => router.push(`/(app)/muraja/log`)}
+              className={`flex-1 shadow-lg ${isDue ? 'opacity-50' : 'shadow-primary/20'}`}
+              onPress={() => !isDue && router.push(`/(app)/muraja/log`)}
+              disabled={isDue}
             >
               <Ionicons name="add-circle" size={20} color="white" />
               <Text className="text-white">
-                 Log Progress
+                 {isDue ? 'Test Required' : 'Log Progress'}
               </Text>
             </Button>
 

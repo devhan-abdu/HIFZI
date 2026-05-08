@@ -1,5 +1,5 @@
-import { HifzActionCard } from "@/src/components/dashboard/HifzActionCard";
 import { ReinforcementCard } from "@/src/components/dashboard/ReinforcementCard";
+import { EvaluationRequiredCard, RestDayCardSingle } from "@/src/components/dashboard/TodayTask";
 import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
 import { NotificationCard } from "@/src/components/NotificationCard";
 import Screen from "@/src/components/screen/Screen";
@@ -26,7 +26,11 @@ import { Text } from "@/src/components/common/ui/Text";
 import { useSession } from "@/src/hooks/useSession";
 import { useNotifications } from "@/src/hooks/useNotifications";
 import { sendTestNotification } from "@/src/utils/testNotifications";
+import { useWeeklyEvaluationTrigger } from "@/src/features/habits/hooks/useWeeklyEvaluationTrigger";
+import { HifzActionCard } from "@/src/components/dashboard/HifzActionCard";
+
 export default function Hifz() {
+  const { duePlanIds } = useWeeklyEvaluationTrigger(); 
   const { 
     hifz, 
     loading: isLoading, 
@@ -35,9 +39,11 @@ export default function Hifz() {
     reinforcementTask, 
     isReinforcementDone,
     todayTask, 
-    srsSuggestions: suggestions 
+    srsSuggestions: suggestions,
+    completedReviews
   } = useHifzDailyTask();
   const { user } = useSession();
+  const isDue = hifz?.id ? duePlanIds.includes(hifz.id) : false;
   
   const session = useReaderSessionStore();
 
@@ -138,8 +144,10 @@ export default function Hifz() {
               Active Task
             </Text>
             <Text className="text-xl  text-gray-900 mb-4 px-1">Today Hifz</Text>
-            {todayTask ?
-              <HifzActionCard 
+            {isDue ? (
+               <EvaluationRequiredCard type="hifz" />
+            ) : todayTask ? (
+              <HifzActionCard
                 hifz={hifz} 
                 task={todayTask} 
                 onStart={() => {
@@ -151,23 +159,9 @@ export default function Hifz() {
                 }}
                 onDetails={() => router.push("/(app)/hifz/log")}
               />
-            : <View className="bg-white border border-slate-100 rounded-[32px] p-8 items-center shadow-sm">
-                <View className="w-12 h-12 bg-slate-50 rounded-full items-center justify-center mb-4">
-                  <Ionicons name="cafe-outline" size={24} color="#276359" />
-                </View>
-                <Text className="text-slate-900 text-base text-center mb-1">Rest Day</Text>
-                <Text className="text-slate-500 text-xs text-center mb-6 px-4">
-                  No new tasks scheduled today. Focus on reviews or reinforcement below.
-                </Text>
-                <Button 
-                  variant="outline" 
-                  className="w-full border-slate-100 bg-slate-50"
-                  onPress={() => router.push("/(app)/hifz/log")}
-                >
-                  <Text style={{ color: '#276359' }} className="text-xs uppercase tracking-widest ">Log Extra Session</Text>
-                </Button>
-              </View>
-            }
+            ) : (
+              <RestDayCardSingle type="hifz" onLog={() => router.push("/(app)/hifz/log")} />
+            )}
           </View>
 
           {reinforcementTask && (
@@ -193,35 +187,41 @@ export default function Hifz() {
                 Priority Review
               </Text>
               <Text className="text-xl text-gray-900 mb-4">Strengthen Your Heart</Text>
-              <View className="gap-y-3">
-                {suggestions.slice(0, 3).map((item) => {
-                  const color = getReviewPriorityColor(item.priority);
-                  return (
-                    <Pressable
-                      key={`${item.sourceLogId}-${item.cycleDay}`}
-                      className="rounded-[24px] border border-slate-100 bg-white p-5 flex-row items-center justify-between shadow-sm active:scale-[0.98]"
-                      onPress={() =>
-                        router.push(
-                          `/(app)/hifz/log?reviewStartPage=${item.startPage}&reviewEndPage=${item.endPage}&reviewCycleDay=${item.cycleDay}` as never,
-                        )
-                      }
-                    >
-                      <View>
-                        <Text className="text-slate-900 text-base mb-1">
-                          {item.startSurah === item.endSurah ? item.startSurah : `${item.startSurah} - ${item.endSurah}`}
-                        </Text>
-                        <Text className="text-slate-500 text-[10px] uppercase tracking-wider">
-                          Pages {item.startPage}-{item.endPage} · {item.overdueDays > 0 ? `${item.overdueDays}d overdue` : 'Due today'}
-                        </Text>
-                      </View>
-                      <View className={`px-3 py-1 rounded-full ${color.badge}`}>
-                        <Text className={`text-[9px] uppercase tracking-widest ${color.text}`}>
-                          {item.priority}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  );
-                })}
+              <View className="gap-y-4">
+                {completedReviews.map((item, idx) => (
+                  <ReinforcementCard
+                    key={`completed-${idx}`}
+                    isCompleted={true}
+                    task={{
+                      startPage: item.startPage,
+                      endPage: item.endPage,
+                      actualPages: [],
+                      displaySurah: item.startSurah === item.endSurah ? item.startSurah : `${item.startSurah} - ${item.endSurah}`,
+                      label: 'Review Completed'
+                    }}
+                    onStart={() => {}}
+                  />
+                ))}
+
+                {/* Due Reviews */}
+                {suggestions.slice(0, 3).map((item) => (
+                  <ReinforcementCard
+                    key={`${item.sourceLogId}-${item.cycleDay}`}
+                    task={{
+                      startPage: item.startPage,
+                      endPage: item.endPage,
+                      actualPages: Array.from({ length: item.endPage - item.startPage + 1 }, (_, i) => item.startPage + i),
+                      displaySurah: item.startSurah === item.endSurah ? item.startSurah : `${item.startSurah} - ${item.endSurah}`,
+                      priority: item.priority,
+                      badgeColor: getReviewPriorityColor(item.priority),
+                      label: item.overdueDays > 0 ? `${item.overdueDays}d overdue` : 'Due today'
+                    }}
+                    onStart={() => {
+                      session.openSession(item.startPage);
+                      router.push(`/(app)/quran/reader?page=${item.startPage}&planId=${hifz?.id}&type=hifz&start=${item.startPage}&end=${item.endPage}`);
+                    }}
+                  />
+                ))}
               </View>
             </View>
           )}
@@ -231,35 +231,25 @@ export default function Hifz() {
               <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
                 Upcoming Reviews
               </Text>
-              <View className="gap-y-3">
-                {suggestions.slice(3, 6).map((item) => {
-                  const color = getReviewPriorityColor(item.priority);
-                  return (
-                    <Pressable
-                      key={`${item.sourceLogId}-${item.cycleDay}`}
-                      className="rounded-2xl border border-slate-100 bg-white p-4"
-                      onPress={() =>
-                        router.push(
-                          `/(app)/hifz/log?reviewStartPage=${item.startPage}&reviewEndPage=${item.endPage}&reviewCycleDay=${item.cycleDay}` as never,
-                        )
-                      }
-                    >
-                      <View className="flex-row items-center justify-between mb-2">
-                        <Text className="text-slate-900 text-sm">
-                          {item.startSurah === item.endSurah ? item.startSurah : `${item.startSurah} - ${item.endSurah}`}
-                        </Text>
-                        <View className={`px-2 py-1 rounded-full ${color.badge}`}>
-                          <Text className={`text-[10px] uppercase tracking-wide ${color.text}`}>
-                            {item.priority}
-                          </Text>
-                        </View>
-                      </View>
-                      <Text className="text-slate-600 text-xs">
-                        Pages {item.startPage}-{item.endPage} · Due {item.dueDate}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
+              <View>
+                {suggestions.slice(3, 6).map((item) => (
+                  <ReinforcementCard
+                    key={`${item.sourceLogId}-${item.cycleDay}`}
+                    task={{
+                      startPage: item.startPage,
+                      endPage: item.endPage,
+                      actualPages: Array.from({ length: item.endPage - item.startPage + 1 }, (_, i) => item.startPage + i),
+                      displaySurah: item.startSurah === item.endSurah ? item.startSurah : `${item.startSurah} - ${item.endSurah}`,
+                      priority: item.priority,
+                      badgeColor: getReviewPriorityColor(item.priority),
+                      label: `Due ${item.dueDate}`
+                    }}
+                    onStart={() => {
+                      session.openSession(item.startPage);
+                      router.push(`/(app)/quran/reader?page=${item.startPage}&planId=${hifz?.id}&type=hifz&start=${item.startPage}&end=${item.endPage}`);
+                    }}
+                  />
+                ))}
               </View>
             </View>
           )}
@@ -337,12 +327,13 @@ export default function Hifz() {
         <ScreenFooter>
           <View className="flex-row gap-x-3">
             <Button
-              className="flex-1 shadow-lg shadow-primary/20"
-              onPress={() => router.push("/(app)/hifz/log")}
+              className={`flex-1 shadow-lg ${isDue ? 'opacity-50' : 'shadow-primary/20'}`}
+              onPress={() => !isDue && router.push("/(app)/hifz/log")}
+              disabled={isDue}
             >
               <Ionicons name="add-circle-outline" size={20} color="white" />
               <Text className="text-white">
-            Log Progress
+                {isDue ? 'Test Required' : 'Log Progress'}
               </Text>
             </Button>
 

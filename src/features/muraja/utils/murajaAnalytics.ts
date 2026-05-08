@@ -174,7 +174,12 @@ export function calculateTodayTask(params: {
 
    
     const fallbackStart = Math.max(startPage, (murajaLastPage ?? startPage - 1) + 1);
-    const displayStart = todayLog?.startPage ?? todayLog?.start_page ?? fallbackStart;
+    let finalStart = fallbackStart;
+    if (finalStart > endPage) {
+        finalStart = startPage;
+    }
+
+    const displayStart = todayLog?.startPage ?? todayLog?.start_page ?? finalStart;
     
     const quotaEnd = Math.min(displayStart + plannedPagesPerDay - 1, endPage);
 

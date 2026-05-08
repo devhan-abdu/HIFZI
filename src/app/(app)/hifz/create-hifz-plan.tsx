@@ -58,6 +58,7 @@ export default function CreateHifzPlan() {
       direction: "forward",
       preferred_time: "fajr",
       is_custom_time: false,
+      evaluation_day: 5,
     },
   });
   const startSurah = useWatch({ control, name: "start_surah" });
@@ -72,6 +73,7 @@ export default function CreateHifzPlan() {
         start_surah: existingPlan.start_surah,
         start_page: existingPlan.start_page,
         direction: existingPlan.direction,
+        evaluation_day: existingPlan.evaluationDay ?? 5,
       });
     }
   }, [existingPlan, reset]);
@@ -89,10 +91,16 @@ export default function CreateHifzPlan() {
   const onSubmit = async (data: HifzPlanSchemaFormType) => {
     if (!user?.id) return;
     try {
+      if (data.selectedDays.includes(data.evaluation_day)) {
+        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        showError("Invalid Schedule", `You cannot select ${dayNames[data.evaluation_day]} as a work day because it is your Evaluation Day.`);
+        return;
+      }
       const stats = calculatePlanStats(data);
-      const { selectedDays, ...rest } = data;
+      const { selectedDays, evaluation_day, ...rest } = data;
       const planData = {
         ...rest,
+        evaluationDay: evaluation_day,
         selected_days: selectedDays,
         total_pages: stats.totalPages,
         estimated_end_date: stats.finishDate.toISOString().slice(0, 10),
@@ -283,7 +291,11 @@ export default function CreateHifzPlan() {
                 control={control}
                 render={({ field: { value, onChange } }) => (
                   <View>
-                    <SelectDays value={value ?? []} onChange={onChange} />
+                    <SelectDays 
+                      value={value ?? []} 
+                      onChange={onChange} 
+                      disabledDay={useWatch({ control, name: 'evaluation_day' })}
+                    />
                     {errors.selectedDays && (
                       <Text className="text-xs text-red-500 mt-2">
                         {errors.selectedDays.message}
@@ -307,7 +319,37 @@ export default function CreateHifzPlan() {
                 />
               )}
             />
+          <View className="mb-10">
+            <Text className="text-gray-400 text-[10px] uppercase mb-4 ml-1 tracking-widest">
+              Weekly Evaluation Day <Text className="text-red-500">*</Text>
+            </Text>
+            <Controller
+              name="evaluation_day"
+              control={control}
+              render={({ field: { value, onChange } }) => (
+                <View className="flex-row flex-wrap gap-2">
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
+                    <Pressable
+                      key={day}
+                      onPress={() => onChange(index)}
+                      className={`px-3 py-2 rounded-xl border ${
+                        value === index ? "bg-primary border-primary" : "bg-white border-slate-100"
+                      }`}
+                    >
+                      <Text className={`text-xs ${value === index ? "text-white" : "text-slate-600"}`}>{day}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+            />
+            {errors.evaluation_day && (
+              <Text className="text-xs text-red-500 mt-2">{errors.evaluation_day.message}</Text>
+            )}
+            <Text className="text-[10px] text-slate-400 mt-2 ml-1 italic">
+              Your weekly progress will be evaluated every {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][useWatch({ control, name: 'evaluation_day' }) ?? 4]}.
+            </Text>
           </View>
+        </View>
 
           <View className="mt-4">
             <Text className="text-gray-400 text-[10px] uppercase mb-4 ml-1 tracking-widest">
