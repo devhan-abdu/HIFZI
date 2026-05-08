@@ -102,6 +102,7 @@ export const habitProgressService = {
       endDate?: string | null;
       metadata?: string | null;
       localRefId?: number | null;
+      evaluationDay?: number | null;
     }
   ) {
     const tx = db || drizzleDb;
@@ -123,6 +124,7 @@ export const habitProgressService = {
       endDate: payload.endDate ?? null,
       status: payload.status ?? "active",
       metadata: payload.metadata ?? null,
+      evaluationDay: payload.evaluationDay ?? 5,
       isSynced: 0,
     }).returning({ id: activityPlans.id });
 

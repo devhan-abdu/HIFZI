@@ -1,4 +1,6 @@
 import { HifzQuestion } from "../types";
+import { aya } from "@/src/features/quran/database/quranAssetSchema";
+import { eq, sql, and, ne } from "drizzle-orm";
 
 const shuffle = (array: any[]) => array.sort(() => Math.random() - 0.5);
 
@@ -8,31 +10,31 @@ export const generateHifzTest = async (db: any, completedPages: number[]) => {
 
   try {
     const pageCount = completedPages.length;
-    const totalQuestions = pageCount >= 30 ? 15 : pageCount > 20 ? 12 : pageCount > 10 ? 10 : 6;
-    const questionsPerType = Math.floor(totalQuestions / 2);
+    // Rule: 2 questions per page, minimum 3, maximum 15
+    const totalQuestions = Math.min(Math.max(pageCount * 2, 3), 15);
+    const questionsPerType = Math.floor(totalQuestions / 3); 
     const queue: HifzQuestion[] = [];
 
     const getRandomPage = () => completedPages[Math.floor(Math.random() * completedPages.length)];
 
+    // 1. SEQUENCE Questions
+    const ayaSubquery = db.select({
+        soraid: aya.soraid,
+        ayaid: aya.ayaid,
+        page: aya.page,
+        text: aya.text,
+        prev_text: sql<string>`LAG(${aya.text}) OVER (ORDER BY ${aya.soraid}, ${aya.ayaid})`.as('prev_text'),
+        next_text: sql<string>`LEAD(${aya.text}) OVER (ORDER BY ${aya.soraid}, ${aya.ayaid})`.as('next_text'),
+    }).from(aya).as('a');
+
     for (let i = 0; i < questionsPerType; i++) {
         try {
             const page = getRandomPage();
-            const data = await db.getFirstAsync(
-                `SELECT * FROM (
-                    SELECT 
-                        soraid, 
-                        ayaid, 
-                        page,
-                        text,
-                        LAG(text) OVER (ORDER BY soraid, ayaid) as prev_text,
-                        LEAD(text) OVER (ORDER BY soraid, ayaid) as next_text
-                    FROM aya
-                ) 
-                WHERE page = ? 
-                ORDER BY RANDOM() 
-                LIMIT 1`, 
-                [page]
-            );
+            const [data] = await db.select()
+                .from(ayaSubquery)
+                .where(eq(ayaSubquery.page, page))
+                .orderBy(sql`RANDOM()`)
+                .limit(1);
 
             if (data) {
                 queue.push({
@@ -50,24 +52,22 @@ export const generateHifzTest = async (db: any, completedPages: number[]) => {
         }
     }     
 
+    // 2. BOUNDARY Questions
     for (let i = 0; i < questionsPerType; i++) {
         try {
             const page = getRandomPage();
-            
-            const boundaryData = await db.getFirstAsync(
-                `SELECT 
-                    main.text AS current_text, -- Fixed typo: currunt -> current
-                    main.soraid, 
-                    main.ayaid, 
-                    main.page,
-                    (SELECT text FROM aya WHERE page = main.page ORDER BY soraid ASC, ayaid ASC LIMIT 1) AS page_start,
-                    (SELECT text FROM aya WHERE page = main.page ORDER BY soraid DESC, ayaid DESC LIMIT 1) AS page_end
-                FROM aya AS main
-                WHERE main.page = ? 
-                ORDER BY RANDOM() 
-                LIMIT 1`, 
-                [page]
-            );
+            const [boundaryData] = await db.select({
+                current_text: aya.text,
+                soraid: aya.soraid,
+                ayaid: aya.ayaid,
+                page: aya.page,
+                page_start: sql<string>`(SELECT text FROM aya WHERE page = ${page} ORDER BY soraid ASC, ayaid ASC LIMIT 1)`,
+                page_end: sql<string>`(SELECT text FROM aya WHERE page = ${page} ORDER BY soraid DESC, ayaid DESC LIMIT 1)`,
+            })
+            .from(aya)
+            .where(eq(aya.page, page))
+            .orderBy(sql`RANDOM()`)
+            .limit(1);
 
             if (boundaryData) {
                 queue.push({
@@ -84,6 +84,44 @@ export const generateHifzTest = async (db: any, completedPages: number[]) => {
             console.warn("Failed Boundary question:", innerError);
         }
     }
+
+    // 3. CHOICE Questions (Multiple Choice)
+    for (let i = 0; i < questionsPerType; i++) {
+        try {
+            const page = getRandomPage();
+            const [data] = await db.select({
+                text: aya.text,
+                soraid: aya.soraid,
+                ayaid: aya.ayaid,
+                next_text: sql<string>`(SELECT text FROM aya WHERE soraid = ${aya.soraid} AND ayaid = ${aya.ayaid} + 1)`,
+            })
+            .from(aya)
+            .where(eq(aya.page, page))
+            .orderBy(sql`RANDOM()`)
+            .limit(1);
+
+            if (data && data.next_text) {
+                const distractors = await db.select({ text: aya.text })
+                    .from(aya)
+                    .where(ne(aya.page, page))
+                    .orderBy(sql`RANDOM()`)
+                    .limit(2);
+
+                queue.push({
+                    type: 'CHOICE',
+                    question: data.text,
+                    answer: {
+                        correct: data.next_text,
+                        options: shuffle([data.next_text, ...distractors.map((d: any) => d.text)])
+                    },
+                    hint: "Pick the next Ayah"
+                });
+            }
+        } catch (innerError) {
+            console.warn("Failed Choice question:", innerError);
+        }
+    }
+
 
     return shuffle(queue);
 

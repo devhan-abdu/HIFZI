@@ -5,7 +5,7 @@ import { IDailyMurajaLog, IWeeklyMurajaPLan } from "../types";
 import { PerformanceService } from "@/src/services/PerformanceService";
 import { GamificationService } from "@/src/services/GamificationService";
 import { PageMasteryService } from "@/src/services/PageMasteryService";
-import { upsertHabitProgressLog, deleteHabitProgressLog } from "../../habits/services/habitProgressService";
+import { upsertHabitProgressLog, deleteHabitProgressLog, upsertActivityPlan } from "../../habits/services/habitProgressService";
 import { supabase } from "@/src/lib/supabase";
 import { notificationService } from "../../notifications/services/notificationService";
 
@@ -45,9 +45,26 @@ export const murajaService = {
         note: planData.note ?? null,
         preferredTime: planData.preferred_time,
         isCustomTime: planData.is_custom_time ?? false,
+        evaluationDay: planData.evaluationDay ?? 5,
       }).returning({ id: weeklyMurajaPlans.id });
 
       lastId = newPlan.id;
+
+      await upsertActivityPlan(tx as any, {
+        userId: planData.user_id,
+        activityType: "MURAJA",
+        status: "active",
+        title: "Muraja Plan",
+        startDate: planData.week_start_date,
+        endDate: planData.week_end_date,
+        evaluationDay: planData.evaluationDay ?? 5,
+        localRefId: lastId,
+        metadata: JSON.stringify({
+          planned_pages_per_day: planData.planned_pages_per_day,
+          start_page: planData.start_page,
+          end_page: planData.end_page,
+        })
+      });
 
       await tx.insert(userStats)
         .values({ userId: planData.user_id, murajaLastPage: planData.start_page - 1 })

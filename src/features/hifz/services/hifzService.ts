@@ -46,6 +46,7 @@ export const hifzService = {
         preferredTime: planData.preferred_time,
         isCustomTime: planData.is_custom_time ?? false,
         isReinforcementEnabled: planData.is_reinforcement_enabled ?? true,
+        evaluationDay: planData.evaluationDay ?? 5,
         syncStatus: 0,
       }).returning({ id: hifzPlans.id });
 
@@ -58,6 +59,7 @@ export const hifzService = {
         title: "Hifz Plan",
         startDate: planData.start_date,
         endDate: planData.estimated_end_date,
+        evaluationDay: planData.evaluationDay ?? 5,
         localRefId: localId,
         metadata: JSON.stringify({
           pages_per_day: planData.pages_per_day,
