@@ -1,6 +1,7 @@
 import { cn } from "@/src/lib/utils";
 import { useState } from "react";
-import { Pressable, PressableProps, Text, View } from "react-native";
+import { Pressable, PressableProps, View } from "react-native";
+import { Text } from "../common/ui/Text";
 
 type ButtonVariant = "primary" | "outline" | "ghost" | "none";
 
