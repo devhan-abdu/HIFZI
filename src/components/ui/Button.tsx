@@ -1,6 +1,6 @@
 import { cn } from "@/src/lib/utils";
 import { useState } from "react";
-import { Pressable, PressableProps, View } from "react-native";
+import { Pressable, PressableProps, View, ActivityIndicator } from "react-native";
 import { Text } from "../common/ui/Text";
 
 type ButtonVariant = "primary" | "outline" | "ghost" | "none";
@@ -9,7 +9,9 @@ interface ButtonProps extends PressableProps {
   children: React.ReactNode;
   variant?: ButtonVariant;
   className?: string;
+  textClassName?: string;
   disabled?: boolean;
+  loading?: boolean;
 }
 
 export function Button({
@@ -17,9 +19,13 @@ export function Button({
   onPress,
   variant = "primary",
   className = "",
+  textClassName = "",
   disabled = false,
+  loading = false,
   ...rest
 }: ButtonProps) {
+
+  const isEffectivelyDisabled = disabled || loading;
 
   const variants: Record<ButtonVariant, string> = {
     primary: "bg-primary",
@@ -31,21 +37,26 @@ export function Button({
   return (
     <Pressable
       onPress={onPress}
-      disabled={disabled}
+      disabled={isEffectivelyDisabled}
       className={cn(
         "rounded-2xl px-6 h-14 flex-row items-center justify-center overflow-hidden",
         variants[variant],
-        disabled && "opacity-50",
+        isEffectivelyDisabled && "opacity-50",
         className,
       )}
       {...rest}
     >
       <View className="flex-row items-center justify-center gap-x-3">
+        {loading && (
+          <ActivityIndicator color={variant === "primary" ? "#fff" : "#276359"} size="small" />
+        )}
+        
         {typeof children === "string" ? (
           <Text
             className={cn(
               " uppercase tracking-[1.5px] text-[12px]",
               variant === "primary" ? "text-white" : "text-primary",
+              textClassName
             )}
           >
             {children}
