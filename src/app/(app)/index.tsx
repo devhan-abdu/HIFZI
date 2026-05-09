@@ -19,6 +19,11 @@ import { useWeeklyMuraja } from "@/src/features/muraja/hooks/useWeeklyMuraja";
 import { useHifzPlan } from "@/src/features/hifz/hooks/useHifzPlan";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { runHifzSeedingScenario } from "@/src/features/hifz/utils/seed-hifz-logic";
+import { db } from "@/src/lib/db/local-client";
+import { activityPlans } from "@/src/features/habits/database/habitSchema";
+import { hifzPlans } from "@/src/features/hifz/database/hifzSchema";
+import { weeklyMurajaPlans } from "@/src/features/muraja/database/murajaSchema";
+import { eq } from "drizzle-orm";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useWeeklyEvaluationTrigger } from "@/src/features/habits/hooks/useWeeklyEvaluationTrigger";
@@ -68,10 +73,16 @@ export default function Dashboard() {
   useEffect(() => {
     if (__DEV__ && user?.id && surah.length > 0) {
       const initSeeding = async () => {
-        const hasSeeded = await AsyncStorage.getItem("SEED_V_ADAPTIVE_TEST");
+        const hasSeeded = await AsyncStorage.getItem("SEED_V_STRONG_BOTH_V6");
         if (!hasSeeded) {
-          await runHifzSeedingScenario(user.id, surah, "adaptive_test");
-          await AsyncStorage.setItem("SEED_V_ADAPTIVE_TEST", "true");
+          // 1. Clear existing data and set common evaluation day
+          await db.update(activityPlans).set({ evaluationDay: 6 }).where(eq(activityPlans.userId, user.id));
+          await db.update(hifzPlans).set({ evaluationDay: 6 }).where(eq(hifzPlans.userId, user.id));
+          await db.update(weeklyMurajaPlans).set({ evaluationDay: 6 }).where(eq(weeklyMurajaPlans.userId, user.id));
+
+          // 2. Run the Strong Both scenario
+          await runHifzSeedingScenario(user.id, surah, "strong_hifz_good_muraja");
+          await AsyncStorage.setItem("SEED_V_STRONG_BOTH_V6", "true");
           queryClient.invalidateQueries();
         }
       };
