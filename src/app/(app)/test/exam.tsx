@@ -6,7 +6,7 @@ import {
 import { useHifzTest } from "@/src/features/hifz/hooks/useHifzTest";
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
-import { View, Pressable } from "react-native";
+import { View, Pressable, ActivityIndicator } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
 import { Text as QuranText } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
@@ -27,12 +27,24 @@ export default function Test() {
   const [score, setScore] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { user } = useSession();
   const { type, planId } = useLocalSearchParams();
 
-  useEffect(() => {
-    if (isFinished && user?.id) {
-      TestService.saveResult({
+  const resetUI = () => {
+    setCurrentIndex(0);
+    setScore(0);
+    setRevealed(false);
+    setIsFinished(false);
+    setIsSaving(false);
+  };
+
+  const handleReturn = async () => {
+    if (isSaving || !user?.id) return;
+    
+    setIsSaving(true);
+    try {
+      await TestService.saveResult({
         userId: user.id,
         planId: planId && !isNaN(Number(planId)) ? Number(planId) : undefined,
         type: (type as any) || "HIFZ",
@@ -40,15 +52,16 @@ export default function Test() {
         score,
         totalQuestions: questions.length,
       });
+      router.replace("/(app)/evaluation");
+    } catch (e) {
+      console.error("Failed to save test:", e);
+      router.replace("/(app)/evaluation");
     }
-  }, [isFinished, user?.id]);
-
-  const resetUI = () => {
-    setCurrentIndex(0);
-    setScore(0);
-    setRevealed(false);
-    setIsFinished(false);
   };
+
+  useEffect(() => {
+    resetUI();
+  }, [type, pages, planId]);
 
   if (loading)
     return (
@@ -88,15 +101,16 @@ export default function Test() {
 
           <View className="gap-y-4 mt-10 w-full px-10">
             <Pressable
-              onPress={() => {
-
-                router.replace("/(app)/evaluation");
-                  resetUI();
-                  refresh();
-              }}
-              className="bg-primary py-3 rounded-xl items-center justify-center shadow-lg shadow-primary/20"
+              onPress={handleReturn}
+              disabled={isSaving}
+              className={`py-3 rounded-xl items-center justify-center shadow-lg shadow-primary/20 ${isSaving ? 'bg-slate-300' : 'bg-primary'}`}
             >
-              <Text className="text-white  text-lg">Return to Evaluation</Text>
+              <View className="flex-row items-center gap-x-2">
+                {isSaving && <ActivityIndicator color="white" size="small" />}
+                <Text className="text-white text-lg">
+                  {isSaving ? "Saving Results..." : "Return to Evaluation"}
+                </Text>
+              </View>
             </Pressable>
 
             <View className="flex-row gap-4">

@@ -9,15 +9,13 @@ export const generateHifzTest = async (db: any, completedPages: number[]) => {
   if (!completedPages || completedPages.length === 0) return [];
 
   try {
-    const pageCount = completedPages.length;
-    // Rule: 2 questions per page, minimum 3, maximum 15
+      const pageCount = completedPages.length;
     const totalQuestions = Math.min(Math.max(pageCount * 2, 3), 15);
     const questionsPerType = Math.floor(totalQuestions / 3); 
     const queue: HifzQuestion[] = [];
 
     const getRandomPage = () => completedPages[Math.floor(Math.random() * completedPages.length)];
 
-    // 1. SEQUENCE Questions
     const ayaSubquery = db.select({
         soraid: aya.soraid,
         ayaid: aya.ayaid,
