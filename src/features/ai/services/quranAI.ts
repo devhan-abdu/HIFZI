@@ -3,29 +3,23 @@ import { supabase } from "@/src/lib/supabase";
 const DEFAULT_FALLBACK = "Keep following your plan and stay consistent!";
 const QURAN_ONLY_FALLBACK = "I focus on Quran learning. Ask me about tafsir or your progress.";
 
-/**
- * Utility to extract text from whatever format the Edge Function returns
- */
+
 function extractText(payload: any): string | null {
   if (!payload) return null;
+  console.log(payload,"what is the payload of the ai" )
   return payload.answer || payload.explanation || payload.text || null;
 }
 
-/**
- * Explains a memorization plan based on user performance
- */
+
 export async function explainPlan(summary: any, suggestion: any): Promise<string> {
   try {
     const { data, error } = await supabase.functions.invoke("explain-plan", {
-      body: {summary, suggestion },
+      body: { summary, suggestion },
     });
     if (error) throw error;
-    const data2 = extractText(data)
     console.log(data ,"what the backend")
     return extractText(data) ?? DEFAULT_FALLBACK;
   } catch (err) {
-    // here thir  is an error
-    console.log("Plan Error:", err);
     return DEFAULT_FALLBACK;
   }
 }

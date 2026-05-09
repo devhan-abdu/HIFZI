@@ -46,9 +46,11 @@ console.log("STATUS:", res.status);
 
 console.log("GEMINI RAW RESPONSE:", JSON.stringify(data, null, 2));
 
-    const text =
-      data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "Stay consistent and keep going!";
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!text) {
+      throw new Error("Gemini failed to generate content");
+    }
 
     return new Response(JSON.stringify({ answer: text }), {
       headers: { "Content-Type": "application/json" },
