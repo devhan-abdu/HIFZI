@@ -29,7 +29,14 @@ export const habitSummaryService = {
     const duePlans: DuePlanInfo[] = [];
 
     for (const plan of activePlans) {
-      const targetEvalDay = plan.evaluationDay ?? 5;
+      const planStart = plan.startDate ? new Date(plan.startDate) : null;
+      if (planStart) {
+        const diffTime = now.getTime() - planStart.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays < 3) continue;
+      }
+
+      const targetEvalDay = plan.evaluationDay ?? 6;
       if (todayDayOfWeek === targetEvalDay) {
         const weekKey = `plan-${plan.id}-eval-${dateKey}`;
         const result = await db.query.weeklySummarySeen.findFirst({
@@ -66,7 +73,7 @@ export const habitSummaryService = {
     const dateKey = `${year}-${month}-${day}`;
 
     for (const plan of activePlans) {
-        const targetEvalDay = plan.evaluationDay ?? 5;
+        const targetEvalDay = plan.evaluationDay ?? 6;
         if (todayDayOfWeek === targetEvalDay) {
             const weekKey = `plan-${plan.id}-eval-${dateKey}`;
             await db.insert(weeklySummarySeen)
