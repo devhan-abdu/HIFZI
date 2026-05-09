@@ -73,7 +73,7 @@ export default function CreateHifzPlan() {
         start_surah: existingPlan.start_surah,
         start_page: existingPlan.start_page,
         direction: existingPlan.direction,
-        evaluation_day: existingPlan.evaluationDay ?? 5,
+        evaluation_day: existingPlan.evaluationDay ?? 6,
       });
     }
   }, [existingPlan, reset]);
