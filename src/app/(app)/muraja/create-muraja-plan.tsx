@@ -49,6 +49,7 @@ export default function CreateWeeklyPlan() {
     formState: { errors },
     control,
     setValue,
+    getValues,
   } = useForm({
     resolver: yupResolver(WeeklyMurajaSchema),
     defaultValues: {
@@ -56,6 +57,8 @@ export default function CreateWeeklyPlan() {
       planned_pages_per_day: 20,
       start_surah: 1,
       start_page: 1,
+      end_surah: 114,
+      end_page: 604,
       estimated_time_min: 20,
       selectedDays: [],
       place: "",
@@ -67,7 +70,31 @@ export default function CreateWeeklyPlan() {
   });
 
   const selectedSurah = useWatch({ control, name: "start_surah" });
+  const selectedEndSurah = useWatch({ control, name: "end_surah" });
+  const selectedStartPage = useWatch({ control, name: "start_page" });
+  const selectedEndPage = useWatch({ control, name: "end_page" });
+  const selectedEvalDay = useWatch({ control, name: 'evaluation_day' });
   const weekStart = useWatch({ control, name: "week_start_date" });
+
+  React.useEffect(() => {
+    if (selectedStartPage > selectedEndPage) {
+      setValue("end_page", selectedStartPage);
+      setValue("end_surah", selectedSurah);
+    }
+  }, [selectedStartPage]);
+
+  React.useEffect(() => {
+    if (selectedSurah > selectedEndSurah) {
+      setValue("end_surah", selectedSurah);
+    }
+  }, [selectedSurah]);
+
+  React.useEffect(() => {
+    const currentDays = getValues('selectedDays') || [];
+    if (currentDays.includes(selectedEvalDay)) {
+      setValue('selectedDays', currentDays.filter(d => d !== selectedEvalDay));
+    }
+  }, [selectedEvalDay]);
 
   const onSubmit = async (data: WeeklyMurajaFormType) => {
     if (!user?.id) return;
@@ -79,13 +106,13 @@ export default function CreateWeeklyPlan() {
         return;
       }
        
-      const startDate = new Date(data.week_start_date)
+      const totalPages = data.end_page - data.start_page + 1;
+      const daysNeeded = Math.ceil(totalPages / data.planned_pages_per_day);
+      
+      const startDate = new Date(data.week_start_date);
       const endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + 6);
+      endDate.setDate(startDate.getDate() + daysNeeded);
 
-      const totalPagesToRead = data.planned_pages_per_day * data.selectedDays.length;
-      const calculatedEndPage = data.start_page + totalPagesToRead - 1;   
-    
       const planPayload: Omit<IWeeklyMurajaPLan, "id"> = {
         user_id: user.id,
         remote_id: null,
@@ -93,7 +120,7 @@ export default function CreateWeeklyPlan() {
         week_end_date: endDate.toISOString().slice(0, 10),
         planned_pages_per_day: data.planned_pages_per_day,
         start_page: data.start_page,
-        end_page: calculatedEndPage,
+        end_page: data.end_page,
         is_active: 1,
         selected_days: JSON.stringify(data.selectedDays),
         sync_status: 0,
@@ -158,7 +185,7 @@ export default function CreateWeeklyPlan() {
       </View>
       <Screen>
         <ScreenContent>
-          <View className="mb-10 p-5 bg-slate-50 rounded-[32px] border border-slate-100">
+          <View className="mb-10 p-5  rounded-[32px] border border-slate-100">
             <Text className="text-slate-400 text-[10px] uppercase mb-4 ml-1 tracking-widest ">
               Plan Focus
             </Text>
@@ -210,7 +237,7 @@ export default function CreateWeeklyPlan() {
           </View>
 
           <SectionHeader title="Target Range" />
-          <View className="p-5 mb-10 bg-slate-50 rounded-[32px] border border-slate-100 gap-y-4">
+          <View className="p-5 mb-10  rounded-[32px] border border-slate-100 gap-y-4">
             <Controller
               control={control}
               name="start_surah"
@@ -227,11 +254,40 @@ export default function CreateWeeklyPlan() {
               render={({ field: { value, onChange } }) => (
                 <View>
                   <SurahPageDropdown
+                    label="Start Page"
                     surah={selectedSurah}
                     setPage={onChange}
                     page={value}
                   />
                   <ErrorMessage error={errors.start_page} />
+                </View>
+              )}
+            />
+
+            <View className="h-[1px]  my-2" />
+
+            <Controller
+              control={control}
+              name="end_surah"
+              render={({ field: { value, onChange } }) => (
+                <View>
+                  <SurahDropdown label="End Surah" surah={value} setSurah={onChange} />
+                  <ErrorMessage error={errors.end_surah} />
+                </View>
+              )}
+            />
+            <Controller
+              control={control}
+              name="end_page"
+              render={({ field: { value, onChange } }) => (
+                <View>
+                  <SurahPageDropdown
+                    label="End Page"
+                    surah={selectedEndSurah}
+                    setPage={onChange}
+                    page={value}
+                  />
+                  <ErrorMessage error={errors.end_page} />
                 </View>
               )}
             />
@@ -262,7 +318,7 @@ export default function CreateWeeklyPlan() {
 
           {/* STEP 3: TIME & SCHEDULE */}
           <SectionHeader title="Daily Routine" />
-          <View className="p-5 mb-10 bg-slate-50 rounded-[32px] border border-slate-100">
+          <View className="p-5 mb-10  rounded-[32px] border border-slate-100">
             <Controller
               name="preferred_time"
               control={control}
@@ -276,26 +332,26 @@ export default function CreateWeeklyPlan() {
                 />
               )}
             />
-            <View className="h-[1px] bg-slate-200 my-6" />
             <Controller
               name="selectedDays"
               control={control}
               render={({ field: { value, onChange } }) => (
-                <View>
+                <View className="mb-8">
                   <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-4 ml-1 ">
                     Weekly Commitment
                   </Text>
                   <SelectDays 
                     value={value ?? []} 
                     onChange={onChange} 
+                    mode="multi"
                     disabledDay={useWatch({ control, name: 'evaluation_day' })}
                   />
                   <ErrorMessage error={errors.selectedDays} />
                 </View>
               )}
             />
-            <View className="h-[1px] bg-slate-200 my-6" />
-            <View>
+
+            <View className="mb-4">
               <Text className="text-slate-400 text-[10px] uppercase mb-4 ml-1 tracking-widest ">
                 Weekly Evaluation Day <Text className="text-red-500">*</Text>
               </Text>
@@ -303,30 +359,22 @@ export default function CreateWeeklyPlan() {
                 name="evaluation_day"
                 control={control}
                 render={({ field: { value, onChange } }) => (
-                  <View className="flex-row flex-wrap gap-2">
-                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
-                      <Pressable
-                        key={day}
-                        onPress={() => onChange(index)}
-                        className={`px-3 py-2 rounded-xl border ${
-                          value === index ? "bg-primary border-primary" : "bg-white border-slate-200"
-                        }`}
-                      >
-                        <Text className={`text-xs ${value === index ? "text-white" : "text-slate-600"}`}>{day}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
+                  <SelectDays 
+                    value={value ?? 4} 
+                    onChange={onChange}
+                    mode="single"
+                  />
                 )}
               />
               <ErrorMessage error={errors.evaluation_day} />
-              <Text className="text-[10px] text-slate-400 mt-3 ml-1 italic">
+              <Text className="text-[10px] text-slate-400 mt-4 ml-1 italic leading-relaxed">
                 Your weekly progress will be evaluated every {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][useWatch({ control, name: 'evaluation_day' }) ?? 4]}.
               </Text>
             </View>
           </View>
 
           <SectionHeader title="Duration & Details" />
-          <View className="p-5 mb-10 bg-slate-50 rounded-[32px] border border-slate-100 gap-y-5">
+          <View className="p-5 mb-10  rounded-[32px] border border-slate-100 gap-y-5">
             <Controller
               control={control}
               name="estimated_time_min"

@@ -1,6 +1,7 @@
-import { eq, and, sql, max, desc } from 'drizzle-orm';
+import { eq, and, sql, max, desc, gte, lte } from 'drizzle-orm';
 import { db } from '@/src/lib/db/local-client';
 import { weeklyMurajaPlans, dailyMurajaLogs } from '../database/murajaSchema';
+import { activityPlans } from '../../habits/database/habitSchema';
 import { IDailyMurajaLog, IWeeklyMurajaPLan } from "../types";
 import { PerformanceService } from "@/src/services/PerformanceService";
 import { GamificationService } from "@/src/services/GamificationService";
@@ -130,6 +131,38 @@ export const murajaService = {
   },
 
  
+  async getPlanById(userId: string, planId: number) {
+    const plan = await db.query.weeklyMurajaPlans.findFirst({
+      where: and(eq(weeklyMurajaPlans.id, planId)),
+    });
+
+    if (!plan) return null;
+
+    const logs = await db.query.dailyMurajaLogs.findMany({
+      where: eq(dailyMurajaLogs.planId, planId),
+      orderBy: [dailyMurajaLogs.date],
+    });
+
+    return {
+      ...plan,
+      daily_logs: logs.map(l => ({
+        id: l.id,
+        remote_id: l.remoteId,
+        plan_id: l.planId,
+        date: l.date,
+        completed_pages: l.completedPages,
+        actual_time_min: l.actualTimeMin,
+        status: l.status as any,
+        is_catchup: l.isCatchup,
+        sync_status: l.syncStatus,
+        start_page: l.startPage,
+        mistakes_count: l.mistakesCount,
+        hesitation_count: l.hesitationCount,
+        quality_score: l.qualityScore,
+      })),
+    };
+  },
+
   async syncUserAnalytics(tx: any, userId: string, planId: number, displayName?: string) {
     let rewards = null;
     const allLogs = await tx.query.dailyMurajaLogs.findMany({
@@ -174,6 +207,23 @@ export const murajaService = {
           updatedAt: sql`CURRENT_TIMESTAMP`
         }
       });
+
+    // Dynamic End Date Re-estimation
+    if (plan.isActive) {
+        const remainingPages = (plan.endPage ?? 0) - trueLastPage;
+        if (remainingPages > 0) {
+            const daysNeeded = Math.ceil(remainingPages / Math.max(1, plan.plannedPagesPerDay));
+            const newEndDate = new Date();
+            newEndDate.setDate(newEndDate.getDate() + daysNeeded);
+            const newEndDateStr = newEndDate.toISOString().slice(0, 10);
+
+            if (newEndDateStr !== plan.weekEndDate) {
+                await tx.update(weeklyMurajaPlans)
+                    .set({ weekEndDate: newEndDateStr, syncStatus: 0 })
+                    .where(eq(weeklyMurajaPlans.id, planId));
+            }
+        }
+    }
 
    
     const todayLog = allLogs.find((l: any) => l.date === todayStr);
@@ -452,17 +502,63 @@ export const murajaService = {
     const startOfMonth = `${year}-${String(month).padStart(2, '0')}-01`;
     const endOfMonth = `${year}-${String(month).padStart(2, '0')}-31`;
 
-    const plans = await db.query.weeklyMurajaPlans.findMany({
+    return await db.query.dailyMurajaLogs.findMany({
       where: and(
-        eq(weeklyMurajaPlans.userId, userId),
-        sql`${weeklyMurajaPlans.weekStartDate} <= ${endOfMonth}`,
-        sql`${weeklyMurajaPlans.weekEndDate} >= ${startOfMonth}`
+        gte(dailyMurajaLogs.date, startOfMonth),
+        lte(dailyMurajaLogs.date, endOfMonth),
+        sql`${dailyMurajaLogs.planId} IN (SELECT id FROM weekly_muraja_plan WHERE user_id = ${userId})`
       ),
-      with: {
-        daily_muraja_logs: true
-      }
+      orderBy: [dailyMurajaLogs.date],
+    });
+  },
+
+  async recyclePlan(userId: string, planId: number) {
+    const oldPlan = await db.query.weeklyMurajaPlans.findFirst({
+      where: eq(weeklyMurajaPlans.id, planId),
     });
 
-    return plans;
+    if (!oldPlan) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Calculate new estimated end date based on same range and rate
+    const totalPages = (oldPlan.endPage ?? 0) - (oldPlan.startPage ?? 1) + 1;
+    const daysNeeded = Math.ceil(totalPages / (oldPlan.plannedPagesPerDay ?? 2));
+    
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + daysNeeded);
+    const endDateStr = endDate.toISOString().split('T')[0];
+
+    return await this.createPlan({
+      user_id: userId,
+      week_start_date: today,
+      week_end_date: endDateStr,
+      planned_pages_per_day: oldPlan.plannedPagesPerDay ?? 2,
+      start_page: oldPlan.startPage ?? 1,
+      end_page: oldPlan.endPage ?? 10,
+      selected_days: oldPlan.selectedDays ?? "[0,1,2,3,4,5,6]",
+      estimated_time_min: oldPlan.estimatedTimeMin ?? 15,
+      preferred_time: oldPlan.preferredTime ?? null,
+      is_custom_time: oldPlan.isCustomTime ?? false,
+      evaluationDay: oldPlan.evaluationDay ?? 5,
+    } as any);
+  },
+
+  async completePlan(userId: string, planId: number) {
+    await db.transaction(async (tx) => {
+      await tx.update(weeklyMurajaPlans)
+        .set({ isActive: false, syncStatus: 0 })
+        .where(and(eq(weeklyMurajaPlans.userId, userId), eq(weeklyMurajaPlans.id, planId)));
+      
+      await tx.update(activityPlans)
+        .set({ status: 'completed', updatedAt: sql`CURRENT_TIMESTAMP` })
+        .where(and(
+          eq(activityPlans.userId, userId),
+          eq(activityPlans.activityType, 'MURAJA'),
+          eq(activityPlans.localRefId, planId)
+        ));
+    });
+    
+    void this.syncPending(userId);
   }
 };

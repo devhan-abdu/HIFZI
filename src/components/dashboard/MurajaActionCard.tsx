@@ -4,25 +4,20 @@ import { useAlert } from "@/src/hooks/useAlert";
 import { Alert } from "../common/Alert";
 import { ActionTaskCard } from "../common/ActionCard";
 import { QualityModal } from "../common/QualityModal";
-import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
+import { router } from "expo-router";
 import { useCelebrationStore } from "@/src/hooks/useCelebrationStore";
 
 export const MurajaActionCard = ({
   todayPlan,
   weeklyPlan,
-  onStart,
-  onResume,
   onDetails,
 }: {
   todayPlan: any;
   weeklyPlan: any;
-  onStart: () => void;
-  onResume: () => void;
   onDetails: () => void;
 }) => {
   const { updateLog, isUpdating } = useMurajaOperation();
   const { alertConfig, hideAlert } = useAlert();
-  const session = useReaderSessionStore();
   const trigger = useCelebrationStore(s => s.trigger);
   const [qualityModalVisible, setQualityModalVisible] = useState(false);
 
@@ -30,10 +25,9 @@ export const MurajaActionCard = ({
   const updateStatus = async (newStatus: "completed" | "pending" | "missed", quality?: number) => {
     const todayStr = new Date().toISOString().slice(0, 10);
     const isCompleted = newStatus === "completed";
-    const duration = quality ? session.getDurationMinutes() : (weeklyPlan.estimated_time_min || 0);
-    const pagesViewed = session.pagesViewed;
-    const actualEnd = pagesViewed.length > 0 ? Math.max(...pagesViewed) : todayPlan.endPage;
-    const actualCount = pagesViewed.length > 0 ? pagesViewed.length : (todayPlan.endPage - todayPlan.startPage + 1);
+    const duration = weeklyPlan.estimated_time_min || 0;
+    const actualEnd = todayPlan.endPage;
+    const actualCount = (todayPlan.endPage - todayPlan.startPage + 1);
 
     try {
       const result = await updateLog({
@@ -66,7 +60,6 @@ export const MurajaActionCard = ({
   };
 
   const isPartial = todayPlan.status === "partial";
-  const isResumable = isPartial || (session.currentPage >= todayPlan.startPage && session.currentPage <= todayPlan.endPage);
 
   const subTitle = todayPlan.status === "partial" 
     ? `${todayPlan.completedPages} pages done · ${todayPlan.startPage} – ${todayPlan.endPage}`
@@ -96,9 +89,9 @@ export const MurajaActionCard = ({
             setQualityModalVisible(true);
           }
         }}
-        onStart={onStart}
-        onResume={onResume}
-        isResumable={isResumable}
+        onStart={() => {
+          router.push(`/(app)/quran/reader?page=${todayPlan.startPage}&planId=${weeklyPlan.id}&type=muraja&start=${todayPlan.startPage}&end=${todayPlan.endPage}`);
+        }}
         onDetails={onDetails}
       />
 

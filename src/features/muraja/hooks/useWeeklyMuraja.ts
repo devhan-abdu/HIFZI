@@ -46,7 +46,7 @@ export const useWeeklyMuraja = () => {
         const activeDays = typeof selected_days === "string" ? JSON.parse(selected_days) as number[] : selected_days as unknown as number[];
 
         const expectedPages = calculateExpectedPages(
-            week_start_date ?? "", week_end_date ?? "", today, activeDays, planned_pages_per_day ?? 1
+            week_start_date ?? "", activeDays, planned_pages_per_day ?? 1, today
         );
         const totalCompletedPages = daily_logs.reduce((acc: number, curr: any) => acc + (curr.completed_pages ?? 0), 0);
         const pageDiff = totalCompletedPages - expectedPages;
@@ -74,7 +74,7 @@ export const useWeeklyMuraja = () => {
         return {
             weeklyPlan: {
                 id, 
-                totalPage: (planned_pages_per_day ?? 1) * activeDays.length,
+                weeklyTargetPages: (planned_pages_per_day ?? 1) * activeDays.length,
                 totalDays: activeDays.length,
                 week_start_date,
                 week_end_date,
@@ -83,19 +83,21 @@ export const useWeeklyMuraja = () => {
                 start_juz,
                 end_juz,
                 startSurah,
-                endSurah
-
+                endSurah,
+                startPage: start_page,
+                endPage: end_page,
             },
             stats: {
                 totalCompletedPages,
+                totalRangePages: (end_page ?? 1) - (start_page ?? 1) + 1,
                 pageDiff,
                 performanceStatus,
                 streak: muraja_current_streak,
-                overAllProgress: ((totalCompletedPages / ((end_page ?? 1) - (start_page ?? 1) + 1)) * 100).toFixed(1),
+                overAllProgress: (((muraja_last_page - (start_page ?? 1) + 1) / ((end_page ?? 1) - (start_page ?? 1) + 1)) * 100).toFixed(1),
                 isEvaluationDay,
             },
             todayTask,
-            weekProgress: generateWeeklyProgress(week_start_date ?? "", todayStr, activeDays, daily_logs)
+            weekProgress: generateWeeklyProgress(week_start_date ?? "", todayStr, activeDays, daily_logs, evaluationDay)
         };
     }, [data, surah]);
   

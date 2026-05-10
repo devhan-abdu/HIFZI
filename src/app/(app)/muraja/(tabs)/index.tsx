@@ -23,9 +23,10 @@ import StatCard from "@/src/features/hifz/components/StatCard";
 import { DayByDay } from "@/src/features/muraja/components/DayByDay";
 import { ActionTaskCard } from "@/src/components/common/ActionCard";
 import { EvaluationRequiredCard, RestDayCardSingle } from "@/src/components/dashboard/TodayTask";
-import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
 import { Ionicons } from "@expo/vector-icons";
-import { useWeeklyEvaluationTrigger } from "@/src/features/habits/hooks/useWeeklyEvaluationTrigger";
+import { usePlanLifecycle } from "@/src/features/habits/hooks/usePlanLifecycle";
+import { PlanEndCard } from "@/src/features/habits/components/PlanEndCard";
+
 
 export default function MurajaIndex() {
   const {
@@ -37,9 +38,8 @@ export default function MurajaIndex() {
     error,
     refetch,
   } = useWeeklyMuraja();
-  const { duePlanIds } = useWeeklyEvaluationTrigger();
-  const isDue = weeklyPlan?.id ? duePlanIds.includes(weeklyPlan.id) : false;
-  const session = useReaderSessionStore();
+  const { getPlanState } = usePlanLifecycle();
+  const planState = getPlanState(weeklyPlan?.id, 'MURAJA');
 
   const {
     analytics,
@@ -104,9 +104,11 @@ export default function MurajaIndex() {
             <WeeklyOverviewCard weeklyPlan={weeklyPlan} />
 
             <View className="mt-6 mb-4">
-              <SectionHeader title="Today's Muraja'a" />
-              {isDue ? (
+              <SectionHeader title="Next Milestone" />
+              {planState === 'EVALUATION_DUE' ? (
                 <EvaluationRequiredCard type="muraja" />
+              ) : planState === 'COMPLETION_DUE' ? (
+                 <PlanEndCard activityType="MURAJA" localRefId={weeklyPlan.id} title="Muraja Plan" />
               ) : todayTask ? (
                 <ActionTaskCard
                   typeLabel="Muraja'a"
@@ -124,13 +126,8 @@ export default function MurajaIndex() {
                       : "completed"
                   )}
                   onStart={() => {
-                    session.openSession(todayTask.startPage);
                     router.push(`/(app)/quran/reader?page=${todayTask.startPage}&planId=${weeklyPlan.id}&type=muraja&start=${todayTask.startPage}&end=${todayTask.endPage}`);
                   }}
-                  onResume={() => {
-                    router.push(`/(app)/quran/reader?page=${session.currentPage}&planId=${weeklyPlan.id}&type=muraja&start=${todayTask.startPage}&end=${todayTask.endPage}`);
-                  }}
-                  isResumable={session.currentPage >= todayTask.startPage && session.currentPage <= todayTask.endPage}
                   onDetails={() => router.push("/(app)/muraja/log")}
                 />
               ) : (
@@ -178,13 +175,13 @@ export default function MurajaIndex() {
         <ScreenFooter>
           <View className="flex-row gap-x-3">
             <Button
-              className={`flex-1 shadow-lg ${isDue ? 'opacity-50' : 'shadow-primary/20'}`}
-              onPress={() => !isDue && router.push(`/(app)/muraja/log`)}
-              disabled={isDue}
+              className={`flex-1 shadow-lg ${planState === 'EVALUATION_DUE' ? 'opacity-50' : 'shadow-primary/20'}`}
+              onPress={() => planState !== 'EVALUATION_DUE' && router.push(`/(app)/muraja/log`)}
+              disabled={planState === 'EVALUATION_DUE'}
             >
               <Ionicons name="add-circle" size={20} color="white" />
               <Text className="text-white">
-                 {isDue ? 'Test Required' : 'Log Progress'}
+                 {planState === 'EVALUATION_DUE' ? 'Test Required' : 'Log Progress'}
               </Text>
             </Button>
 

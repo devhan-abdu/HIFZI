@@ -13,9 +13,13 @@ export const computeWeeklyReview = (plan: any) => {
       acc.totalTime += log.actual_time_min || 0;
       acc.totalPages += log.completed_pages || 0;
       acc.logCount++;
+      if (log.qualityScore || log.quality_score) {
+        acc.totalQuality += (log.qualityScore || log.quality_score);
+        acc.qualityCount++;
+      }
     }
     return acc;
-  }, { completed: 0, missed: 0, partial: 0, totalTime: 0, totalPages: 0, logCount: 0 });
+  }, { completed: 0, missed: 0, partial: 0, totalTime: 0, totalPages: 0, logCount: 0, totalQuality: 0, qualityCount: 0 });
       
   let maxStreak = 0;
   let currentStreak = 0;
@@ -65,34 +69,45 @@ export const computeWeeklyReview = (plan: any) => {
     longestStreak: maxStreak,
     bestDay: bestDayName,
     avgSession: summary.logCount ? Math.round(summary.totalTime / summary.logCount) : 0,
-    completionRate: Math.round((summary.completed / totalPlannedDays) * 100)
+    completionRate: Math.round((summary.completed / totalPlannedDays) * 100),
+    avgQuality: summary.qualityCount ? parseFloat((summary.totalQuality / summary.qualityCount).toFixed(1)) : 0,
+    completedDays: summary.completed,
+    partialDays: summary.partial,
+    startDate: plan.weekStartDate || plan.week_start_date,
   };
 };
 
 export function calculateExpectedPages(
         startDateStr: string,
-        endDateStr: string,
-        targetDate: Date,
         activeDays: number[],
-        rate: number
+        rate: number,
+        targetDate: Date = new Date()
 ): number {
+    const start = new Date(startDateStr);
+    const target = new Date(targetDate);
+    start.setHours(0, 0, 0, 0);
+    target.setHours(0, 0, 0, 0);
 
-   let expectedDaysPassed = 0;
-        const start = new Date(startDateStr);
-        const end = new Date(endDateStr);
-        const tempDate = new Date(start);
+    if (target < start || activeDays?.length === 0) return 0;
 
-       
-        while (tempDate < targetDate && tempDate <= end) {
-            if (activeDays.includes((tempDate.getDay() + 6 ) % 7)) {
-                expectedDaysPassed++;
-            }
-            tempDate.setDate(tempDate.getDate() + 1);
-        }
-
-        return expectedDaysPassed * rate;
-}
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+    const totalDaysElapsed = Math.floor((target.getTime() - start.getTime()) / MS_PER_DAY) + 1;
     
+    const fullWeeks = Math.floor(totalDaysElapsed / 7);
+    const remainingDays = totalDaysElapsed % 7;
+
+    let plannedDaysElapsed = fullWeeks * activeDays?.length;
+    const startDayOfWeek = (start.getDay() + 6) % 7;
+
+    for (let i = 0; i < remainingDays; i++) {
+        const currentDay = (startDayOfWeek + i) % 7;
+        if (activeDays.includes(currentDay)) {
+            plannedDaysElapsed++;
+        }
+    }
+
+    return plannedDaysElapsed * rate;
+}
 
 export function getPerformanceStatus(diff: number): 'ahead' | 'behind' | 'on-track' {
         if (diff < 0) return 'behind';
@@ -104,30 +119,44 @@ export function generateWeeklyProgress(
         startDateStr: string, 
         todayStr: string, 
         activeDays: number[], 
-        logs: any[]
+        logs: any[],
+        evaluationDay?: number
 ): IWeeklyMUrajaStatus[]{
-  
-       const progress: IWeeklyMUrajaStatus[] = [];
-        let calendarDate = new Date(startDateStr);
+        const progress: IWeeklyMUrajaStatus[] = [];
+        const today = new Date(todayStr);
+        const planStart = new Date(startDateStr);
+        planStart.setHours(0, 0, 0, 0);
+        
+        let calendarDate = new Date(today);
+        
+        if (evaluationDay !== undefined) {
+            const todayDayOfWeek = (today.getDay() + 6) % 7;
+            const evalDayNormalized = evaluationDay; 
+            
+            let daysSinceCycleStart = (todayDayOfWeek - (evalDayNormalized + 1) + 7) % 7;
+            calendarDate.setDate(calendarDate.getDate() - daysSinceCycleStart);
+        } else {            calendarDate.setDate(calendarDate.getDate() - 6);
+        }
 
         for (let i = 0; i < 7; i++) {
             const dateStr = calendarDate.toISOString().slice(0, 10);
             const log = logs.find(l => l.date === dateStr);
             const isSelected = activeDays.includes((calendarDate.getDay()+ 6) % 7);
             const isPast = dateStr < todayStr;
+            const isBeforePlan = calendarDate < planStart;
 
               let status: IWeeklyMUrajaStatus['status'] = 'pending';
 
-              if (!isSelected) {
+              if (isBeforePlan) {
+                status = 'pending'; 
+              } else if (!isSelected) {
                 status = 'rest';
-
               } else if (log) {
-                if (isPast && log.status === 'pending') {
+                if (isPast && (log.status === 'pending' || !log.status)) {
                   status = 'missed'; 
                 } else {
                   status = log.status as IWeeklyMUrajaStatus['status'];
                 }
-
               } else {
                 if (isPast) {
                   status = 'missed';
@@ -136,12 +165,11 @@ export function generateWeeklyProgress(
                 }
               }
           
-          
             progress.push({
                 date: dateStr,
                 dayName: calendarDate.toLocaleDateString('en-US', { weekday: "short" }),
                 isToday: dateStr === todayStr,
-                isSelected,
+                isSelected: isBeforePlan ? false : isSelected,
                 status: status,
                 completed: log?.completed_pages ?? 0
             });
@@ -153,7 +181,7 @@ export function generateWeeklyProgress(
 export function calculateTodayTask(params: {
     today: Date;
     weekStartDate: string;
-    weekEndDate: string;
+    weekEndDate: string; // Estimated
     activeDays: number[];
     plannedPagesPerDay: number;
     startPage: number;
@@ -166,7 +194,9 @@ export function calculateTodayTask(params: {
     const { today, weekStartDate, weekEndDate, activeDays, plannedPagesPerDay, startPage, endPage, murajaLastPage, dailyLogs, surahs, getSurahByPage } = params;
     
     const todayStr = today.toISOString().slice(0, 10);
-    const isPlanActiveNow = today >= new Date(weekStartDate) && today <= new Date(weekEndDate);
+    
+    // Plan is active if we are past or on start date
+    const isPlanActiveNow = today >= new Date(weekStartDate);
     if (!isPlanActiveNow) return null;
 
     const todayLog = dailyLogs.find((log: any) => log.date === todayStr);
@@ -202,7 +232,7 @@ export function calculateTodayTask(params: {
         }
     }
 
-    const expectedPages = calculateExpectedPages(weekStartDate, weekEndDate, today, activeDays, plannedPagesPerDay);
+    const expectedPages = calculateExpectedPages(weekStartDate, activeDays, plannedPagesPerDay, today);
     const totalCompletedPages = dailyLogs.reduce((acc, curr) => acc + (curr.completedPages ?? curr.completed_pages ?? 0), 0);
     const pageDiff = totalCompletedPages - expectedPages;
 

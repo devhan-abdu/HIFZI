@@ -62,7 +62,7 @@ export type IMurajaDashboardData = IWeeklyMurajaPLan & {
 };
 
 export interface IWeeklyPlanDashboardData {
-  totalPage: number,
+  weeklyTargetPages: number,
   totalDays: number,
   week_start_date: string | null;
   week_end_date: string | null;
@@ -71,7 +71,9 @@ export interface IWeeklyPlanDashboardData {
   start_juz: number | null;
   end_juz: number | null;
   startSurah: string,
-  endSurah: string
+  endSurah: string,
+  startPage: number | null;
+  endPage: number | null;
 }
 
 export interface IWeeklyMUrajaStatus {
@@ -101,6 +103,21 @@ export const WeeklyMurajaSchema = Yup.object({
     .positive('Start page must be a number')
     .required("Start page required")
     .integer("Start page must be a whole number"),
+
+  end_surah: Yup.number()
+    .positive('End surah must be a number')
+    .required("End surah required")
+    .integer("End surah must be a whole number")
+    .min(1, "End surah must be greater than zero"),
+
+  end_page: Yup.number()
+    .positive('End page must be a number')
+    .required("End page required")
+    .integer("End page must be a whole number")
+    .test('page-order', 'End page must be after start page', function(value) {
+      const { start_page } = this.parent;
+      return !start_page || !value || value >= start_page;
+    }),
 
   estimated_time_min: Yup.number()
     .nullable()

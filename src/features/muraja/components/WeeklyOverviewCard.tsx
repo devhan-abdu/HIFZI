@@ -10,10 +10,6 @@ export const WeeklyOverviewCard = ({
 }: {
   weeklyPlan: IWeeklyPlanDashboardData;
 }) => {
-  const dateRange = `${format(
-    new Date(weeklyPlan.week_start_date || new Date()),
-    "MMM dd",
-  )} - ${format(new Date(weeklyPlan.week_end_date || new Date()), "MMM dd")}`;
 
   return (
     <View className="bg-primary rounded-[40px] p-7 mb-8 shadow-2xl shadow-primary/40 overflow-hidden relative border border-white/5">
@@ -22,29 +18,31 @@ export const WeeklyOverviewCard = ({
       <View className="flex-row justify-between items-end mb-6">
         <View className="flex-1">
           <Text className="text-white/50 uppercase tracking-[2px] text-[9px] mb-1.5">
-            Active Cycle
+            Plan Range
           </Text>
           <View className="bg-white/10 px-3 py-1 rounded-full self-start border border-white/10">
-            <Text className="text-white text-[10px]  tracking-wider">{dateRange}</Text>
+            <Text className="text-white text-[10px] tracking-wider">
+              {weeklyPlan.startSurah} – {weeklyPlan.endSurah}
+            </Text>
           </View>
         </View>
 
         <View className="items-end">
            <Text className="text-white/50 uppercase tracking-[2px] text-[9px] mb-1.5">
-            Juz Focus
+            Est. Completion
           </Text>
-          <Text className="text-white text-2xl tracking-tighter">
-            {weeklyPlan.start_juz}—{weeklyPlan.end_juz}
+          <Text className="text-white text-xl tracking-tighter">
+            {weeklyPlan.week_end_date ? format(new Date(weeklyPlan.week_end_date), "MMM dd, yyyy") : "N/A"}
           </Text>
         </View>
       </View>
 
       <View className="mb-6">
         <Text className="text-white/40 uppercase tracking-widest text-[9px] mb-1">
-          Target Progress
+          Current Cycle Target
         </Text>
         <Text className="text-white text-4xl tracking-tighter">
-          {weeklyPlan.totalPage} <Text className="text-white/40 text-xl">Pages</Text>
+          {weeklyPlan.weeklyTargetPages} <Text className="text-white/40 text-xl">Pages</Text>
         </Text>
       </View>
 
