@@ -103,6 +103,7 @@ export function useRetentionLog() {
       queryClient.invalidateQueries({ queryKey: ["hifz", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["reinforcement-status", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["user-stats", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["user-badges", user?.id] });
     },
   });
 

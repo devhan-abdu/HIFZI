@@ -1,6 +1,9 @@
-import React from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, ScrollView, Pressable, Modal, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Text } from '../common/ui/Text';
+import { BadgeType } from '@/src/services/GamificationService';
+import { BADGE_DICTIONARY } from '@/src/features/gamification/constants';
 
 type Badge = {
   badgeId: string;
@@ -13,11 +16,13 @@ type AchievementSectionProps = {
 };
 
 export function AchievementSection({ badges }: AchievementSectionProps) {
+  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
+
   if (badges.length === 0) return null;
 
   return (
-    <View className="mb-8">
-      <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-3 px-1">
+    <View className="mb-6">
+      <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-8 px-1">
         Your Achievements
       </Text>
       <ScrollView 
@@ -25,25 +30,89 @@ export function AchievementSection({ badges }: AchievementSectionProps) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 4 }}
       >
-        {badges.map((badge) => (
-          <Pressable 
-            key={badge.badgeId}
-            className="mr-3 bg-white border border-slate-100 rounded-2xl p-3 flex-row items-center shadow-sm"
-          >
-            <View className="w-8 h-8 bg-primary/5 rounded-full items-center justify-center mr-3">
-              <Ionicons name="ribbon" size={16} color="#276359" />
-            </View>
-            <View>
-              <Text className="text-slate-900 text-xs  capitalize">
-                {badge.badgeType.replace('BADGE_', '').toLowerCase()}
-              </Text>
-              <Text className="text-slate-400 text-[9px] uppercase tracking-tighter">
-                Unlocked
-              </Text>
-            </View>
-          </Pressable>
-        ))}
+        {badges.map((badge) => {
+          const badgeDef = BADGE_DICTIONARY[badge.badgeType as BadgeType] || {
+            title: badge.badgeType.replace(/_/g, ' '),
+            description: "An achievement unlocked in your journey.",
+            icon: "ribbon",
+            color: "#276359"
+          };
+
+          return (
+            <Pressable 
+              key={badge.badgeId}
+              onPress={() => setSelectedBadge(badge)}
+              className="mr-3 bg-white border border-slate-100 rounded-xl p-3 flex-row items-center shadow-sm"
+            >
+              <View 
+                className="w-8 h-8 rounded-full items-center justify-center mr-3"
+                style={{ backgroundColor: `${badgeDef.color}15` }}
+              >
+                <Ionicons name={badgeDef.icon as any} size={16} color={badgeDef.color} />
+              </View>
+              <View>
+                <Text className="text-slate-900 text-xs capitalize font-medium">
+                  {badgeDef.title}
+                </Text>
+                <Text className="text-slate-400 text-[9px] uppercase tracking-tighter mt-0.5">
+                  Unlocked
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })}
       </ScrollView>
+
+      <Modal
+        visible={!!selectedBadge}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSelectedBadge(null)}
+      >
+        <TouchableOpacity 
+          className="flex-1 bg-black/60 justify-center items-center px-6"
+          activeOpacity={1}
+          onPress={() => setSelectedBadge(null)}
+        >
+          {selectedBadge && (() => {
+            const def = BADGE_DICTIONARY[selectedBadge.badgeType as BadgeType] || {
+              title: selectedBadge.badgeType.replace(/_/g, ' '),
+              description: "An achievement unlocked in your journey.",
+              icon: "ribbon",
+              color: "hsla(170, 44%, 27%, 1.00)"
+            };
+
+            return (
+              <TouchableOpacity 
+                activeOpacity={1} 
+                className="bg-white w-full rounded-3xl p-8 items-center shadow-2xl"
+              >
+                <View 
+                  className="w-20 h-20 rounded-full items-center justify-center mb-6"
+                  style={{ backgroundColor: `${def.color}15` }}
+                >
+                  <Ionicons name={def.icon as any} size={40} color={def.color} />
+                </View>
+                
+                <Text className="text-2xl font-bold text-slate-900 mb-2 text-center">
+                  {def.title}
+                </Text>
+                
+                <Text className="text-slate-500 text-center text-sm leading-6 mb-8">
+                  {def.description}
+                </Text>
+
+                <Pressable 
+                  onPress={() => setSelectedBadge(null)}
+                  className="w-full bg-primary  py-4 rounded-xl items-center"
+                >
+                  <Text className="text-white font-semibold">Continue</Text>
+                </Pressable>
+              </TouchableOpacity>
+            );
+          })()}
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }

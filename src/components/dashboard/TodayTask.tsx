@@ -7,25 +7,16 @@ import { MurajaActionCard } from "./MurajaActionCard";
 import { CardSkeleton } from "./Skeleton";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { PlanEndCard } from "@/src/features/habits/components/PlanEndCard";
 
-import { DuePlanInfo } from "@/src/features/habits/services/habitSummaryService";
+import { usePlanLifecycle } from "@/src/features/habits/hooks/usePlanLifecycle";
 
 export const TodayTasksSection = ({ 
   onLogHifz, 
   onLogMuraja,
-  onStartHifz,
-  onResumeHifz,
-  onStartMuraja,
-  onResumeMuraja,
-  duePlans = [],
 }: { 
   onLogHifz: () => void; 
   onLogMuraja: () => void;
-  onStartHifz: (task: any, planId: number) => void;
-  onResumeHifz: (task: any, planId: number) => void;
-  onStartMuraja: (task: any, planId: number) => void;
-  onResumeMuraja: (task: any, planId: number) => void;
-  duePlans?: DuePlanInfo[];
 }) => {
   const {
     todayTask: todayPlan,
@@ -35,50 +26,52 @@ export const TodayTasksSection = ({
   const {
     hifz,
     todayTask: hifzTodayTask,
-    analytics: hifzAnalytics,
     loading: hifzLoading,
   } = useHifzDailyTask();
+
+  const { getPlanState } = usePlanLifecycle();
+  
+  const hifzState = getPlanState(hifz?.id, 'HIFZ');
+  const murajaState = getPlanState(weeklyPlan?.id, 'MURAJA');
 
 
   if (murajaLoading || hifzLoading) {
     return [1, 2].map((index) => <CardSkeleton key={index} />);
   }
 
-  const hasHifzTask = !!(hifz && hifzTodayTask);
   const hasMurajaTask = !!todayPlan;
   const hasAnyPlan = !!(hifz || weeklyPlan);
 
   if (!hasAnyPlan) return null;
-  console.log("duePlans", duePlans, hifz?.id, weeklyPlan?.id);
-  const isHifzDue = hifz?.id ? duePlans.some(p => p.activityType === 'HIFZ' && p.localRefId === hifz.id) : false;
-  const isMurajaDue = weeklyPlan?.id ? duePlans.some(p => p.activityType === 'MURAJA' && p.localRefId === weeklyPlan.id) : false;
 
   return (
     <View className="gap-y-4">
-      {isHifzDue ? (
+      {/* Hifz Slot */}
+      {hifzState === 'EVALUATION_DUE' ? (
           <EvaluationRequiredCard type="hifz" />
-      ) : hasHifzTask && hifzTodayTask ? (
+      ) : hifzState === 'COMPLETION_DUE' ? (
+          <PlanEndCard activityType="HIFZ" localRefId={hifz?.id ?? 0} title={hifz?.startSurah?.toString() ?? ''} />
+      ) : !!hifz && hifzTodayTask ? (
         <HifzActionCard 
           hifz={hifz!} 
           task={hifzTodayTask} 
           title={hifzTodayTask.displaySurah}
           subTitle={`Target: ${hifzTodayTask.totalTarget} pages • Juz ${hifzTodayTask.juz}`}
-          onStart={() => hifz?.id && onStartHifz(hifzTodayTask, hifz.id)}
-          onResume={() => hifz?.id && onResumeHifz(hifzTodayTask, hifz.id)}
           onDetails={onLogHifz}
         />
       ) : !!hifz && (
         <RestDayCardSingle type="hifz" onLog={onLogHifz} />
       )}
       
-      {isMurajaDue ? (
+      {/* Muraja Slot */}
+      {murajaState === 'EVALUATION_DUE' ? (
           <EvaluationRequiredCard type="muraja" />
-      ) : hasMurajaTask && todayPlan ? (
+      ) : murajaState === 'COMPLETION_DUE' ? (
+          <PlanEndCard activityType="MURAJA" localRefId={weeklyPlan?.id ?? 0} title="Muraja Plan" />
+      ) : !!weeklyPlan && todayPlan ? (
         <MurajaActionCard 
           todayPlan={todayPlan} 
           weeklyPlan={weeklyPlan} 
-          onStart={() => weeklyPlan?.id && onStartMuraja(todayPlan, weeklyPlan.id)}
-          onResume={() => weeklyPlan?.id && onResumeMuraja(todayPlan, weeklyPlan.id)}
           onDetails={onLogMuraja}
         />
       ) : !!weeklyPlan && (

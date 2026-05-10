@@ -5,6 +5,7 @@ import { testLogs } from "../../test/database/testSchema";
 import { explainPlan } from "../../ai/services/quranAI";
 import { eq, and, gte, desc, sql, inArray } from "drizzle-orm";
 import { activityPlans } from "../../habits/database/habitSchema";
+import { userStats } from "../../user/database/userSchema";
 import { habitProgressService } from "./habitProgressService";
 import * as Crypto from 'expo-crypto';
 
@@ -32,9 +33,11 @@ export interface WeeklyPerformanceReport {
   hifzPartialDays: number;
   murajaCompletedDays: number;
   murajaPartialDays: number;
+  priorityMatrix: "Elite" | "Polishing" | "Focus" | "Reinforcement";
 }
 
 export const AdaptivePlanService = {
+
   async evaluateWeeklyPerformance(
     userId: string,
     weekStartDate: string,
@@ -55,17 +58,13 @@ export const AdaptivePlanService = {
     const isHifzDue = evaluatedTypes.includes("HIFZ");
     const isMurajaDue = evaluatedTypes.includes("MURAJA");
 
-    const hifzPlan = isHifzDue 
-      ? await db.query.hifzPlans.findFirst({
-          where: and(eq(hifzPlans.userId, userId), eq(hifzPlans.status, 'active'))
-        })
-      : null;
+    const hifzPlan = await db.query.hifzPlans.findFirst({
+        where: and(eq(hifzPlans.userId, userId), eq(hifzPlans.status, 'active'))
+    });
 
-    const murajaPlan = isMurajaDue
-      ? await db.query.weeklyMurajaPlans.findFirst({
-          where: eq(weeklyMurajaPlans.userId, userId)
-        })
-      : null;
+    const murajaPlan = await db.query.weeklyMurajaPlans.findFirst({
+        where: eq(weeklyMurajaPlans.userId, userId)
+    });
 
     const murajaLogs = (isMurajaDue && murajaPlan)
       ? await db.query.dailyMurajaLogs.findMany({
@@ -92,7 +91,6 @@ export const AdaptivePlanService = {
       const planStart = planStartStr ? new Date(planStartStr) : windowStart;
       planStart.setHours(0, 0, 0, 0);
       
-      // The evaluation window is the intersection of [Plan Start] and [Evaluation Week Start]
       const effectiveStart = planStart > windowStart ? planStart : windowStart;
       
       // We evaluate up to today (inclusive)
@@ -126,7 +124,7 @@ export const AdaptivePlanService = {
       const quality = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
       
       return { 
-        rate: rate, 
+        rate: Math.min(100, rate), 
         quality,
         completedCount,
         partialCount
@@ -168,8 +166,6 @@ export const AdaptivePlanService = {
     const murajaTestScore = murajaTest ? (murajaTest.score / murajaTest.totalQuestions) * 100 : undefined;
 
     const getCombinedScore = (rate: number, testScore: number | undefined, quality: number) => {
-        // If they took a test, that is the most important (60%)
-        // If no test, self-reported quality is less reliable, so we favor Rate (70% Rate / 30% Quality)
         if (testScore !== undefined) {
             return (rate * 0.4) + (testScore * 0.6);
         }
@@ -189,49 +185,55 @@ export const AdaptivePlanService = {
     let status: EvaluationStatus = "Polishing";
     let finalRule = "no_change";
     let recommendation = "";
+    let priorityMatrix: "Elite" | "Polishing" | "Focus" | "Reinforcement" = "Polishing";
 
-    // CASE: Both Hifz and Muraja evaluated together
     if (isHifzDue && isMurajaDue) {
         if (isMurajaGood && !isHifzGood) {
             suggestedHifz = currentHifzTarget - 1;
             status = "Polishing";
+            priorityMatrix = "Focus";
             finalRule = "case_1_reduce_hifz";
             recommendation = "Revision is solid, but Hifz was a bit difficult. Reducing load to ensure better memorization.";
         } else if (!isMurajaGood && isHifzGood) {
             suggestedHifz = Math.floor(currentHifzTarget * 0.5);
             suggestedMuraja = currentMurajaTarget + 1;
             status = "Recovery";
+            priorityMatrix = "Reinforcement";
             finalRule = "case_2_prioritize_muraja";
             recommendation = "Revision needs more attention. Cutting Hifz load temporarily to help you stabilize previous pages.";
         } else if (!isMurajaGood && !isHifzGood) {
             suggestedHifz = currentHifzTarget - 1;
             suggestedMuraja = currentMurajaTarget - 1;
             status = "Recovery";
+            priorityMatrix = "Reinforcement";
             finalRule = "case_3_recovery_mode";
             recommendation = "Both Hifz and Muraja were difficult this week. Let's reduce both targets to rebuild your consistency.";
         } else if (isMurajaGood && isHifzGood) {
             suggestedHifz = currentHifzTarget + 1;
             status = "Elite";
+            priorityMatrix = "Elite";
             finalRule = "case_4_progression";
             recommendation = "Excellent performance across the board! Increasing Hifz load slightly to maintain your momentum.";
         }
 
         if (hifzStats.rate < 20 && murajaStats.rate < 20) {
             status = "Spark";
+            priorityMatrix = "Reinforcement";
             suggestedHifz = 1;
             suggestedMuraja = 1;
             recommendation = "Consistency is key. Let's start small with a minimal goal to rebuild the habit.";
         }
     } 
-    // CASE: Only Hifz evaluated
     else if (isHifzDue) {
         if (isHifzGood) {
             suggestedHifz = currentHifzTarget + 1;
             status = "Elite";
+            priorityMatrix = "Elite";
             recommendation = "Great job with your Hifz this week! Increasing your target to match your pace.";
         } else {
             suggestedHifz = currentHifzTarget - 1;
             status = hifzStats.rate < 40 ? "Recovery" : "Polishing";
+            priorityMatrix = "Reinforcement";
             recommendation = "Memorizing new pages felt difficult this week. Let's reduce the load to prioritize quality.";
         }
     } 
@@ -239,10 +241,12 @@ export const AdaptivePlanService = {
         if (isMurajaGood) {
             suggestedMuraja = currentMurajaTarget + 1;
             status = "Elite";
+            priorityMatrix = "Elite";
             recommendation = "Your revision consistency is outstanding. Increasing daily Muraja to strengthen your memory faster.";
         } else {
             suggestedMuraja = currentMurajaTarget - 1;
             status = murajaStats.rate < 40 ? "Recovery" : "Polishing";
+            priorityMatrix = "Reinforcement";
             recommendation = "Revision goals were hard to meet. Reducing the daily target to help you get back on track.";
         }
     }
@@ -291,6 +295,7 @@ export const AdaptivePlanService = {
       hifzPartialDays: hifzStats.partialCount,
       murajaCompletedDays: murajaStats.completedCount,
       murajaPartialDays: murajaStats.partialCount,
+      priorityMatrix
     };
   },
 
@@ -381,15 +386,11 @@ export const AdaptivePlanService = {
 
     const msg = await explainPlan(summary, suggestion);
 
-    // Only cache if it's a real AI response, not a generic fallback
-    const DEFAULT_FALLBACK = "Keep following your plan and stay consistent!";
-    if (msg && msg !== DEFAULT_FALLBACK) {
-      await habitProgressService.upsertCachedGuidance(db, {
-        userId,
-        activityHash: hash,
-        data: { message: msg }
-      });
-    }
+    await habitProgressService.upsertCachedGuidance(db, {
+      userId,
+      activityHash: hash,
+      data: { message: msg }
+    });
 
     return msg;
   },
@@ -408,9 +409,30 @@ export const AdaptivePlanService = {
       }
 
       if (evaluatedTypes.includes("MURAJA")) {
-        await tx.update(weeklyMurajaPlans)
-          .set({ plannedPagesPerDay: murajaTarget, syncStatus: 0 })
-          .where(eq(weeklyMurajaPlans.userId, userId));
+        const plan = await tx.query.weeklyMurajaPlans.findFirst({
+          where: eq(weeklyMurajaPlans.userId, userId)
+        });
+        
+        const stats = await tx.query.userStats.findFirst({
+          where: eq(userStats.userId, userId)
+        });
+
+        if (plan) {
+          const remainingPages = (plan.endPage ?? 0) - (stats?.murajaLastPage ?? 0);
+          const daysNeeded = Math.ceil(remainingPages / Math.max(1, murajaTarget));
+          
+          const newEndDate = new Date();
+          newEndDate.setDate(newEndDate.getDate() + daysNeeded);
+          const newEndDateStr = newEndDate.toISOString().slice(0, 10);
+
+          await tx.update(weeklyMurajaPlans)
+            .set({ 
+              plannedPagesPerDay: murajaTarget, 
+              weekEndDate: newEndDateStr,
+              syncStatus: 0 
+            })
+            .where(eq(weeklyMurajaPlans.userId, userId));
+        }
       }
     });
   }
