@@ -50,6 +50,17 @@ export const weeklySummarySeen = sqliteTable('quran_weekly_summary_seen', {
   createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const planAchievements = sqliteTable('plan_achievements', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    userId: text('user_id').notNull(),
+    planType: text('plan_type').notNull(), 
+    localRefId: integer('local_ref_id').notNull(),
+    achievementType: text('achievement_type').notNull(), 
+    seenAt: text('seen_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+    userIdPlanIdx: index('idx_plan_achievements_user_plan').on(table.userId, table.planType, table.localRefId),
+}));
+
 export const adaptiveGuidanceCache = sqliteTable('adaptive_guidance_cache', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   userId: text('user_id').notNull().unique(),
