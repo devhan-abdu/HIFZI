@@ -25,6 +25,8 @@ const StatsSummary = ({
     preferred_time: formData.preferred_time ?? "fajr",
     is_custom_time: formData.is_custom_time ?? false,
     is_reinforcement_enabled: formData.is_reinforcement_enabled ?? true,
+    total_pages: formData.total_pages,
+    evaluation_day: formData.evaluation_day ?? 5,
   };
   const stats = useMemo(
     () => calculatePlanStats(safeFormData),
@@ -35,11 +37,11 @@ const StatsSummary = ({
       formData.direction,
       formData.start_date,
       formData.start_surah,
+      formData.total_pages,
     ],
   );
 
   const startSurahName = useMemo(() => {
-    console.log(formData, "formdata");
     const s = surah.items.find(
       (item) => item.number === Number(formData.start_surah),
     );

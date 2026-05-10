@@ -4,6 +4,7 @@ import * as Notifications from "expo-notifications";
 import { useSession } from "@/src/hooks/useSession";
 import { notificationService } from "@/src/features/notifications/services/notificationService";
 import { notificationRepository } from "@/src/features/notifications/services/notificationRepository";
+import { router } from "expo-router";
 
 export function NotificationBootstrap() {
   const { user, loading } = useSession();
@@ -46,6 +47,16 @@ export function NotificationBootstrap() {
         if (payload?.userId && payload?.eventKey) {
           void notificationRepository.recordDeliveredNotification(payload).catch(() => {
           });
+        }
+
+        if (payload?.type) {
+          if (payload.type === 'warning' || payload.type === 'smart') {
+            router.push('/(app)');
+          } else if (payload.type === 'comeback') {
+            router.push('/(app)');
+          } else if (payload.type === 'milestone' || payload.type === 'xp') {
+            router.push('/(app)');
+          }
         }
       });
 

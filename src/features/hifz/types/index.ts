@@ -2,40 +2,38 @@ import * as Yup from "yup";
 
 export interface IHifzLog {
     id?: number;
-    hifz_plan_id: number;
-    actual_start_page: number;
-    actual_end_page: number;
-    actual_pages_completed: number;
+    hifzPlanId: number;
+    actualStartPage: number;
+    actualEndPage: number;
+    actualPagesCompleted: number;
     date: string;
-    log_day: number;
+    logDay: number;
     status: "completed" | "partial" | "missed",
     notes?: string;
-    mistakes_count?: number;
-    hesitation_count?: number;
-    quality_score?: number;
-    actual_minutes_spent?: number;
+    mistakesCount?: number;
+    hesitationCount?: number;
+    qualityScore?: number;
+    actualMinutesSpent?: number;
 };
 
-
-
 export interface IHifzPlan {
-  user_id?: string,
+  userId?: string,
   id?: number;                 
-  start_surah: number;
-  start_page: number;
-  total_pages: number;
-  pages_per_day: number;
-  selected_days: number[];
-  days_per_week: number
-  start_date: string;         
-  estimated_end_date: string;  
+  startSurah: number;
+  startPage: number;
+  totalPages: number;
+  pagesPerDay: number;
+  selectedDays: number[];
+  daysPerWeek: number
+  startDate: string;         
+  estimatedEndDate: string;  
   direction: 'forward' | "backward", 
   status?: "active" | "completed" | "paused";
-  preferred_time?: string;
-  is_custom_time?: boolean;
-  is_reinforcement_enabled?: boolean;
+  preferredTime?: string;
+  isCustomTime?: boolean;
+  isReinforcementEnabled?: boolean;
   evaluationDay?: number;
-  hifz_daily_logs?: IHifzLog[]
+  hifzDailyLogs?: IHifzLog[]
 }
 export interface HifzQuestion {
  type: 'SEQUENCE' | 'BOUNDARY' | 'CHOICE';
@@ -48,6 +46,7 @@ export const HifzPlanSchema = Yup.object({
   start_date: Yup.string().required("Start date is required"),
   start_surah: Yup.number().required("Start surah is required").min(1).max(114),
   start_page: Yup.number().required("Start page is required").min(1).max(604),
+  total_pages: Yup.number().optional().min(1).max(604),
   
   direction: Yup.string().oneOf(['forward', 'backward']).required().default("forward"),
   selectedDays: Yup.array()

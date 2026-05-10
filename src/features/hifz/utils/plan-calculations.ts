@@ -10,9 +10,9 @@ export const calculatePlanStats = (data: HifzPlanSchemaFormType) => {
   const dailyRate = Number(data.pages_per_day) || 1;
   const weeklyFreq = data.selectedDays?.length || 1;
 
-  const totalPages = data.direction === "forward" 
+  const totalPages = data.total_pages || (data.direction === "forward" 
     ? totalQuranPages - startPage + 1 
-    : startPage;
+    : startPage);
 
   const sessionNeeded = Math.ceil(totalPages / dailyRate);
   let daysNeeded = 1;
@@ -33,12 +33,21 @@ export const calculatePlanStats = (data: HifzPlanSchemaFormType) => {
   };
 };
 
-export const calculateFinishedDate = (currentPage: number, direction: "forward" | "backward", pagesPerDay: number , weeklyFreq: number) => {
+export const calculateFinishedDate = (
+    currentPage: number, 
+    direction: "forward" | "backward", 
+    pagesPerDay: number, 
+    weeklyFreq: number,
+    totalPlanPages?: number,
+    startPage: number = 1
+) => {
   const totalQuranPages = 604;
 
-  const totalPages = direction === "forward" 
-    ? totalQuranPages - currentPage + 1 
-    : currentPage;
+  const totalPages = totalPlanPages 
+    ? Math.max(0, totalPlanPages - (direction === 'forward' ? (currentPage - startPage + 1) : (startPage - currentPage + 1)))
+    : (direction === "forward" 
+        ? totalQuranPages - currentPage + 1 
+        : currentPage);
 
   const sessionNeeded = Math.ceil(totalPages / pagesPerDay);
   let daysNeeded = 1;
@@ -100,7 +109,7 @@ export const getPerformance = (val: number) => {
 
 export const getLastLog = (hifzPlan: IHifzPlan) => {
 
-  const logs = hifzPlan.hifz_daily_logs || [];
+  const logs = hifzPlan.hifzDailyLogs || [];
   if (logs.length === 0) return null;
 
   return logs.reduce<IHifzLog | null>((latest, log) => {

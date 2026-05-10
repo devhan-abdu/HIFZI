@@ -16,7 +16,7 @@ type StatusTabType = {
 };
 
 export default function LogProgress({ plan, onClose }: LogProgressType) {
-  const target = plan.pages_per_day;
+  const target = plan.pagesPerDay;
   const [pages, setPages] = useState(target);
   const [status, setStatus] = useState<"completed" | "partial" | "missed">(
     "completed",

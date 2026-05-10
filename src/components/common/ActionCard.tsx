@@ -12,8 +12,6 @@ interface ActionCardProps {
   isLoading: boolean;
   onDone: (quality?: number) => void;
   onStart: () => void;
-  onResume?: () => void;
-  isResumable?: boolean;
   onDetails: () => void;
   hideActionButtons?: boolean;
 }
@@ -27,8 +25,6 @@ export const ActionTaskCard = ({
   isLoading,
   onDone,
   onStart,
-  onResume,
-  isResumable,
   onDetails,
   hideActionButtons,
 }: ActionCardProps) => {
@@ -43,7 +39,7 @@ export const ActionTaskCard = ({
 
     return (
         <Pressable 
-            onPress={(isResumable && onResume) ? onResume : onStart}
+            onPress={onStart}
             disabled={isLoading}
             className="overflow-hidden rounded-[32px] shadow-sm active:scale-[0.98] transition-all bg-white border border-slate-100 p-6"
         >
@@ -103,7 +99,7 @@ export const ActionTaskCard = ({
             ) : (
               <>
                 <Text style={{ color: isFinished ? '#94a3b8' : accentColor }} className="uppercase tracking-widest text-[10px]">
-                  {isFinished ? (isCompleted ? "Open Mushaf" : "Resume Session") : isResumable ? "Resume Session" : "Open Mushaf"}
+                  Open Mushaf
                 </Text>
                 <Ionicons 
                   name={isFinished ? "arrow-forward" : "chevron-forward"} 

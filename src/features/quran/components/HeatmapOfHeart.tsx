@@ -29,7 +29,7 @@ export const HeatmapOfHeart = () => {
     const percentage = Math.round(retrievability * 100);
 
     if (data.consecutivePerfects >= 3) {
-      return { label: "Mastered", color: "#ca8a04", hex: "#fef9c3", border: "#eab308", percentage: 100 };
+      return { label: "Mastered", color: "#0d9488", hex: "#18ccb1", border: "#0f766e", percentage: 100 };
     }
 
     if (data.lastSessionQuality === 'low' || (data.lastMistakesCount ?? 0) >= 4 || retrievability < 0.7) {
@@ -41,10 +41,10 @@ export const HeatmapOfHeart = () => {
     const daysSince = (now.getTime() - lastReview.getTime()) / (1000 * 60 * 60 * 24);
 
     if (data.lastSessionQuality === 'medium' || daysSince > 14 || retrievability < 0.85) {
-      return { label: "Partial", color: "#eab308", hex: "#fef08a", border: "#eab308", percentage };
+      return { label: "Partial", color: "#d97706", hex: "#fef3c7", border: "#f59e0b", percentage };
     }
 
-    return { label: "Strong", color: "#276359", hex: "#e9f0ef", border: "#276359", percentage };
+    return { label: "Strong", color: "#0f766e", hex: "rgba(24, 204, 177, 0.3)", border: "rgba(24, 204, 177, 0.6)", percentage };
   };
 
   const handlePageSelect = (page: number) => {
@@ -158,11 +158,11 @@ export const HeatmapOfHeart = () => {
           </View>
         ) : (
           <View className="flex-row justify-between items-center opacity-60 px-2">
-            <LegendItem color="#f1f5f9" label="Not Started" />
-            <LegendItem color="#fee2e2" label="Weak" />
-            <LegendItem color="#fef08a" label="Partial" />
-            <LegendItem color="#e9f0ef" label="Strong" />
-            <LegendItem color="#fef9c3" label="Mastered" border="#eab308" />
+            <LegendItem color="#f1f5f9" border="#e2e8f0" label="Not Started" />
+            <LegendItem color="#fee2e2" border="#ef4444" label="Weak" />
+            <LegendItem color="#fef3c7" border="#f59e0b" label="Partial" />
+            <LegendItem color="rgba(24, 204, 177, 0.3)" border="rgba(24, 204, 177, 0.6)" label="Strong" />
+            <LegendItem color="#18ccb1" border="#0f766e" label="Mastered" />
           </View>
         )}
       </View>

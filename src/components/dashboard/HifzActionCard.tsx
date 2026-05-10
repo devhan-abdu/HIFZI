@@ -6,14 +6,13 @@ import { useSession } from "@/src/hooks/useSession";
 import { ActionTaskCard } from "../common/ActionCard";
 import { Alert } from "../common/Alert";
 import { QualityModal } from "../common/QualityModal";
-import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
 import { useCelebrationStore } from "@/src/hooks/useCelebrationStore";
+
+import { router } from "expo-router";
 
 export const HifzActionCard = ({
   hifz,
   task,
-  onStart,
-  onResume,
   onDetails,
   title,
   subTitle,
@@ -21,8 +20,6 @@ export const HifzActionCard = ({
 }: {
   hifz: IHifzPlan;
   task: any;
-  onStart: () => void;
-  onResume?: () => void;
   onDetails: () => void;
   title?: string;
   subTitle?: string;
@@ -30,7 +27,6 @@ export const HifzActionCard = ({
 }) => {
   const { addLog, isCreating: isAddingHifz } = useAddLog();
   const { user } = useSession();
-  const session = useReaderSessionStore();
   const trigger = useCelebrationStore((s) => s.trigger);
 
   const [errorVisible, setErrorVisible] = useState(false);
@@ -45,8 +41,6 @@ export const HifzActionCard = ({
   const currentStatus = todaysLog?.status || "pending";
 
   const isLoading = isAddingHifz;
-
-  const isResumable = session.currentPage >= task.startPage && session.currentPage <= task.endPage;
 
   if (!task) {
     return (
@@ -63,29 +57,23 @@ export const HifzActionCard = ({
 
     try {
       const logDay = (new Date().getDay() + 6) % 7;
-      const duration = quality ? session.getDurationMinutes() : undefined;
-      const pagesViewed = session.pagesViewed;
       
-      const actualEnd = pagesViewed.length > 0 ? Math.max(...pagesViewed) : task.endPage;
-      const actualCount = pagesViewed.length > 0 ? pagesViewed.length : (task.target || hifz.pages_per_day);
-
       const payload = {
         hifz_plan_id: hifz.id!,
-        actual_pages_completed: status === "completed" ? actualCount : 0,
+        actual_pages_completed: status === "completed" ? (task.target || hifz.pages_per_day) : 0,
         actual_start_page: task.startPage,
-        actual_end_page: status === "completed" ? actualEnd : task.endPage,
+        actual_end_page: task.endPage,
         status: status,
         date: todayStr,
         log_day: logDay,
         quality_score: quality,
-        actual_minutes_spent: duration,
       };
 
-      const result = await addLog({ todayLog: payload as any, userId: user?.id });
+      const result = await addLog({ todayLog: payload as any, userId: user?.id }) as any;
       
       if (status === "completed" && result?.rewards) {
         const rewards = result.rewards;
-        if (rewards.rewards.length > 0) {
+        if (rewards.rewards?.length > 0) {
           trigger(`Mubarak! New Badge: ${rewards.rewards[0].replace('BADGE_', '')}`, "badge");
         } else if (rewards.isPerfect) {
           trigger("MashAllah! Perfect Session!", "success");
@@ -115,9 +103,9 @@ export const HifzActionCard = ({
             setQualityModalVisible(true);
           }
         }}
-        onStart={onStart}
-        onResume={onResume}
-        isResumable={isResumable}
+        onStart={() => {
+          router.push(`/(app)/quran/reader?page=${task.startPage}&planId=${hifz.id}&type=hifz&start=${task.startPage}&end=${task.endPage}`);
+        }}
         onDetails={onDetails}
       />
 

@@ -74,17 +74,17 @@ export const getNextTask = (
 export const getTodayTask = (
   hifzPlan: IHifzPlan,
   surahData: ISurah[],
-  pages: number = hifzPlan.pages_per_day,
+  pages: number = hifzPlan.pagesPerDay,
 ) => {
   const todayStr = new Date().toISOString().slice(0, 10);
 
-  const historicalLogs = (hifzPlan.hifz_daily_logs || [])
+  const historicalLogs = (hifzPlan.hifzDailyLogs || [])
     .filter(log => log.date < todayStr)
     .sort((a, b) => a.date.localeCompare(b.date));
   
   const lastLog = [...historicalLogs].reverse().find(log => log.status === "completed" || log.status === "partial")
 
-  const reaferencePage = lastLog ? lastLog.actual_end_page : hifzPlan.start_page;
+  const reaferencePage = lastLog ? lastLog.actualEndPage : hifzPlan.startPage;
 
   return getNextTask(
     hifzPlan.direction as "forward" | "backward",
@@ -98,11 +98,11 @@ export const getTodayTask = (
 
 export const getPagesFromLog = (log: IHifzLog, direction: 'forward' | 'backward', surahData: ISurah[]): number[] => {
   const pages: number[] = [];
-  let currentPage = log.actual_start_page;
-  const targetCount = log.actual_pages_completed || 0;
+  let currentPage = log.actualStartPage;
+  const targetCount = log.actualPagesCompleted || 0;
 
   if (targetCount === 0 && log.status !== "missed") {
-    return [log.actual_start_page];
+    return [log.actualStartPage];
   }
 
   while (pages.length < targetCount) {
@@ -137,7 +137,7 @@ export const getReinforcementRange = (
 ) => {
   const todayStr = new Date().toISOString().slice(0, 10);
   
-  const logs = (hifzPlan.hifz_daily_logs || [])
+  const logs = (hifzPlan.hifzDailyLogs || [])
     .filter(log => log.date < todayStr && (log.status === "completed" || log.status === "partial"))
     .sort((a, b) => b.date.localeCompare(a.date));
 

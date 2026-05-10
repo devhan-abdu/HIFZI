@@ -1,6 +1,7 @@
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { db } from '@/src/lib/db/local-client';
 import { hifzPlans, hifzLogs } from '../database/hifzSchema';
+import { activityPlans } from '../../habits/database/habitSchema';
 import { supabase } from "@/src/lib/supabase";
 import { IHifzLog, IHifzPlan } from "../types";
 import {
@@ -20,8 +21,8 @@ import { useCatalogStore } from "../../quran/store/catalogStore";
 import { getPagesFromLog } from "../utils/quran-logic";
 
 export const hifzService = {
-  async createPlan(planData: Omit<IHifzPlan, "hifz_daily_logs" | "id"> & { user_id: string }) {
-    const userId = planData.user_id;
+  async createPlan(planData: Omit<IHifzPlan, "hifzDailyLogs" | "id"> & { userId: string }) {
+    const userId = planData.userId;
     if (!userId) throw new Error("Missing user id");
 
     let localId = 0;
@@ -33,19 +34,19 @@ export const hifzService = {
 
       const [newPlan] = await tx.insert(hifzPlans).values({
         userId,
-        startSurah: planData.start_surah,
-        startPage: planData.start_page,
-        totalPages: planData.total_pages,
-        pagesPerDay: planData.pages_per_day,
-        selectedDays: JSON.stringify(planData.selected_days),
-        daysPerWeek: planData.days_per_week,
-        startDate: planData.start_date,
-        estimatedEndDate: planData.estimated_end_date,
+        startSurah: planData.startSurah,
+        startPage: planData.startPage,
+        totalPages: planData.totalPages,
+        pagesPerDay: planData.pagesPerDay,
+        selectedDays: JSON.stringify(planData.selectedDays),
+        daysPerWeek: planData.daysPerWeek,
+        startDate: planData.startDate,
+        estimatedEndDate: planData.estimatedEndDate,
         direction: planData.direction,
         status: planData.status ?? "active",
-        preferredTime: planData.preferred_time,
-        isCustomTime: planData.is_custom_time ?? false,
-        isReinforcementEnabled: planData.is_reinforcement_enabled ?? true,
+        preferredTime: planData.preferredTime,
+        isCustomTime: planData.isCustomTime ?? false,
+        isReinforcementEnabled: planData.isReinforcementEnabled ?? true,
         evaluationDay: planData.evaluationDay ?? 5,
         syncStatus: 0,
       }).returning({ id: hifzPlans.id });
@@ -57,25 +58,25 @@ export const hifzService = {
         activityType: "HIFZ",
         status: "active",
         title: "Hifz Plan",
-        startDate: planData.start_date,
-        endDate: planData.estimated_end_date,
+        startDate: planData.startDate,
+        endDate: planData.estimatedEndDate,
         evaluationDay: planData.evaluationDay ?? 5,
         localRefId: localId,
         metadata: JSON.stringify({
-          pages_per_day: planData.pages_per_day,
-          start_page: planData.start_page,
-          total_pages: planData.total_pages,
+          pagesPerDay: planData.pagesPerDay,
+          startPage: planData.startPage,
+          totalPages: planData.totalPages,
         }),
       });
     });
 
-    if (planData.preferred_time) {
+    if (planData.preferredTime) {
       void habitStackingService.scheduleReminders({
         id: localId,
         type: 'hifz',
-        preferredTime: planData.preferred_time,
-        isCustomTime: planData.is_custom_time ?? false,
-        selectedDays: planData.selected_days,
+        preferredTime: planData.preferredTime,
+        isCustomTime: planData.isCustomTime ?? false,
+        selectedDays: planData.selectedDays,
       });
     }
 
@@ -83,11 +84,13 @@ export const hifzService = {
     return localId;
   },
 
-  async getPlan(userId: string): Promise<IHifzPlan | null> {
+  async getPlan(userId: string, planId?: number): Promise<IHifzPlan | null> {
     if (!userId) return null;
 
     const localPlan = await db.query.hifzPlans.findFirst({
-      where: and(eq(hifzPlans.userId, userId), eq(hifzPlans.status, 'active')),
+      where: planId 
+        ? eq(hifzPlans.id, planId)
+        : and(eq(hifzPlans.userId, userId), eq(hifzPlans.status, 'active')),
       orderBy: [desc(hifzPlans.id)],
     });
 
@@ -102,33 +105,34 @@ export const hifzService = {
 
     return {
       id: localPlan.id,
-      user_id: localPlan.userId,
-      start_surah: localPlan.startSurah,
-      start_page: localPlan.startPage,
-      total_pages: localPlan.totalPages,
-      pages_per_day: localPlan.pagesPerDay,
-      selected_days: JSON.parse(localPlan.selectedDays ?? "[]"),
-      days_per_week: localPlan.daysPerWeek,
-      start_date: localPlan.startDate,
-      estimated_end_date: localPlan.estimatedEndDate,
+      userId: localPlan.userId,
+      startSurah: localPlan.startSurah,
+      startPage: localPlan.startPage,
+      totalPages: localPlan.totalPages,
+      pagesPerDay: localPlan.pagesPerDay,
+      selectedDays: JSON.parse(localPlan.selectedDays ?? "[]"),
+      daysPerWeek: localPlan.daysPerWeek,
+      startDate: localPlan.startDate,
+      estimatedEndDate: localPlan.estimatedEndDate,
       direction: localPlan.direction as "forward" | "backward",
       status: localPlan.status as any,
-      preferred_time: localPlan.preferredTime ?? undefined,
-      is_custom_time: localPlan.isCustomTime ?? undefined,
-      is_reinforcement_enabled: localPlan.isReinforcementEnabled ?? true,
-      hifz_daily_logs: logs.map(l => ({
+      preferredTime: localPlan.preferredTime ?? undefined,
+      isCustomTime: localPlan.isCustomTime ?? undefined,
+      isReinforcementEnabled: localPlan.isReinforcementEnabled ?? true,
+      evaluationDay: localPlan.evaluationDay ?? 5,
+      hifzDailyLogs: logs.map(l => ({
         id: l.id,
-        hifz_plan_id: l.hifzPlanId,
-        actual_start_page: l.actualStartPage,
-        actual_end_page: l.actualEndPage,
-        actual_pages_completed: l.actualPagesCompleted,
+        hifzPlanId: l.hifzPlanId,
+        actualStartPage: l.actualStartPage,
+        actualEndPage: l.actualEndPage,
+        actualPagesCompleted: l.actualPagesCompleted,
         date: l.date,
-        log_day: l.logDay,
+        logDay: l.logDay,
         status: l.status as any,
         notes: l.notes ?? undefined,
-        mistakes_count: l.mistakesCount,
-        hesitation_count: l.hesitationCount,
-        quality_score: l.qualityScore ?? undefined,
+        mistakesCount: l.mistakesCount,
+        hesitationCount: l.hesitationCount,
+        qualityScore: l.qualityScore ?? undefined,
       })),
     };
   },
@@ -146,7 +150,7 @@ export const hifzService = {
       const existing = await tx.query.hifzLogs.findFirst({
         where: and(
           eq(hifzLogs.userId, userId),
-          eq(hifzLogs.hifzPlanId, todayLog.hifz_plan_id),
+          eq(hifzLogs.hifzPlanId, todayLog.hifzPlanId),
           eq(hifzLogs.date, todayLog.date)
         )
       });
@@ -171,28 +175,28 @@ export const hifzService = {
         return;
       }
 
-      const mCount = todayLog.mistakes_count ?? 0;
-      const hCount = todayLog.hesitation_count ?? 0;
+      const mCount = todayLog.mistakesCount ?? 0;
+      const hCount = todayLog.hesitationCount ?? 0;
 
-      if (!todayLog.quality_score && (mCount > 0 || hCount > 0)) {
+      if (!todayLog.qualityScore && (mCount > 0 || hCount > 0)) {
         let score = 5;
         if (mCount >= 4) score = 1;
         else if (mCount >= 2) score = 2;
         else if (mCount >= 1 || hCount >= 3) score = 3;
         else if (hCount >= 1) score = 4;
-        todayLog.quality_score = score;
+        todayLog.qualityScore = score;
       }
 
       const sameAsExisting = !!existing &&
-        existing.actualStartPage === todayLog.actual_start_page &&
-        existing.actualEndPage === todayLog.actual_end_page &&
-        existing.actualPagesCompleted === todayLog.actual_pages_completed &&
-        existing.logDay === todayLog.log_day &&
+        existing.actualStartPage === todayLog.actualStartPage &&
+        existing.actualEndPage === todayLog.actualEndPage &&
+        existing.actualPagesCompleted === todayLog.actualPagesCompleted &&
+        existing.logDay === todayLog.logDay &&
         existing.status === todayLog.status &&
         existing.notes === (todayLog.notes ?? null) &&
-        existing.mistakesCount === (todayLog.mistakes_count ?? 0) &&
-        existing.hesitationCount === (todayLog.hesitation_count ?? 0) &&
-        existing.qualityScore === (todayLog.quality_score ?? null);
+        existing.mistakesCount === (todayLog.mistakesCount ?? 0) &&
+        existing.hesitationCount === (todayLog.hesitationCount ?? 0) &&
+        existing.qualityScore === (todayLog.qualityScore ?? null);
 
       if (sameAsExisting) {
         localId = existing.id;
@@ -201,17 +205,17 @@ export const hifzService = {
 
       const logValues = {
         userId,
-        hifzPlanId: todayLog.hifz_plan_id,
-        actualStartPage: todayLog.actual_start_page,
-        actualEndPage: todayLog.actual_end_page,
-        actualPagesCompleted: todayLog.actual_pages_completed,
+        hifzPlanId: todayLog.hifzPlanId,
+        actualStartPage: todayLog.actualStartPage,
+        actualEndPage: todayLog.actualEndPage,
+        actualPagesCompleted: todayLog.actualPagesCompleted,
         date: todayLog.date,
-        logDay: todayLog.log_day,
+        logDay: todayLog.logDay,
         status: todayLog.status,
         notes: todayLog.notes ?? null,
-        mistakesCount: todayLog.mistakes_count ?? 0,
-        hesitationCount: todayLog.hesitation_count ?? 0,
-        qualityScore: todayLog.quality_score ?? null,
+        mistakesCount: todayLog.mistakesCount ?? 0,
+        hesitationCount: todayLog.hesitationCount ?? 0,
+        qualityScore: todayLog.qualityScore ?? null,
         syncStatus: 0,
         updatedAt: sql`CURRENT_TIMESTAMP`,
       };
@@ -227,32 +231,32 @@ export const hifzService = {
 
       changed = true;
 
-      const normalizedUnits = Math.max(0, Math.round(todayLog.actual_pages_completed ?? 0));
+      const normalizedUnits = Math.max(0, Math.round(todayLog.actualPagesCompleted ?? 0));
       const isMissed = todayLog.status === "missed" || normalizedUnits === 0;
 
       await upsertHabitProgressLog(tx as any, {
         userId,
         date: todayLog.date,
         activityType: "HIFZ",
-        minutesSpent: todayLog.actual_minutes_spent ?? (isMissed ? 0 : Math.max(1, normalizedUnits) * 3),
+        minutesSpent: todayLog.actualMinutesSpent ?? (isMissed ? 0 : Math.max(1, normalizedUnits) * 3),
         unitsCompleted: isMissed ? 0 : normalizedUnits,
         note: todayLog.notes ?? null,
-        planId: todayLog.hifz_plan_id,
+        planId: todayLog.hifzPlanId,
         localRefId: localId,
         eventType: isMissed ? "TASK_MISSED" : "HIFZ_COMPLETED",
         metadata: JSON.stringify({
-          startPage: todayLog.actual_start_page,
-          endPage: todayLog.actual_end_page,
-          qualityScore: todayLog.quality_score
+          startPage: todayLog.actualStartPage,
+          endPage: todayLog.actualEndPage,
+          qualityScore: todayLog.qualityScore
         })
       });
 
-      const qualityScore = todayLog.quality_score ?? PerformanceService.deriveQualityScore(todayLog.mistakes_count ?? 0, todayLog.hesitation_count ?? 0);
+      const qualityScore = todayLog.qualityScore ?? PerformanceService.deriveQualityScore(todayLog.mistakesCount ?? 0, todayLog.hesitationCount ?? 0);
       const quality: 'perfect' | 'medium' | 'low' = qualityScore >= 5 ? 'perfect' : qualityScore <= 2 ? 'low' : 'medium';
 
       const surahData = useCatalogStore.getState().surahs;
       const plan = await tx.query.hifzPlans.findFirst({
-        where: eq(hifzPlans.id, todayLog.hifz_plan_id)
+        where: eq(hifzPlans.id, todayLog.hifzPlanId)
       });
       const direction = (plan?.direction as 'forward' | 'backward') || 'forward';
       const pages = isMissed ? [] : getPagesFromLog(todayLog, direction, surahData);
@@ -265,8 +269,8 @@ export const hifzService = {
         todayLog.date,
         isMissed ? null : pages,
         quality,
-        todayLog.mistakes_count ?? 0,
-        todayLog.hesitation_count ?? 0
+        todayLog.mistakesCount ?? 0,
+        todayLog.hesitationCount ?? 0
       );
 
       if (!isMissed && pages.length > 0) {
@@ -379,5 +383,23 @@ export const hifzService = {
     } catch (e) {
       console.warn("Hifz sync failed", e);
     }
+  },
+
+  async completePlan(userId: string, planId: number) {
+    await db.transaction(async (tx) => {
+      await tx.update(hifzPlans)
+        .set({ status: 'completed', syncStatus: 0, updatedAt: sql`CURRENT_TIMESTAMP` })
+        .where(and(eq(hifzPlans.userId, userId), eq(hifzPlans.id, planId)));
+      
+      await tx.update(activityPlans)
+        .set({ status: 'completed', updatedAt: sql`CURRENT_TIMESTAMP` })
+        .where(and(
+          eq(activityPlans.userId, userId),
+          eq(activityPlans.activityType, 'HIFZ'),
+          eq(activityPlans.localRefId, planId)
+        ));
+    });
+    
+    void this.syncPending(userId);
   }
 };

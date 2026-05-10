@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { Text } from "@/src/components/common/ui/Text";
 import { View } from "react-native";
+import { getRankForLevel } from "@/src/features/gamification/constants";
 
 type HifzAnalytics = {
   progress?: number;
@@ -80,9 +81,10 @@ export default function Card({
               {format(new Date(), "EEEE, MMM dd")}
             </Text>
             {userStats && (
-              <View className="ml-3 bg-white/20 px-2 py-0.5 rounded-full flex-row items-center">
-                <Ionicons name="star" size={8} color="#fbbf24" />
-                <Text className="text-white text-[9px]  ml-1">LVL {userStats.level}</Text>
+              <View className="flex-row items-center ml-3">
+                <Text className="text-white/80 text-[10px] font-bold tracking-widest">
+                  LVL {userStats.level}
+                </Text>
               </View>
             )}
           </View>
@@ -90,19 +92,25 @@ export default function Card({
             Hifz <Text className="text-white/50">&</Text> Muraja
           </Text>
           
-          {userStats && (
-            <View className="mt-2 w-32">
-              <View className="h-1 bg-white/10 rounded-full overflow-hidden">
-                <View 
-                  className="h-full bg-white" 
-                  style={{ width: `${(userStats.totalXp % 1000) / 10}%` }} 
-                />
+          {userStats && (() => {
+            const currentRank = getRankForLevel(userStats.level);
+            return (
+              <View className="mt-2 w-40">
+                <Text className="text-white/80 text-[10px] mb-1 font-medium tracking-wide">
+                  {currentRank.title} {currentRank.titleAr}
+                </Text>
+                <View className="h-1 bg-white/10 rounded-full overflow-hidden">
+                  <View 
+                    className="h-full bg-white" 
+                    style={{ width: `${(userStats.totalXp % 1000) / 10}%` }} 
+                  />
+                </View>
+                <Text className="text-[8px] text-white/40 mt-1 uppercase tracking-widest">
+                  {userStats.totalXp % 1000} / 1000 XP
+                </Text>
               </View>
-              <Text className="text-[8px] text-white/40 mt-1 uppercase tracking-widest">
-                {userStats.totalXp % 1000} / 1000 XP
-              </Text>
-            </View>
-          )}
+            );
+          })()}
         </View>
       </View>
 

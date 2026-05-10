@@ -28,15 +28,15 @@ export function useHifzDailyTask() {
 
     const dayNumber = (today.getDay() + 6) % 7;
     const targetInfo = getTargetPage(
-      hifz.selected_days,
+      hifz.selectedDays,
       analytics.plannedPages,
       analytics.completedPages,
-      hifz.pages_per_day,
+      hifz.pagesPerDay,
       dayNumber,
     );
 
     const hasPlannedTarget = !!targetInfo && targetInfo.totalTarget > 0;
-    const fallbackTarget = Math.max(1, Math.round(hifz.pages_per_day));
+    const fallbackTarget = Math.max(1, Math.round(hifz.pagesPerDay));
     const effectiveTarget = hasPlannedTarget ? targetInfo.totalTarget : fallbackTarget;
     const task = getTodayTask(hifz, surah, effectiveTarget);
     if (!task) return null;
@@ -65,7 +65,7 @@ export function useHifzDailyTask() {
   const { suggestions: srsSuggestions } = useReviewSuggestions(hifz?.id);
 
   const reinforcementTask = useMemo(() => {
-    if (!hifz || !surah.length || !hifz.is_reinforcement_enabled) return null;
+    if (!hifz || !surah.length || !hifz.isReinforcementEnabled) return null;
     
     const today = new Date();
     const evaluationDay = hifz.evaluationDay ?? 5;
@@ -75,9 +75,9 @@ export function useHifzDailyTask() {
   }, [hifz, surah]);
 
   const { data: murajaLogs = [] } = useQuery({
-    queryKey: ['today-muraja-logs', hifz?.user_id],
+    queryKey: ['today-muraja-logs', hifz?.userId],
     queryFn: async () => {
-      if (!hifz?.user_id) return [];
+      if (!hifz?.userId) return [];
       const { db } = await import("@/src/lib/db/local-client");
       const { pageActivityLogs } = await import("@/src/features/habits/database/habitSchema");
       const { and, gte, eq } = await import("drizzle-orm");
@@ -85,13 +85,13 @@ export function useHifzDailyTask() {
       const todayStr = new Date().toISOString().slice(0, 10);
       return await db.query.pageActivityLogs.findMany({
         where: and(
-          eq(pageActivityLogs.userId, hifz.user_id),
+          eq(pageActivityLogs.userId, hifz.userId),
           eq(pageActivityLogs.source, 'muraja'),
           gte(pageActivityLogs.logDate, todayStr)
         )
       });
     },
-    enabled: !!hifz?.user_id
+    enabled: !!hifz?.userId
   });
 
   const completedReviews = useMemo(() => {

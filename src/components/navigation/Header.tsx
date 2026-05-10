@@ -44,21 +44,9 @@ export const Header = ({ title, userStats }: { title: string; userStats?: { leve
       <View className="flex-row justify-between items-center">
         <View className="flex-1">
           <View className="flex-row items-center gap-x-3">
-            <Text className="text-primary text-[12px] font-bold uppercase tracking-[2.5px]">
+            <Text className="text-primary text-[18px]  uppercase tracking-[3px]">
               HIFZI
             </Text>
-            {userStats && (
-              <View className="flex-row items-center bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10">
-                <Ionicons name="sparkles" size={10} color="#276359" />
-                <Text className="text-primary text-[9px]  ml-1">L{userStats.level}</Text>
-                <View className="w-8 h-[2px] bg-primary/20 rounded-full ml-2 overflow-hidden">
-                  <View 
-                    className="h-full bg-primary" 
-                    style={{ width: `${xpProgress}%` }} 
-                  />
-                </View>
-              </View>
-            )}
           </View>
           {/* {title !== "Home" && (
             <Text className="text-2xl  text-slate-900 tracking-tight mt-1">

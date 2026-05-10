@@ -47,14 +47,15 @@ export default function CreateHifzPlan() {
     control,
     setValue,
     reset,
-  } = useForm({
-    resolver: yupResolver(HifzPlanSchema),
+  } = useForm<HifzPlanSchemaFormType>({
+    resolver: yupResolver(HifzPlanSchema) as any,
     defaultValues: {
       start_date: new Date().toISOString().split("T")[0],
       selectedDays: [],
       pages_per_day: 2,
       start_surah: 1,
       start_page: 1,
+      total_pages: undefined,
       direction: "forward",
       preferred_time: "fajr",
       is_custom_time: false,
@@ -67,11 +68,11 @@ export default function CreateHifzPlan() {
   useEffect(() => {
     if (existingPlan) {
       reset({
-        start_date: existingPlan.start_date,
-        selectedDays: existingPlan.selected_days,
-        pages_per_day: existingPlan.pages_per_day,
-        start_surah: existingPlan.start_surah,
-        start_page: existingPlan.start_page,
+        start_date: existingPlan.startDate,
+        selectedDays: existingPlan.selectedDays,
+        pages_per_day: existingPlan.pagesPerDay,
+        start_surah: existingPlan.startSurah,
+        start_page: existingPlan.startPage,
         direction: existingPlan.direction,
         evaluation_day: existingPlan.evaluationDay ?? 6,
       });
@@ -97,22 +98,29 @@ export default function CreateHifzPlan() {
         return;
       }
       const stats = calculatePlanStats(data);
-      const { selectedDays, evaluation_day, ...rest } = data;
+      
       const planData = {
-        ...rest,
-        evaluationDay: evaluation_day,
-        selected_days: selectedDays,
-        total_pages: stats.totalPages,
-        estimated_end_date: stats.finishDate.toISOString().slice(0, 10),
-        days_per_week: data.selectedDays.length,
+        startDate: data.start_date,
+        startSurah: data.start_surah,
+        startPage: data.start_page,
+        direction: data.direction as 'forward' | 'backward',
+        pagesPerDay: data.pages_per_day,
+        preferredTime: data.preferred_time,
+        isCustomTime: data.is_custom_time,
+        isReinforcementEnabled: data.is_reinforcement_enabled,
+        evaluationDay: data.evaluation_day,
+        selectedDays: data.selectedDays,
+        totalPages: stats.totalPages,
+        estimatedEndDate: stats.finishDate.toISOString().slice(0, 10),
+        daysPerWeek: data.selectedDays.length,
       };
+      
       await savePlan(planData);
       showSuccess(
         "Success",
         existingPlan ? "Plan updated!" : "Journey started!",
         () => router.back(),
       );
-      console.log("after calling savePlan")
     } catch (error: any) {
       showError("Error", formatErrorMessage(error));
     }

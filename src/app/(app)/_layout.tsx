@@ -127,6 +127,14 @@ export default function AppLayout() {
         />
 
         <Tabs.Screen
+          name="plan-completion"
+          options={{
+            href: null,
+            headerShown: false,
+          }}
+        />
+
+        <Tabs.Screen
           name="quran"
           options={{
             title: "Quran",

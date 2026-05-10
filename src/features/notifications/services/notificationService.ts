@@ -1,10 +1,12 @@
 import { db } from "@/src/lib/db/local-client";
 import { userStats } from "@/src/features/user/database/userSchema";
 import { habitEvents, notifications } from "../database/notificationSchema";
+import { activityPlans } from "@/src/features/habits/database/habitSchema";
 import { notificationRepository } from "./notificationRepository";
 import { notificationManager } from "./notificationManager";
 import { eq, and, sql } from "drizzle-orm";
 import { supabase } from "@/src/lib/supabase";
+import { COMEBACK_TEMPLATES, STREAK_WARNING_TEMPLATES } from "../../gamification/constants";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const STREAK_RISK_HOUR = 18;
@@ -95,8 +97,26 @@ export const notificationService = {
       xpGained
     });
 
+    const activePlan = await db.query.activityPlans.findFirst({
+      where: and(
+        eq(activityPlans.userId, payload.userId),
+        eq(activityPlans.activityType, payload.habitType.toUpperCase() as any),
+        eq(activityPlans.status, 'active')
+      )
+    });
+    
+    let selectedDays = [0, 1, 2, 3, 4, 5, 6];
+    if (activePlan?.metadata) {
+      try {
+        const meta = JSON.parse(activePlan.metadata);
+        if (meta.selectedDays && Array.isArray(meta.selectedDays)) {
+          selectedDays = meta.selectedDays;
+        }
+      } catch (e) {}
+    }
+
     const allEvents = await notificationRepository.getHabitEvents(payload.userId);
-    const streaks = this.calculateStreaks(allEvents.map(e => e.date), todayKey);
+    const streaks = this.calculateStreaks(allEvents.filter(e => e.habitType === payload.habitType).map(e => e.date), todayKey, selectedDays);
     
     const totalXpResult = await db.select({ total: sql<number>`sum(xp_gained)` })
       .from(habitEvents)
@@ -144,8 +164,27 @@ export const notificationService = {
     await notificationRepository.deleteHabitEvent(userId, habitType, date);
     
     const todayKey = this.toDateKey();
+    
+    const activePlan = await db.query.activityPlans.findFirst({
+      where: and(
+        eq(activityPlans.userId, userId),
+        eq(activityPlans.activityType, habitType.toUpperCase() as any),
+        eq(activityPlans.status, 'active')
+      )
+    });
+    
+    let selectedDays = [0, 1, 2, 3, 4, 5, 6];
+    if (activePlan?.metadata) {
+      try {
+        const meta = JSON.parse(activePlan.metadata);
+        if (meta.selectedDays && Array.isArray(meta.selectedDays)) {
+          selectedDays = meta.selectedDays;
+        }
+      } catch (e) {}
+    }
+
     const allEvents = await notificationRepository.getHabitEvents(userId);
-    const streaks = this.calculateStreaks(allEvents.map(e => e.date), todayKey);
+    const streaks = this.calculateStreaks(allEvents.filter(e => e.habitType === habitType).map(e => e.date), todayKey, selectedDays);
     
     const totalXpResult = await db.select({ total: sql<number>`sum(xp_gained)` })
       .from(habitEvents)
@@ -214,13 +253,12 @@ export const notificationService = {
     }
 
     for (const habit of ['hifz', 'muraja'] as const) {
-      await this.scheduleRiskWarning(userId, habit, now);
+      await this.scheduleSmartReminders(userId, habit, now);
     }
   },
 
-  async scheduleRiskWarning(userId: string, habit: 'hifz' | 'muraja', now: Date) {
+  async scheduleSmartReminders(userId: string, habit: 'hifz' | 'muraja', now: Date) {
     const todayKey = this.toDateKey(now);
-    const eventKey = `risk:${habit}:${todayKey}`;
     const scheduleKey = `schedule:risk:${habit}:${todayKey}`;
 
     const allEvents = await notificationRepository.getHabitEvents(userId);
@@ -230,6 +268,31 @@ export const notificationService = {
       const existing = await notificationRepository.getScheduledNotification(userId, scheduleKey);
       if (existing?.notificationIdentifier) await notificationManager.cancel(existing.notificationIdentifier);
       await notificationRepository.deleteScheduledNotification(userId, scheduleKey);
+      
+      const day3 = new Date(now.getTime() + 3 * DAY_MS);
+      day3.setHours(STREAK_RISK_HOUR, 0, 0, 0);
+      const comebackKey = `schedule:comeback:${habit}:${this.toDateKey(day3)}`;
+      
+      const existingComeback = await notificationRepository.getScheduledNotification(userId, comebackKey);
+      if (!existingComeback) {
+        const body = COMEBACK_TEMPLATES[Math.floor(Math.random() * COMEBACK_TEMPLATES.length)];
+        const identifier = await notificationManager.schedule({
+          title: "Waiting For You",
+          body,
+          data: { type: 'comeback', habit, eventKey: comebackKey },
+          trigger: day3
+        });
+        
+        if (identifier) {
+          await notificationRepository.upsertScheduledNotification(userId, {
+            kind: 'streak_risk',
+            habitType: habit,
+            eventKey: comebackKey,
+            scheduledFor: day3.toISOString(),
+            notificationIdentifier: identifier
+          });
+        }
+      }
       return;
     }
 
@@ -244,10 +307,11 @@ export const notificationService = {
     if (now.getTime() < triggerDate.getTime()) {
       const existing = await notificationRepository.getScheduledNotification(userId, scheduleKey);
       if (!existing) {
+        const body = STREAK_WARNING_TEMPLATES[Math.floor(Math.random() * STREAK_WARNING_TEMPLATES.length)];
         const identifier = await notificationManager.schedule({
           title: "Streak Risk",
-          body: `⚠️ Your ${habit} streak is in danger! Complete it before midnight!`,
-          data: { type: 'warning', habit, eventKey },
+          body,
+          data: { type: 'warning', habit, eventKey: scheduleKey },
           trigger: triggerDate
         });
         
@@ -264,31 +328,68 @@ export const notificationService = {
     }
   },
 
-  calculateStreaks(dates: string[], todayKey: string) {
+  calculateStreaks(dates: string[], todayKey: string, selectedDays: number[] = [0,1,2,3,4,5,6]) {
     const uniqueSorted = Array.from(new Set(dates)).sort();
     const set = new Set(uniqueSorted);
     
     let current = 0;
     let cursor = new Date(todayKey);
-    while (set.has(this.toDateKey(cursor))) {
-      current++;
+    const cursorStr = this.toDateKey(cursor);
+    
+    // Safety check: if today is a working day and it's missed, does the streak break? 
+    // Usually we only break it if yesterday was missed.
+    // For a robust calculation backwards:
+    let isFirstDay = true;
+    while (true) {
+      const dayOfWeek = cursor.getDay();
+      const dateStr = this.toDateKey(cursor);
+      
+      if (set.has(dateStr)) {
+        current++;
+      } else {
+        if (selectedDays.includes(dayOfWeek)) {
+          // If it's today and we haven't done it yet, we don't break the streak immediately
+          if (isFirstDay && dateStr === todayKey) {
+            // Keep going, wait to see if yesterday was done
+          } else {
+            break; // Streak broken because a selected day was missed
+          }
+        }
+        // If it's not a selected day, we missed it but it doesn't break the streak.
+      }
+      isFirstDay = false;
       cursor.setDate(cursor.getDate() - 1);
+      
+      // Safety limit to prevent infinite loops (e.g. going back 5 years)
+      if (current === 0 && !isFirstDay && dateStr !== todayKey && !set.has(dateStr) && (new Date(todayKey).getTime() - cursor.getTime() > 10 * DAY_MS)) {
+        break; // If we go back 10 days and still 0, stop.
+      }
     }
 
+    // Longest streak calculation
     let longest = 0;
     let running = 0;
-    let prev: Date | null = null;
     
-    for (const d of uniqueSorted) {
-      const curr = new Date(d);
-      if (!prev) {
-        running = 1;
-      } else {
-        const diff = Math.round((curr.getTime() - prev.getTime()) / DAY_MS);
-        running = (diff === 1) ? running + 1 : 1;
+    // Re-evaluate longest streak accurately by walking forward from the oldest event
+    if (uniqueSorted.length > 0) {
+      const start = new Date(uniqueSorted[0]);
+      const end = new Date(uniqueSorted[uniqueSorted.length - 1]);
+      let tempCursor = new Date(start);
+      
+      while (tempCursor <= end) {
+        const tempDayOfWeek = tempCursor.getDay();
+        const tempDateStr = this.toDateKey(tempCursor);
+        
+        if (set.has(tempDateStr)) {
+          running++;
+          longest = Math.max(longest, running);
+        } else {
+          if (selectedDays.includes(tempDayOfWeek)) {
+            running = 0; // Streak breaks only on missed selected days
+          }
+        }
+        tempCursor.setDate(tempCursor.getDate() + 1);
       }
-      longest = Math.max(longest, running);
-      prev = curr;
     }
     
     return { current, longest };

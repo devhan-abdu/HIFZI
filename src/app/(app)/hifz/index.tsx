@@ -1,6 +1,5 @@
-import { ReinforcementCard } from "@/src/components/dashboard/ReinforcementCard";
 import { EvaluationRequiredCard, RestDayCardSingle } from "@/src/components/dashboard/TodayTask";
-import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
+import { ReinforcementCard } from "@/src/components/dashboard/ReinforcementCard";
 import { NotificationCard } from "@/src/components/NotificationCard";
 import Screen from "@/src/components/screen/Screen";
 import {
@@ -26,11 +25,11 @@ import { Text } from "@/src/components/common/ui/Text";
 import { useSession } from "@/src/hooks/useSession";
 import { useNotifications } from "@/src/hooks/useNotifications";
 import { sendTestNotification } from "@/src/utils/testNotifications";
-import { useWeeklyEvaluationTrigger } from "@/src/features/habits/hooks/useWeeklyEvaluationTrigger";
 import { HifzActionCard } from "@/src/components/dashboard/HifzActionCard";
+import { usePlanLifecycle } from "@/src/features/habits/hooks/usePlanLifecycle";
+import { PlanEndCard } from "@/src/features/habits/components/PlanEndCard";
 
 export default function Hifz() {
-  const { duePlanIds } = useWeeklyEvaluationTrigger(); 
   const { 
     hifz, 
     loading: isLoading, 
@@ -42,10 +41,9 @@ export default function Hifz() {
     srsSuggestions: suggestions,
     completedReviews
   } = useHifzDailyTask();
+  const { getPlanState } = usePlanLifecycle();
+  const planState = getPlanState(hifz?.id, 'HIFZ');
   const { user } = useSession();
-  const isDue = hifz?.id ? duePlanIds.includes(hifz.id) : false;
-  
-  const session = useReaderSessionStore();
 
   const handleSendTestNotification = async () => {
     if (!user?.id) return;
@@ -144,19 +142,14 @@ export default function Hifz() {
               Active Task
             </Text>
             <Text className="text-xl  text-gray-900 mb-4 px-1">Today Hifz</Text>
-            {isDue ? (
+            {planState === 'EVALUATION_DUE' ? (
                <EvaluationRequiredCard type="hifz" />
+            ) : planState === 'COMPLETION_DUE' ? (
+               <PlanEndCard activityType="HIFZ" localRefId={hifz?.id ?? 0} title={analytics!.startSurah?.toString() ?? ''} />
             ) : todayTask ? (
               <HifzActionCard
                 hifz={hifz} 
                 task={todayTask} 
-                onStart={() => {
-                  session.openSession(todayTask.startPage);
-                  router.push(`/(app)/quran/reader?page=${todayTask.startPage}&planId=${hifz.id}&type=hifz&start=${todayTask.startPage}&end=${todayTask.endPage}`);
-                }}
-                onResume={() => {
-                  router.push(`/(app)/quran/reader?page=${session.currentPage}&planId=${hifz?.id}&type=hifz&start=${todayTask.startPage}&end=${todayTask.endPage}`);
-                }}
                 onDetails={() => router.push("/(app)/hifz/log")}
               />
             ) : (
@@ -174,7 +167,6 @@ export default function Hifz() {
                 task={reinforcementTask}
                 isCompleted={isReinforcementDone}
                 onStart={() => {
-                  session.openSession(reinforcementTask.startPage);
                   router.push(`/(app)/quran/reader?page=${reinforcementTask.startPage}&planId=${hifz?.id}&type=hifz&start=${reinforcementTask.startPage}&end=${reinforcementTask.endPage}`);
                 }}
               />
@@ -217,7 +209,6 @@ export default function Hifz() {
                       label: item.overdueDays > 0 ? `${item.overdueDays}d overdue` : 'Due today'
                     }}
                     onStart={() => {
-                      session.openSession(item.startPage);
                       router.push(`/(app)/quran/reader?page=${item.startPage}&planId=${hifz?.id}&type=hifz&start=${item.startPage}&end=${item.endPage}`);
                     }}
                   />
@@ -245,7 +236,6 @@ export default function Hifz() {
                       label: `Due ${item.dueDate}`
                     }}
                     onStart={() => {
-                      session.openSession(item.startPage);
                       router.push(`/(app)/quran/reader?page=${item.startPage}&planId=${hifz?.id}&type=hifz&start=${item.startPage}&end=${item.endPage}`);
                     }}
                   />
@@ -327,13 +317,13 @@ export default function Hifz() {
         <ScreenFooter>
           <View className="flex-row gap-x-3">
             <Button
-              className={`flex-1 shadow-lg ${isDue ? 'opacity-50' : 'shadow-primary/20'}`}
-              onPress={() => !isDue && router.push("/(app)/hifz/log")}
-              disabled={isDue}
+              className={`flex-1 shadow-lg ${planState === 'EVALUATION_DUE' ? 'opacity-50' : 'shadow-primary/20'}`}
+              onPress={() => planState !== 'EVALUATION_DUE' && router.push("/(app)/hifz/log")}
+              disabled={planState === 'EVALUATION_DUE'}
             >
               <Ionicons name="add-circle-outline" size={20} color="white" />
               <Text className="text-white">
-                {isDue ? 'Test Required' : 'Log Progress'}
+                {planState === 'EVALUATION_DUE' ? 'Test Required' : 'Log Progress'}
               </Text>
             </Button>
 
