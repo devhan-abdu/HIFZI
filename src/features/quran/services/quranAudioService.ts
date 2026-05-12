@@ -1,11 +1,12 @@
 import { fetch as expoFetch } from "expo/fetch";
 import { File } from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { callQF } from "./qfClient";
+import { callQF, QF_ENV } from "./qfClient";
 
 export type Reciter = {
   id: number;
   name: string;
+  slug?: string;
 };
 
 export type ChapterAudioSegment = {
@@ -17,6 +18,9 @@ export type ChapterAudioSegment = {
 export type ChapterAudioResponse = {
   audio_file?: {
     audio_url?: string;
+    // API returns timestamps array (not segments)
+    timestamps?: ChapterAudioSegment[];
+    // some environments may return segments
     segments?: ChapterAudioSegment[];
   };
   audio_url?: string;
@@ -24,19 +28,33 @@ export type ChapterAudioResponse = {
   segments?: ChapterAudioSegment[];
 };
 
+/**
+ * Fetches and caches the list of available chapter reciters.
+ * Endpoint: GET /resources/chapter_reciters
+ */
 export async function getRecitationsCached(): Promise<Reciter[]> {
-  const CACHE_KEY = "chapter_reciters_v1";
+  const CACHE_KEY = "chapter_reciters_v6";
   try {
     const cached = await AsyncStorage.getItem(CACHE_KEY);
     if (cached) return JSON.parse(cached);
 
-    const response = await callQF("/content/resources/chapter_reciters", { params: { language: "en" } });
-    const recitations = (response?.reciters ?? [])
+    const response = await callQF(`/${QF_ENV}/content/api/v4/resources/chapter_reciters`, {
+      params: { language: "en" },
+    });
+
+    const raw: any[] = response?.reciters ?? [];
+    
+    const recitations: Reciter[] = raw
       .map((item: any) => ({
         id: Number(item?.id),
-        name: item?.reciter_name ?? item?.translated_name?.name ?? item?.name ?? ""
+        slug: item?.slug,
+        name:
+          item?.reciter_name ??
+          item?.translated_name?.name ??
+          item?.name ??
+          `Reciter ${item?.id}`,
       }))
-      .filter((r: Reciter) => r.id && r.name);
+      .filter((r: Reciter) => r.id > 0 && r.name);
 
     if (recitations.length > 0) {
       await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(recitations));
@@ -61,27 +79,26 @@ export function normalizeSegments(segments: ChapterAudioSegment[]) {
   }));
 }
 
+/**
+ * Fetches audio metadata for a chapter.
+ * Endpoint: GET /chapter_recitations/{reciter_id}/{chapter_number}
+ */
 export async function fetchChapterAudioMetadata(
   chapterId: number,
-  selectedAudio: number,
+  reciterId: number,
 ): Promise<ChapterAudioResponse> {
-  const attempts: Array<string> = [
-    `/content/chapter_recitations/${selectedAudio}/${chapterId}`,
-    `/content/chapter_recitations/${chapterId}/${selectedAudio}`,
-  ];
-
-  let lastError: Error | null = null;
-  for (const endpoint of attempts) {
-    try {
-      return (await callQF(endpoint, {
-        params: { segments: true },
-        silentErrorLog: true,
-      })) as ChapterAudioResponse;
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-    }
+  if (!Number.isInteger(chapterId) || chapterId < 1 || chapterId > 114) {
+    throw new Error(`INVALID_CHAPTER_NUMBER: ${chapterId}. Expected integer 1–114.`);
   }
-  throw lastError ?? new Error("CHAPTER_AUDIO_METADATA_FAILED");
+  if (!Number.isInteger(reciterId) || reciterId < 1) {
+    throw new Error(`INVALID_RECITER_ID: ${reciterId}. Expected a positive integer.`);
+  }
+
+  // Route audio through the configured QF environment
+  const endpoint = `/${QF_ENV}/content/api/v4/chapter_recitations/${Number(String(reciterId))}/${String(chapterId)}`;
+  return (await callQF(endpoint, {
+    params: { segments: true },
+  })) as ChapterAudioResponse;
 }
 
 export async function downloadAudioFileWithProgress(

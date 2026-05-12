@@ -1,5 +1,5 @@
 import * as React from "react";
-import { View } from "react-native";
+import { View, ActivityIndicator } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import { useAuthRequest } from "expo-auth-session";
 import { Text, Button } from "./common/ui/Text";
@@ -21,6 +21,7 @@ const discovery = {
 };
 
 export default function LoginButton() {
+  const [isLoading, setIsLoading] = React.useState(false);
   const [request, response, promptAsync] = useAuthRequest(
     {
       clientId: CLIENT_ID,
@@ -40,45 +41,71 @@ export default function LoginButton() {
 
   React.useEffect(() => {
     const run = async () => {
-      if (response?.type !== "success") return;
+      if (!response) return;
 
-      try {
-        const res = await fetch(`${BACKEND}/qf-login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            code: response.params.code,
-            codeVerifier: request?.codeVerifier,
-            redirectUri: REDIRECT_URI,
-          }),
-        });
-
-        const data = await res.json();
-        if (res.ok && data.access_token) {
-          await supabase.auth.setSession({
-            access_token: data.access_token,
-            refresh_token: data.refresh_token,
+      if (response.type === "success") {
+        setIsLoading(true);
+        try {
+          const res = await fetch(`${BACKEND}/qf-login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              code: response.params.code,
+              codeVerifier: request?.codeVerifier,
+              redirectUri: REDIRECT_URI,
+            }),
           });
+
+          const data = await res.json();
+          if (res.ok && data.access_token) {
+            await supabase.auth.setSession({
+              access_token: data.access_token,
+              refresh_token: data.refresh_token,
+            });
+            // Session set, effect in parent will redirect
+          } else {
+             setIsLoading(false);
+          }
+        } catch (err) {
+          console.error("Login exchange failed", err);
+          setIsLoading(false);
         }
-      } catch (err) {
-        console.error("Login exchange failed", err);
+      } else {
+        setIsLoading(false);
       }
     };
 
     run();
   }, [response]);
 
+  const handleLogin = async () => {
+    setIsLoading(true);
+    const result = await promptAsync();
+    if (result?.type !== "success") {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <View>
+    <View className="w-full">
       <Button
-        disabled={!request}
-        onPress={() => promptAsync()}
-        className="bg-white p-4 rounded-xl my-8"
+        disabled={!request || isLoading}
+        onPress={handleLogin}
+        className="bg-white p-5 rounded-2xl my-8 flex-row items-center justify-center shadow-lg active:opacity-90"
       >
-        <Text className="text-primary  text-xl uppercase tracking-widest">
-          Get Started
-        </Text>
+        {isLoading ? (
+          <ActivityIndicator color="#0E1B1B" />
+        ) : (
+          <View className="flex-row items-center">
+            <Text className="text-[#0E1B1B] text-lg font-bold uppercase tracking-widest">
+              Continue with Quran.com
+            </Text>
+          </View>
+        )}
       </Button>
+      <Text className="text-white/40 text-center text-xs -mt-4">
+        Secure authentication via Quran Foundation
+      </Text>
     </View>
   );
 }

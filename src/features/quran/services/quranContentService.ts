@@ -1,5 +1,5 @@
 import { Directory, File, Paths } from "expo-file-system";
-import { callQF } from "./qfClient";
+import { callQF, QF_ENV } from "./qfClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export type TafsirPayload = {
@@ -17,17 +17,18 @@ export type TranslationPayload = {
 export type Translation = {
   id: number;
   name: string;
+  language_name?: string;
 };
 
 export type PageVerse = {
   id: number;
   verse_key: string;
   text_uthmani: string;
-  translations?: Array<{
+  translations?: {
     id: number;
     resource_id: number;
     text: string;
-  }>;
+  }[];
 };
 
 function extractTextPayload(response: any, key: "tafsirs" | "translations"): any | null {
@@ -43,17 +44,28 @@ function extractTextPayload(response: any, key: "tafsirs" | "translations"): any
 
 export async function getTranslationsCached(): Promise<Translation[]> {
   try {
-    const cached = await AsyncStorage.getItem("translations");
+    const cached = await AsyncStorage.getItem("translations_v2");
     if (cached) return JSON.parse(cached);
 
-    const response = await callQF("/content/resources/translations", { params: { language: "en" } });
-    const translations = response?.translations ?? [];
+    const response = await callQF(`/${QF_ENV}/content/api/v4/resources/translations`, { params: { language: "en" } });
+    const raw: any[] = response?.translations ?? [];
+    const translations: Translation[] = raw
+      .map((item: any) => ({
+        id: Number(item?.id),
+        name:
+          item?.translated_name?.name ??
+          item?.name ??
+          item?.author_name ??
+          `Translation ${item?.id}`,
+        language_name: item?.language_name ?? item?.language?.name ?? "",
+      }))
+      .filter((t) => t.id > 0 && t.name);
+
     if (translations.length > 0) {
-      await AsyncStorage.setItem("translations", JSON.stringify(translations));
+      await AsyncStorage.setItem("translations_v2", JSON.stringify(translations));
     }
     return translations;
   } catch (error) {
-    console.error("[ContentService] getTranslations error:", error);
     return [];
   }
 }
@@ -69,7 +81,7 @@ export async function getAyahTafsirCached(tafsirId: number, sura: number, ayah: 
     } catch {}
   }
 
-  const response = await callQF(`/content/tafsirs/${tafsirId}/by_ayah/${verseKey}`, {
+  const response = await callQF(`/${QF_ENV}/content/api/v4/tafsirs/${tafsirId}/by_ayah/${verseKey}`, {
     params: { fields: "resource_name,language_name,verse_key" }
   });
 
@@ -93,7 +105,7 @@ export async function getAyahTranslationCached(translationId: number, sura: numb
     } catch {}
   }
 
-  const response = await callQF(`/content/translations/${translationId}/by_ayah/${verseKey}`, {
+  const response = await callQF(`/${QF_ENV}/content/api/v4/translations/${translationId}/by_ayah/${verseKey}`, {
     params: { fields: "resource_name,language_name,verse_key" }
   });
 
@@ -106,6 +118,54 @@ export async function getAyahTranslationCached(translationId: number, sura: numb
   throw new Error("TRANSLATION_NOT_FOUND");
 }
 
+/**
+ * Fetch all verses for a chapter with translation text.
+ * Uses the user's recommended endpoint: GET /translations/{resource_id}/by_chapter/{chapter_number}
+ */
+export async function getChapterVersesWithTranslation(
+  chapterId: number,
+  translationId: number,
+): Promise<PageVerse[]> {
+  if (chapterId < 1 || chapterId > 114) {
+    throw new Error(`INVALID_CHAPTER_NUMBER: ${chapterId}. Must be 1–114.`);
+  }
+
+  const cacheDir = new Directory(Paths.document, "chapter_translations", String(translationId));
+  const cacheFile = new File(cacheDir, `chapter_${chapterId}.json`);
+
+  if (cacheFile.exists) {
+    try {
+      return JSON.parse(cacheFile.textSync());
+    } catch {}
+  }
+
+  const response = await callQF(
+    `/${QF_ENV}/content/api/v4/translations/${translationId}/by_chapter/${chapterId}`,
+    { params: { fields: "text_uthmani,verse_key,verse_number" } },
+  );
+
+  const raw: any[] = response?.translations ?? response?.data ?? [];
+  const verses: PageVerse[] = raw.map((v: any) => ({
+    id: v.id ?? v.resource_id ?? 0,
+    verse_key: v.verse_key ?? "",
+    text_uthmani: v.text_uthmani ?? "",
+    translations: [
+      {
+        id: v.id ?? 0,
+        resource_id: v.resource_id ?? translationId,
+        text: v.text ?? "",
+      },
+    ],
+  }));
+
+  if (verses.length > 0) {
+    if (!cacheDir.exists) cacheDir.create({ idempotent: true, intermediates: true });
+    cacheFile.write(JSON.stringify(verses));
+  }
+  return verses;
+}
+
+/** @deprecated Use getChapterVersesWithTranslation instead */
 export async function getPageVersesWithTranslation(page: number, translationId: number): Promise<PageVerse[]> {
   const cacheDir = new Directory(Paths.document, "page_translations", String(translationId));
   const cacheFile = new File(cacheDir, `page_${page}.json`);
@@ -116,7 +176,7 @@ export async function getPageVersesWithTranslation(page: number, translationId: 
     } catch {}
   }
 
-  const response = await callQF(`/content/translations/${translationId}/by_page/${page}`, {
+  const response = await callQF(`/${QF_ENV}/content/api/v4/translations/${translationId}/by_page/${page}`, {
     params: { fields: "text_uthmani,verse_key,verse_number" }
   });
 

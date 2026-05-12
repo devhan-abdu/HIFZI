@@ -32,7 +32,21 @@ serve(async (req) => {
     });
 
     const tokenData = await tokenRes.json();
+    console.log("QF login token response", {
+      ok: tokenRes.ok,
+      access_token: Boolean(tokenData.access_token),
+      refresh_token: Boolean(tokenData.refresh_token),
+      expires_in: tokenData.expires_in,
+      token_type: tokenData.token_type,
+      scope: tokenData.scope,
+      error: tokenData.error,
+      error_description: tokenData.error_description,
+    });
+
     if (!tokenRes.ok) throw new Error(`QF Token Error: ${tokenData.error_description}`);
+    if (!tokenData.refresh_token) {
+      console.warn("QF login response missing refresh_token. Offline refresh will fail.");
+    }
 
     // 2. Fetch QF User Info
     const userRes = await fetch(`${authBaseUrl}/userinfo`, {
@@ -100,6 +114,13 @@ serve(async (req) => {
       access_token: tokenData.access_token,
       refresh_token: tokenData.refresh_token,
       expires_at: expiryTimestamp,
+    });
+
+    console.log("Saved QF tokens for user", {
+      userId,
+      hasAccessToken: Boolean(tokenData.access_token),
+      hasRefreshToken: Boolean(tokenData.refresh_token),
+      expiresAt: expiryTimestamp,
     });
 
     if (tokenStoreError) {

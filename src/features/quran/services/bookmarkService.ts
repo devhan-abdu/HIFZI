@@ -1,8 +1,10 @@
 import { db } from "@/src/lib/db/local-client";
+import { getAssetDb } from "@/src/lib/db/asset-client";
 import { bookmarksLocal } from "../database/quranStateSchema";
 import { aya } from "../database/quranAssetSchema";
 import { eq, and, sql, asc, desc, ne } from "drizzle-orm";
 import * as Crypto from "expo-crypto";
+import { SQLiteDatabase } from "expo-sqlite";
 import {
   createRemoteBookmark,
   deleteRemoteBookmark,
@@ -13,7 +15,7 @@ import {
 
 
 export const bookmarkService = {
-  
+
 
   async getVisibleBookmarks(userId: string) {
     return await db.query.bookmarksLocal.findMany({
@@ -23,32 +25,37 @@ export const bookmarkService = {
   },
 
 
-  async getPageFromVerseKey(verseKey: string): Promise<number> {
+  async getPageFromVerseKey(verseKey: string, assetDb: SQLiteDatabase): Promise<number> {
     const parsed = parseVerseKey(verseKey);
     if (!parsed) return 0;
 
-    const row = await db.query.aya.findFirst({
-      where: and(eq(aya.soraid, parsed.sura), eq(aya.ayaid, parsed.ayah)),
-      columns: { page: true },
-    });
+    const drizzleAsset = getAssetDb(assetDb);
+    const rows = await drizzleAsset
+      .select({ page: aya.page })
+      .from(aya)
+      .where(and(eq(aya.soraid, parsed.sura), eq(aya.ayaid, parsed.ayah)))
+      .limit(1);
 
-    return row?.page ?? 0;
+    return rows[0]?.page ?? 0;
   },
 
-  async getFirstVerseKeyFromPage(pageNumber: number): Promise<string | null> {
-    const row = await db.query.aya.findFirst({
-      where: eq(aya.page, pageNumber),
-      orderBy: [asc(aya.soraid), asc(aya.ayaid)],
-      columns: { soraid: true, ayaid: true },
-    });
+  async getFirstVerseKeyFromPage(pageNumber: number, assetDb: SQLiteDatabase): Promise<string | null> {
+    const drizzleAsset = getAssetDb(assetDb);
+    const rows = await drizzleAsset
+      .select({ soraid: aya.soraid, ayaid: aya.ayaid })
+      .from(aya)
+      .where(eq(aya.page, pageNumber))
+      .orderBy(asc(aya.soraid), asc(aya.ayaid))
+      .limit(1);
 
+    const row = rows[0];
     return row ? `${row.soraid}:${row.ayaid}` : null;
   },
 
- 
+
   async upsertBookmark(userId: string, verseKey: string, pageNumber: number, localId?: string) {
     const id = localId || Crypto.randomUUID();
-    
+
     await db.insert(bookmarksLocal)
       .values({
         localId: id,
@@ -67,23 +74,22 @@ export const bookmarkService = {
           updatedAt: sql`CURRENT_TIMESTAMP`,
         }
       });
-      
+
     return id;
   },
 
- 
   async markAsDeleted(userId: string, verseKey: string) {
     await db.update(bookmarksLocal)
-      .set({ 
-        syncStatus: 'deleted', 
-        deletedAt: sql`CURRENT_TIMESTAMP`, 
-        updatedAt: sql`CURRENT_TIMESTAMP` 
+      .set({
+        syncStatus: 'deleted',
+        deletedAt: sql`CURRENT_TIMESTAMP`,
+        updatedAt: sql`CURRENT_TIMESTAMP`
       })
       .where(and(eq(bookmarksLocal.userId, userId), eq(bookmarksLocal.verseKey, verseKey)));
   },
 
 
-  async sync(userId: string) {
+  async sync(userId: string, assetDb: SQLiteDatabase) {
     try {
       const pending = await db.query.bookmarksLocal.findMany({
         where: and(eq(bookmarksLocal.userId, userId), eq(bookmarksLocal.syncStatus, 'pending')),
@@ -104,7 +110,7 @@ export const bookmarkService = {
 
       const toDelete = await db.query.bookmarksLocal.findMany({
         where: and(
-          eq(bookmarksLocal.userId, userId), 
+          eq(bookmarksLocal.userId, userId),
           eq(bookmarksLocal.syncStatus, 'deleted'),
           sql`${bookmarksLocal.remoteId} IS NOT NULL`
         ),
@@ -125,7 +131,7 @@ export const bookmarkService = {
 
       const remoteItems = await listAllRemoteBookmarks();
       for (const remote of remoteItems) {
-        const page = await this.getPageFromVerseKey(remote.verseKey);
+        const page = await this.getPageFromVerseKey(remote.verseKey, assetDb);
         await db.insert(bookmarksLocal)
           .values({
             localId: Crypto.randomUUID(),

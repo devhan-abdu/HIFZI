@@ -1,4 +1,5 @@
-import { callQF, QFRequestError } from "./index";
+import { callQF, QF_ENV, QFRequestError } from "./index";
+
 
 export const BOOKMARKS_MUSHAF_ID = 4;
 const BOOKMARKS_PAGE_SIZE = 20;
@@ -77,7 +78,7 @@ export async function createRemoteBookmark(verseKey: string) {
     mushaf: BOOKMARKS_MUSHAF_ID,
   };
 
-  const response = (await callQF("/auth/v1/bookmarks", {
+  const response = (await callQF(`/${QF_ENV}/auth/v1/bookmarks`, {
     method: "POST",
     body: payload,
   })) as RemoteBookmarkMutationResponse | null;
@@ -93,7 +94,7 @@ export async function createRemoteBookmark(verseKey: string) {
 export async function deleteRemoteBookmark(bookmarkId: string) {
   if (!bookmarkId) throw new Error("MISSING_BOOKMARK_ID");
 
-  await callQF(`/auth/v1/bookmarks/${bookmarkId}`, {
+  await callQF(`/${QF_ENV}/auth/v1/bookmarks/${bookmarkId}`, {
     method: "DELETE",
     params: {
       mushafId: BOOKMARKS_MUSHAF_ID,
@@ -103,7 +104,7 @@ export async function deleteRemoteBookmark(bookmarkId: string) {
 
 
 export async function listRemoteBookmarksPage(after?: string) {
-  const response = (await callQF("/auth/v1/bookmarks", {
+  const response = (await callQF(`/${QF_ENV}/auth/v1/bookmarks`, {
     method: "GET",
     params: {
       mushafId: BOOKMARKS_MUSHAF_ID,
