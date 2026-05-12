@@ -51,7 +51,7 @@ export function AchievementSection({ badges }: AchievementSectionProps) {
                 <Ionicons name={badgeDef.icon as any} size={16} color={badgeDef.color} />
               </View>
               <View>
-                <Text className="text-slate-900 text-xs capitalize font-medium">
+                <Text className="text-slate-900 text-xs capitalize ">
                   {badgeDef.title}
                 </Text>
                 <Text className="text-slate-400 text-[9px] uppercase tracking-tighter mt-0.5">
@@ -94,7 +94,7 @@ export function AchievementSection({ badges }: AchievementSectionProps) {
                   <Ionicons name={def.icon as any} size={40} color={def.color} />
                 </View>
                 
-                <Text className="text-2xl font-bold text-slate-900 mb-2 text-center">
+                <Text className="text-2xl  text-slate-900 mb-2 text-center">
                   {def.title}
                 </Text>
                 
@@ -106,7 +106,7 @@ export function AchievementSection({ badges }: AchievementSectionProps) {
                   onPress={() => setSelectedBadge(null)}
                   className="w-full bg-primary  py-4 rounded-xl items-center"
                 >
-                  <Text className="text-white font-semibold">Continue</Text>
+                  <Text className="text-white ">Continue</Text>
                 </Pressable>
               </TouchableOpacity>
             );

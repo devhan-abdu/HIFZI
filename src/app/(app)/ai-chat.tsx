@@ -1,32 +1,38 @@
 import { Header } from "@/src/components/navigation/Header";
+import { Text } from "@/src/components/common/ui/Text";
 import Screen from "@/src/components/screen/Screen";
 import { ScreenContent } from "@/src/components/screen/ScreenContent";
-import Input from "@/src/components/ui/Input";
-import { Text } from "@/src/components/common/ui/Text";
 import { askQuranQuestion } from "@/src/features/ai/services/quranAI";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, View, ScrollView } from "react-native";
+import { 
+  Pressable, 
+  View, 
+  ScrollView
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Input from "@/src/components/ui/Input";
 
 type ChatItem = {
   role: "user" | "assistant";
   text: string;
+  timestamp: Date;
 };
 
 export default function AIChatScreen() {
   const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(false);
+  const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
 
   const [messages, setMessages] = useState<ChatItem[]>([
     {
       role: "assistant",
-      text: "I focus on Quran learning. Ask me about tafsir, memorization, or your progress.",
+      text: "Assalamu Alaikum! I'm your Quran learning assistant. How can I help you today?",
+      timestamp: new Date(),
     },
   ]);
 
-  const scrollRef = useRef<ScrollView>(null);
-
-  // --------------------------------------------------
   // ⚡ AUTO SCROLL ON NEW MESSAGE
   // --------------------------------------------------
   useEffect(() => {
@@ -39,20 +45,21 @@ export default function AIChatScreen() {
     const trimmed = question.trim();
     if (!trimmed || loading) return;
 
-    setMessages((prev) => [...prev, { role: "user", text: trimmed }]);
+    setMessages((prev) => [...prev, { role: "user", text: trimmed, timestamp: new Date() }]);
     setQuestion("");
     setLoading(true);
 
     try {
       const answer = await askQuranQuestion(trimmed);
 
-      setMessages((prev) => [...prev, { role: "assistant", text: answer }]);
+      setMessages((prev) => [...prev, { role: "assistant", text: answer, timestamp: new Date() }]);
     } catch {
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
           text: "I focus on Quran learning. Ask me about tafsir, memorization, or your progress.",
+          timestamp: new Date(),
         },
       ]);
     } finally {

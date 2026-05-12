@@ -86,6 +86,7 @@ export const notificationService = {
     habitType: 'hifz' | 'muraja';
     status: 'completed' | 'partial' | 'missed';
     date: string;
+    rewards?: any;
   }) {
     const xpGained = payload.status === 'completed' ? 50 : (payload.status === 'partial' ? 20 : 0);
     const todayKey = this.toDateKey();
@@ -148,12 +149,14 @@ export const notificationService = {
         }
       });
 
-    if (xpGained > 0) {
-      await this.triggerXPReward(payload.userId, payload.habitType, payload.status, payload.date, xpGained, xpToNextLevel);
-    }
-
-    if (streaks.current > 0 && streaks.current % 5 === 0) {
-      await this.triggerStreakMilestone(payload.userId, payload.displayName ?? "Hafiz", streaks.current);
+    if (payload.status !== 'missed') {
+      await this.sendConsolidatedNotification(payload.userId, {
+        displayName: payload.displayName ?? "Hafiz",
+        streak: streaks.current,
+        levelUp: payload.rewards?.levelUp,
+        badges: payload.rewards?.badges,
+        habitType: payload.habitType
+      });
     }
 
     await this.refreshSchedules(payload.userId);
@@ -206,30 +209,58 @@ export const notificationService = {
     void this.syncWithRemote(userId);
   },
 
-  async triggerXPReward(userId: string, habitType: string, status: string, date: string, gained: number, remaining: number) {
-    const eventKey = `xp:${habitType}:${status}:${date}:${gained}`;
-    const result = await notificationRepository.createNotification(userId, {
-      type: 'xp',
-      title: "XP Earned",
-      message: `✨ Great job! You earned ${gained} XP. Only ${remaining} XP to level up!`,
-      eventKey
-    });
+  async sendConsolidatedNotification(userId: string, data: {
+    displayName: string;
+    streak: number;
+    levelUp?: number | null;
+    badges?: any[];
+    habitType: string;
+  }) {
+    let title = "Great Work!";
+    let message = `You've completed your ${data.habitType} session. Keep it up!`;
+    let type: 'milestone' | 'warning' | 'xp' = 'milestone';
+    let eventKey = `consolidated:${data.habitType}:${this.toDateKey()}`;
 
-    if (result) {
-      await notificationManager.sendLocal({ 
-        title: result.title, 
-        body: result.body,
-        data: { type: 'xp', eventKey }
-      });
+    // Priority 1: Badges
+    if (data.badges && data.badges.length > 0) {
+      const badge = data.badges[0];
+      title = "New Badge Earned!";
+      message = `Mubarak! You've earned the ${badge.badgeName} badge.`;
+      if (data.levelUp) message += ` and reached Level ${data.levelUp}!`;
+      else if (data.streak > 0 && data.streak % 5 === 0) message += ` on your ${data.streak}-day streak!`;
+      eventKey = `badge:${badge.badgeType}:${this.toDateKey()}`;
+    } 
+    // Priority 2: Level Up
+    else if (data.levelUp) {
+      title = "Level Up!";
+      const templates = [
+        `Mubarak! You've reached Level ${data.levelUp}! Keep ascending.`,
+        `Amazing! You are now Level ${data.levelUp}. Your dedication is inspiring.`,
+        `Level Up! ${data.levelUp} looks great on you. Keep going!`
+      ];
+      message = templates[Math.floor(Math.random() * templates.length)];
+      if (data.streak > 0 && data.streak % 5 === 0) message += ` 🔥 ${data.streak}-day streak!`;
+      eventKey = `levelup:${data.levelUp}:${this.toDateKey()}`;
     }
-  },
+    // Priority 3: Streak Milestone
+    else if (data.streak > 0 && data.streak % 5 === 0) {
+      title = "Streak Milestone";
+      const templates = [
+        `🔥 ${data.displayName}! You're on a ${data.streak}-day streak! Keep going!`,
+        `Consistency is key! ${data.streak} days and counting. Mubarak!`,
+        `Mashallah! A ${data.streak}-day streak. You're becoming a Muraja master.`
+      ];
+      message = templates[Math.floor(Math.random() * templates.length)];
+      eventKey = `milestone:${data.streak}:${this.toDateKey()}`;
+    } else {
+      // If none of the above, we don't send a notification (removing the "XP Earned" one)
+      return;
+    }
 
-  async triggerStreakMilestone(userId: string, name: string, streak: number) {
-    const eventKey = `milestone:${streak}:${this.toDateKey()}`;
     const result = await notificationRepository.createNotification(userId, {
-      type: 'milestone',
-      title: "Streak Milestone",
-      message: `🔥 ${name}! You're on a ${streak}-day streak! Keep going!`,
+      type,
+      title,
+      message,
       eventKey
     });
 
@@ -237,7 +268,7 @@ export const notificationService = {
       await notificationManager.sendLocal({ 
         title: result.title, 
         body: result.body,
-        data: { type: 'milestone', eventKey }
+        data: { type, eventKey }
       });
     }
   },

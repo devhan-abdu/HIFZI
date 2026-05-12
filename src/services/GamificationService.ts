@@ -12,14 +12,14 @@ export type BadgeType =
   | "MYSTERY_REWARD" | "ELITE_PATH" | "RECOVERY_SHIELD" | "SPARK";
 
 export const GamificationService = {
-  async awardXP(db: any, userId: string, amount: number) {
+  async awardXP(db: any, userId: string, amount: number, options?: { silent?: boolean }) {
     const tx = db || drizzleDb;
     
     const stats = await tx.query.userStats.findFirst({
       where: eq(userStats.userId, userId),
     });
 
-    if (!stats) return;
+    if (!stats) return { leveledUp: false, newLevel: 0 };
 
     const oldLevel = stats.level;
     const newXp = stats.totalXp + amount;
@@ -32,7 +32,7 @@ export const GamificationService = {
       })
       .where(eq(userStats.userId, userId));
 
-    if (newLevel > oldLevel) {
+    if (newLevel > oldLevel && !options?.silent) {
       await notificationRepository.createNotification(userId, {
         type: 'milestone',
         title: 'Level Up!',
@@ -40,9 +40,15 @@ export const GamificationService = {
         eventKey: `levelup_${newLevel}_${Date.now()}`
       });
     }
+
+    return { 
+      leveledUp: newLevel > oldLevel, 
+      newLevel,
+      xpAwarded: amount
+    };
   },
 
-  async awardBadge(db: any, userId: string, type: BadgeType, metadata?: any) {
+  async awardBadge(db: any, userId: string, type: BadgeType, metadata?: any, options?: { silent?: boolean }) {
     const tx = db || drizzleDb;
     const existing = await tx.query.userBadges.findFirst({
       where: and(eq(userBadges.userId, userId), eq(userBadges.badgeType, type))
@@ -61,14 +67,16 @@ export const GamificationService = {
     const badgeDef = BADGE_DICTIONARY[type];
     const badgeName = badgeDef ? badgeDef.title : type.replace(/_/g, ' ');
 
-    await notificationRepository.createNotification(userId, {
-      type: 'milestone',
-      title: 'New Badge Earned!',
-      message: `Mubarak! You've earned the ${badgeName} badge.`,
-      eventKey: `badge_${type}_${Date.now()}`
-    });
+    if (!options?.silent) {
+      await notificationRepository.createNotification(userId, {
+        type: 'milestone',
+        title: 'New Badge Earned!',
+        message: `Mubarak! You've earned the ${badgeName} badge.`,
+        eventKey: `badge_${type}_${Date.now()}`
+      });
+    }
 
-    return badgeId;
+    return { badgeId, badgeType: type, badgeName };
   },
 
   async processSessionCompletion(
@@ -87,11 +95,14 @@ export const GamificationService = {
     const stats = await tx.query.userStats.findFirst({ where: eq(userStats.userId, userId) });
     let newConsecutivePerfects = stats?.consecutivePerfects || 0;
 
+    const awardedBadges: any[] = [];
+    
     // Comeback Badge Logic
     if (stats?.lastActivityDate) {
       const daysInactive = differenceInDays(new Date(), new Date(stats.lastActivityDate));
       if (daysInactive >= 3) {
-        await this.awardBadge(tx, userId, "RECOVERY_SHIELD");
+        const badge = await this.awardBadge(tx, userId, "RECOVERY_SHIELD", undefined, { silent: true });
+        if (badge) awardedBadges.push(badge);
         rewards.push("BADGE_RECOVERY_SHIELD");
       }
     }
@@ -100,7 +111,8 @@ export const GamificationService = {
       xpAwarded += 15; // Bonus for perfect quality
       newConsecutivePerfects += 1;
       if (newConsecutivePerfects === 5) {
-        await this.awardBadge(tx, userId, "MUTQEEN_5");
+        const badge = await this.awardBadge(tx, userId, "MUTQEEN_5", undefined, { silent: true });
+        if (badge) awardedBadges.push(badge);
         rewards.push("BADGE_MUTQEEN_5");
       }
     } else {
@@ -114,15 +126,27 @@ export const GamificationService = {
       })
       .where(eq(userStats.userId, userId));
 
-    if (streak === 3) await this.awardBadge(tx, userId, "STREAK_3");
-    if (streak === 7) await this.awardBadge(tx, userId, "STREAK_7");
-    if (streak === 30) await this.awardBadge(tx, userId, "STREAK_30");
+    const streakBadges = ["STREAK_3", "STREAK_7", "STREAK_30"] as const;
+    const streakThresholds = [3, 7, 30];
+    
+    for (let i = 0; i < streakThresholds.length; i++) {
+      if (streak === streakThresholds[i]) {
+        const badge = await this.awardBadge(tx, userId, streakBadges[i], undefined, { silent: true });
+        if (badge) awardedBadges.push(badge);
+      }
+    }
 
     const streakBonus = Math.min(50, streak * 5); 
     xpAwarded += streakBonus;
 
-    await this.awardXP(tx, userId, xpAwarded);
+    const levelResult = await this.awardXP(tx, userId, xpAwarded, { silent: true });
 
-    return { xpAwarded, rewards, isPerfect: qualityScore === 5 };
+    return { 
+      xpAwarded, 
+      rewards, 
+      isPerfect: qualityScore === 5,
+      levelUp: levelResult.leveledUp ? levelResult.newLevel : null,
+      badges: awardedBadges 
+    };
   }
 };
