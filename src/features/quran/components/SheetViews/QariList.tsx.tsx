@@ -46,8 +46,11 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
   }, []);
 
   useEffect(() => {
-    if (recitations.length > 0 && !selectedAudio) {
-      setAudio(recitations[0].id);
+    if (recitations.length > 0) {
+      const isValid = recitations.some((r) => r.id === selectedAudio);
+      if (!isValid) {
+        setAudio(recitations[0].id);
+      }
     }
   }, [recitations, selectedAudio, setAudio]);
 

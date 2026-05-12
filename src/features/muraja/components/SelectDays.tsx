@@ -61,14 +61,14 @@ export default function SelectDays({ value, onChange, disabledDay, mode = 'multi
           >
             <View className="items-center">
                 <Text
-                className={` text-xs font-medium ${
+                className={` text-xs  ${
                     isSelected ? "text-white" : isEvaluationDay ? "text-amber-700/60" : "text-slate-600"
                 }`}
                 >
                 {day.name}
                 </Text>
                 {isEvaluationDay && (
-                    <Text className="text-[7px] uppercase tracking-tighter text-amber-600 font-bold">Eval</Text>
+                    <Text className="text-[7px] uppercase tracking-tighter text-amber-600 ">Eval</Text>
                 )}
             </View>
           </Pressable>

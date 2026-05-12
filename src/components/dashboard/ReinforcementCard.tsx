@@ -50,7 +50,7 @@ export const ReinforcementCard = ({
             <Ionicons name="sparkles" size={16} color="#059669" />
           </View>
           <View>
-            <Text className="text-emerald-900 font-medium text-sm">Retention Secured</Text>
+            <Text className="text-emerald-900  text-sm">Retention Secured</Text>
             <Text className="text-emerald-600/70 text-[10px] uppercase tracking-widest">{task.label || 'Memory Refreshed'} · {task.displaySurah || 'Quran Review'}</Text>
           </View>
         </View>
@@ -73,7 +73,7 @@ export const ReinforcementCard = ({
             )}
             <Text className="text-slate-400 text-[10px] uppercase tracking-widest">{task.label || 'Optional Review'}</Text>
           </View>
-          <Text className="text-lg font-semibold text-slate-900">{task.displaySurah || 'Quran Review'}</Text>
+          <Text className="text-lg  text-slate-900">{task.displaySurah || 'Quran Review'}</Text>
           <Text className="text-slate-500 text-xs">Pages {task.startPage} – {task.endPage}</Text>
         </View>
         

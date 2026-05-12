@@ -27,7 +27,7 @@ export const PlanEndCard: React.FC<PlanEndCardProps> = ({ activityType, localRef
 
                 <View className="flex-row items-center justify-between mb-6">
                     <View className="bg-amber-100 px-4 py-1.5 rounded-full border border-amber-200">
-                        <Text className="text-[10px] text-amber-700 font-bold uppercase tracking-[2px]">
+                        <Text className="text-[10px] text-amber-700  uppercase tracking-[2px]">
                             {isHifz ? 'Milestone Reached' : 'Cycle Completed'}
                         </Text>
                     </View>
@@ -46,7 +46,7 @@ export const PlanEndCard: React.FC<PlanEndCardProps> = ({ activityType, localRef
                          <Ionicons name={isHifz ? "ribbon" : "trophy"} size={28} color="#d97706" />
                     </View>
                     <View className="flex-1">
-                        <Text className="text-slate-900 text-2xl font-bold tracking-tight">
+                        <Text className="text-slate-900 text-2xl  tracking-tight">
                             {isHifz ? 'Mubarak! Hifz Goal' : 'Alhamdulillah! Complete'}
                         </Text>
                         <Text className="text-slate-400 text-xs uppercase tracking-widest mt-1">Journey Achievement</Text>
@@ -60,7 +60,7 @@ export const PlanEndCard: React.FC<PlanEndCardProps> = ({ activityType, localRef
                 </Text>
 
                 <View className="flex-row items-center bg-primary self-start px-6 py-3 rounded-2xl shadow-sm shadow-primary/30">
-                    <Text className="text-white font-bold mr-3 tracking-tight">Review Journey Insights</Text>
+                    <Text className="text-white  mr-3 tracking-tight">Review Journey Insights</Text>
                     <Ionicons name="arrow-forward" size={18} color="white" />
                 </View>
             </View>

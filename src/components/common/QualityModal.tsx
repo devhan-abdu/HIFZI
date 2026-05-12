@@ -56,7 +56,7 @@ export const QualityModal = ({ visible, onSelect, onClose, title = "Session Qual
         >
           <View className="items-center mb-8">
             <View className="w-16 h-1 bg-slate-100 rounded-full mb-6" />
-            <Text className="text-2xl tracking-tight text-slate-900 text-center font-semibold">{title}</Text>
+            <Text className="text-2xl tracking-tight text-slate-900 text-center ">{title}</Text>
             <Text className="text-slate-500 text-[13px] text-center mt-2 px-6 leading-5">
               Honest feedback helps us track your progress accurately.
             </Text>
@@ -76,7 +76,7 @@ export const QualityModal = ({ visible, onSelect, onClose, title = "Session Qual
                 </View>
                 
                 <View className="flex-1">
-                  <Text className="text-base font-semibold text-slate-900">
+                  <Text className="text-base  text-slate-900">
                     {opt.label}
                   </Text>
                   <Text className="text-slate-500 text-[12px] leading-4 mt-0.5">
@@ -95,7 +95,7 @@ export const QualityModal = ({ visible, onSelect, onClose, title = "Session Qual
             onPress={onClose}
             className="mt-8 py-4 items-center rounded-2xl active:bg-slate-50"
           >
-            <Text className="text-slate-400 font-bold uppercase tracking-widest text-[11px]">Maybe Later</Text>
+            <Text className="text-slate-400  uppercase tracking-widest text-[11px]">Maybe Later</Text>
           </Pressable>
         </View>
       </View>

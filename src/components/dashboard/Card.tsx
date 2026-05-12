@@ -82,7 +82,7 @@ export default function Card({
             </Text>
             {userStats && (
               <View className="flex-row items-center ml-3">
-                <Text className="text-white/80 text-[10px] font-bold tracking-widest">
+                <Text className="text-white/80 text-[10px]  tracking-widest">
                   LVL {userStats.level}
                 </Text>
               </View>
@@ -96,7 +96,7 @@ export default function Card({
             const currentRank = getRankForLevel(userStats.level);
             return (
               <View className="mt-2 w-40">
-                <Text className="text-white/80 text-[10px] mb-1 font-medium tracking-wide">
+                <Text className="text-white/80 text-[10px] mb-1  tracking-wide">
                   {currentRank.title} {currentRank.titleAr}
                 </Text>
                 <View className="h-1 bg-white/10 rounded-full overflow-hidden">

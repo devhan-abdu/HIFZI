@@ -2,6 +2,7 @@ import { TodayTasksSection } from "@/src/components/dashboard/TodayTask";
 import Screen from "@/src/components/screen/Screen";
 import { ScreenContent } from "@/src/components/screen/ScreenContent";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
+import { useSeedData } from "@/src/hooks/useSeedData";
 import {  View } from "react-native";
 import { Redirect, router } from "expo-router";
 import Card from "@/src/components/dashboard/Card";
@@ -19,11 +20,10 @@ import { useHifzPlan } from "@/src/features/hifz/hooks/useHifzPlan";
 
 import { useUserStats } from "@/src/hooks/useUserStats";
 import { useUserBadges } from "@/src/hooks/useUserBadges";
-import { useSeedData } from "@/src/hooks/useSeedData";
 import { AchievementSection } from "@/src/components/dashboard/AchievementSection";
 
+
 export default function Dashboard() {
-  useSeedData();
   const { items: surah, loading } = useLoadSurahData();
   const { hifz: hifzPlan, isLoading: loadingHifz } = useHifzPlan();
   const habitProgress = useHabitProgress();
@@ -32,6 +32,12 @@ export default function Dashboard() {
   const { data: badges = [] } = useUserBadges();
 
   const { data: userStats } = useUserStats();
+  
+  // DEVELOPMENT ONLY: Auto-seed the database for demo
+  useSeedData();
+
+
+
 
   const hifzAnalytics = useMemo(() => {
     if (!hifzPlan || !surah.length) return null;
@@ -47,6 +53,7 @@ export default function Dashboard() {
     return <Redirect href="/(app)/onboarding" />;
   }
 
+ 
   return (
     <>
       <Header title="Home" userStats={userStats} />

@@ -208,7 +208,7 @@ export default function CreateWeeklyPlan() {
                       </View>
                       <View>
                         <Text
-                          className={`text-base font-medium ${
+                          className={`text-base  ${
                             formattedWeekStart ? "text-slate-900" : (
                               "text-slate-600"
                             )

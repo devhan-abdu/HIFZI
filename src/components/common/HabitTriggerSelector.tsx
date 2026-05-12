@@ -76,7 +76,7 @@ export const HabitTriggerSelector = ({ value, onChange, isCustom, setIsCustom, e
                   size={18} 
                   color={isSelected ? '#ffffff' : '#64748b'} 
                 />
-                <Text className={`ml-2 text-sm font-semibold tracking-tight ${
+                <Text className={`ml-2 text-sm  tracking-tight ${
                   isSelected ? 'text-white' : 'text-slate-600'
                 }`}>
                   {trigger.id === 'custom' && isCustom && value && !TRIGGERS.find(t => t.id === value) 

@@ -56,7 +56,7 @@ export const WeeklyOverviewCard = ({
               size={12}
               color="rgba(255,255,255,0.6)"
             />
-            <Text className="text-white text-sm font-medium">{weeklyPlan.totalDays}</Text>
+            <Text className="text-white text-sm ">{weeklyPlan.totalDays}</Text>
           </View>
           <Text className="text-white/40 text-[8px] uppercase tracking-[1.5px]">
             Days
@@ -70,7 +70,7 @@ export const WeeklyOverviewCard = ({
               size={12}
               color="rgba(255,255,255,0.6)"
             />
-            <Text className="text-white text-sm font-medium">
+            <Text className="text-white text-sm ">
               {weeklyPlan.estimated_time_min}m
             </Text>
           </View>
@@ -86,7 +86,7 @@ export const WeeklyOverviewCard = ({
               size={12}
               color="rgba(255,255,255,0.6)"
             />
-            <Text className="text-white text-sm font-medium">
+            <Text className="text-white text-sm ">
               {weeklyPlan.planned_pages_per_day}
             </Text>
           </View>

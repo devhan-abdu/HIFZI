@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useReaderStore } from "../hooks/useReaderStore";
 import { useBookmarks } from "../hooks/useBookmarks";
 import { PageData } from "../type";
+import { TranslationSelectorPanel } from "./TranslationSelectorPanel";
 
 interface ReaderHeaderProps {
   pageData?: PageData;
@@ -24,6 +25,9 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
     uiVisible,
     tallyMode,
     toggleTallyMode,
+    translationSelectorOpen,
+    toggleTranslationSelector,
+    closeTranslationSelector,
   } = useReaderStore();
 
   const {
@@ -39,9 +43,10 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
     if (selectedAyah) {
       resetSelection();
     } else {
+      closeTranslationSelector();
       router.back();
     }
-  }, [selectedAyah, resetSelection, router]);
+  }, [selectedAyah, resetSelection, closeTranslationSelector, router]);
 
   const handleToggleBookmark = async () => {
     if (selectedAyah) {
@@ -54,9 +59,7 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
       return;
     }
 
-    if (!pageData?.page) {
-      return;
-    }
+    if (!pageData?.page) return;
 
     if (isPageBookmarked(pageData.page)) {
       void removeBookmark(pageData.page);
@@ -76,70 +79,91 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
     : false;
 
   return (
-    <View
-      style={{
-        paddingTop: insets.top + 8,
-        zIndex: 100,
-        position: "absolute",
-      }}
-      className="top-0 left-0 right-0 bg-white shadow-sm border-b border-gray-100"
-    >
-      <View className="flex-row items-center justify-between px-4 py-3">
-        <TouchableOpacity onPress={handleBack} className="p-2">
-          <Ionicons
-            name={selectedAyah ? "close" : "chevron-back"}
-            size={24}
-            color="#374151"
-          />
-        </TouchableOpacity>
+    <>
+      <View
+        style={{ paddingTop: insets.top + 8, zIndex: 100, position: "absolute" }}
+        className="top-0 left-0 right-0 bg-white shadow-sm border-b border-gray-100"
+      >
+        <View className="flex-row items-center justify-between px-4 py-3">
+          {/* Back / Close */}
+          <TouchableOpacity onPress={handleBack} className="p-2">
+            <Ionicons
+              name={selectedAyah ? "close" : "chevron-back"}
+              size={24}
+              color="#374151"
+            />
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={toggleUI}
-          activeOpacity={0.8}
-          className="flex-1 items-center justify-center"
-        >
-          <Text className="text-lg  text-gray-800 tracking-tight">
-            {surahName}
-          </Text>
-          <Text className="text-xs text-gray-500 font-medium mt-0.5">
-            {pageLabel}
-          </Text>
-        </TouchableOpacity>
-
-        <View className="flex-row items-center space-x-2">
+          {/* Center title */}
           <TouchableOpacity
-            onPress={() =>
-              setViewMode(viewMode === "mushaf" ? "translation" : "mushaf")
-            }
-            className="p-2 bg-slate-50 rounded-full"
+            onPress={toggleUI}
+            activeOpacity={0.8}
+            className="flex-1 items-center justify-center"
           >
-            <Ionicons
-              name={viewMode === "mushaf" ? "language" : "book"}
-              size={20}
-              color="#0d9488"
-            />
+            <Text className="text-lg text-gray-800 tracking-tight">{surahName}</Text>
+            <Text className="text-xs text-gray-500 mt-0.5">{pageLabel}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={toggleTallyMode}
-            className={`p-2 rounded-full ${tallyMode ? "bg-teal-500" : "bg-slate-50"}`}
-          >
-            <Ionicons
-              name="analytics"
-              size={20}
-              color={tallyMode ? "#fff" : "#0d9488"}
-            />
-          </TouchableOpacity>
+          {/* Actions */}
+          <View className="flex-row items-center space-x-1">
+            {/* Translation mode toggle */}
+            <TouchableOpacity
+              onPress={() => {
+                if (viewMode === "translation") closeTranslationSelector();
+                setViewMode(viewMode === "mushaf" ? "translation" : "mushaf");
+              }}
+              className="p-2 bg-slate-50 rounded-full"
+            >
+              <Ionicons
+                name={viewMode === "mushaf" ? "language" : "book"}
+                size={20}
+                color="#0d9488"
+              />
+            </TouchableOpacity>
 
-          <TouchableOpacity className="p-2" onPress={handleToggleBookmark}>
-            <Ionicons
-              name={isBookmarkedActive ? "bookmark" : "bookmark-outline"}
-              size={22}
-              color={isBookmarkedActive ? "#C7326A" : "#4b5563"}
-            />
-          </TouchableOpacity>
+            {/* Translation selector — only in translation mode */}
+            {viewMode === "translation" && (
+              <TouchableOpacity
+                onPress={toggleTranslationSelector}
+                className={`p-2 rounded-full ${translationSelectorOpen ? "bg-teal-500" : "bg-slate-50"}`}
+              >
+                <Ionicons
+                  name="chevron-down"
+                  size={20}
+                  color={translationSelectorOpen ? "#fff" : "#0d9488"}
+                  style={{
+                    transform: [{ rotate: translationSelectorOpen ? "180deg" : "0deg" }],
+                  }}
+                />
+              </TouchableOpacity>
+            )}
+
+            {/* Tally counter */}
+            <TouchableOpacity
+              onPress={toggleTallyMode}
+              className={`p-2 rounded-full ${tallyMode ? "bg-teal-500" : "bg-slate-50"}`}
+            >
+              <Ionicons
+                name="analytics"
+                size={20}
+                color={tallyMode ? "#fff" : "#0d9488"}
+              />
+            </TouchableOpacity>
+
+            {/* Bookmark */}
+            <TouchableOpacity className="p-2" onPress={handleToggleBookmark}>
+              <Ionicons
+                name={isBookmarkedActive ? "bookmark" : "bookmark-outline"}
+                size={22}
+                color={isBookmarkedActive ? "#C7326A" : "#4b5563"}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-    </View>
+
+      {/* Translation selector panel — slides down below header */}
+      {viewMode === "translation" && <TranslationSelectorPanel />}
+    </>
   );
 }

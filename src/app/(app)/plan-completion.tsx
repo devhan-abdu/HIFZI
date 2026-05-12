@@ -112,7 +112,7 @@ export default function PlanCompletionScreen() {
                                     color="#276359" 
                                 />
                             </View>
-                            <Text className="text-3xl font-bold text-center px-6 text-[#276359]">
+                            <Text className="text-3xl  text-center px-6 text-[#276359]">
                                 {isHifz ? 'Mubarak!\nHifz Milestone' : 'Revision Cycle\nComplete'}
                             </Text>
                             <Text className="text-[#276359]/40 text-center mt-4 px-10 leading-6">
@@ -124,20 +124,20 @@ export default function PlanCompletionScreen() {
                         <View className="bg-[#276359]/5 p-6 rounded-[32px] border border-[#276359]/10 mb-8">
                             <View className="flex-row justify-between mb-8">
                                 <View className="items-center flex-1">
-                                    <Text className="text-2xl font-bold text-[#276359]">{report?.avgRate}%</Text>
-                                    <Text className="text-[#276359]/30 text-[10px] uppercase tracking-widest mt-1 font-bold">Completion</Text>
+                                    <Text className="text-2xl  text-[#276359]">{report?.avgRate}%</Text>
+                                    <Text className="text-[#276359]/30 text-[10px] uppercase tracking-widest mt-1 ">Completion</Text>
                                 </View>
                                 <View className="w-[1px] h-10 bg-[#276359]/10" />
                                 <View className="items-center flex-1">
-                                    <Text className="text-2xl font-bold text-[#276359]">{report?.avgQuality}/5</Text>
-                                    <Text className="text-[#276359]/30 text-[10px] uppercase tracking-widest mt-1 font-bold">Retention</Text>
+                                    <Text className="text-2xl  text-[#276359]">{report?.avgQuality}/5</Text>
+                                    <Text className="text-[#276359]/30 text-[10px] uppercase tracking-widest mt-1 ">Retention</Text>
                                 </View>
                                 <View className="w-[1px] h-10 bg-[#276359]/10" />
                                 <View className="items-center flex-1">
-                                    <Text className="text-2xl font-bold text-[#276359]">
+                                    <Text className="text-2xl  text-[#276359]">
                                         {report?.completedDays}
                                     </Text>
-                                    <Text className="text-[#276359]/30 text-[10px] uppercase tracking-widest mt-1 font-bold">Perfects</Text>
+                                    <Text className="text-[#276359]/30 text-[10px] uppercase tracking-widest mt-1 ">Perfects</Text>
                                 </View>
                             </View>
 
@@ -145,7 +145,7 @@ export default function PlanCompletionScreen() {
                                 <View className="flex-row items-start gap-3">
                                     <Ionicons name="medal-outline" size={20} color="#276359" />
                                     <View className="flex-1">
-                                        <Text className="text-[#276359] font-bold mb-1">Plan Summary</Text>
+                                        <Text className="text-[#276359]  mb-1">Plan Summary</Text>
                                         <Text className="text-[#276359]/70 text-sm leading-5">
                                             Over the last {report?.planDurationDays} days, you completed {report?.totalCompletedPages} pages with {report?.status} consistency.
                                         </Text>
@@ -157,7 +157,7 @@ export default function PlanCompletionScreen() {
 
                     {/* Next Steps */}
                     <View className="gap-y-4">
-                        <Text className="text-[#276359]/40 text-[10px] uppercase tracking-[2px] mb-2 px-2 font-bold">Next Path</Text>
+                        <Text className="text-[#276359]/40 text-[10px] uppercase tracking-[2px] mb-2 px-2 ">Next Path</Text>
                         
                         <Pressable 
                             onPress={handleRecycle}
@@ -168,7 +168,7 @@ export default function PlanCompletionScreen() {
                                     <Ionicons name="refresh" size={24} color="#276359" />
                                 </View>
                                 <View>
-                                    <Text className="text-[#276359] font-bold">
+                                    <Text className="text-[#276359] ">
                                         {isHifz ? 'Review Range' : 'Restart Cycle'}
                                     </Text>
                                     <Text className="text-[#276359]/50 text-xs">Maintain current progress</Text>
@@ -186,7 +186,7 @@ export default function PlanCompletionScreen() {
                                     <Ionicons name="add" size={24} color="white" />
                                 </View>
                                 <View>
-                                    <Text className="text-white font-bold">
+                                    <Text className="text-white ">
                                         {isHifz ? 'New Memorization Range' : 'Create New Plan'}
                                     </Text>
                                     <Text className="text-white/70 text-xs">Start fresh with new targets</Text>

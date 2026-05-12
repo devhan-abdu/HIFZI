@@ -14,6 +14,9 @@ export async function getJuz(db:SQLiteDatabase) {
       name: sora.name,
       englishName: sora.nameEnglish,
       revelationType: sql<string>`CASE WHEN ${sora.place} = 1 THEN 'Meccan' ELSE 'Medinan' END`,
+      startingPage: sql<number>`MIN(${aya.page})`,
+      endingPage: sql<number>`MAX(${aya.page})`,
+      numberOfAyahs: sql<number>`COUNT(${aya.ayaid})`,
     })
     .from(aya)
     .innerJoin(sora, eq(sora.soraid, aya.soraid))
@@ -21,7 +24,7 @@ export async function getJuz(db:SQLiteDatabase) {
     .groupBy(aya.joza, sora.soraid)
     .orderBy(asc(aya.joza), asc(aya.page), asc(sora.soraid));
 
-    const result: Array<{ juzNumber: number; surahs: Surah[] }> = [];
+    const result: { juzNumber: number; surahs: Surah[] }[] = [];
 
     for (const row of rows as any) {
       const currentJuz = result[result.length - 1];
@@ -29,10 +32,10 @@ export async function getJuz(db:SQLiteDatabase) {
         number: row.number,
         name: row.name,
         englishName: row.englishName,
-        numberOfAyahs: 0, 
+        numberOfAyahs: row.numberOfAyahs ?? 0,
         revelationType: row.revelationType,
-        startingPage: 0,
-        endingPage: 0,
+        startingPage: row.startingPage ?? 0,
+        endingPage: row.endingPage ?? 0,
       };
 
       if (!currentJuz || currentJuz.juzNumber !== row.juzNumber) {
@@ -49,24 +52,34 @@ export async function getJuz(db:SQLiteDatabase) {
 }
 
 export async function getPageData(page: number, db:SQLiteDatabase): Promise<PageData | null> {
-      const assetDb = getAssetDb(db);
+  const assetDb = getAssetDb(db);
 
   try {
-    const result = await assetDb.query.aya.findFirst({
-      where: eq(aya.page, page),
-      with: { sora: true },
-      orderBy: [asc(aya.soraid), asc(aya.ayaid)]
-    });
+    const rows = await assetDb
+      .select({
+        soraid: aya.soraid,
+        joza: aya.joza,
+        hezb: aya.hezb,
+        quarter: aya.quarter,
+        page: aya.page,
+        nameEnglish: sora.nameEnglish,
+      })
+      .from(aya)
+      .innerJoin(sora, eq(sora.soraid, aya.soraid))
+      .where(eq(aya.page, page))
+      .orderBy(asc(aya.soraid), asc(aya.ayaid))
+      .limit(1);
 
+    const result = rows[0];
     if (!result) return null;
 
     return {
       number: result.soraid,
-      name: (result as any).sora?.nameEnglish || "",
+      name: result.nameEnglish ?? "",
       juz: result.joza ?? 0,
       hizb: result.hezb ?? 0,
       quartor: result.quarter ?? 0,
-      page: result.page ?? 0
+      page: result.page ?? 0,
     };
   } catch (err) {
     console.error("[AssetService] getPageData error:", err);
@@ -74,28 +87,47 @@ export async function getPageData(page: number, db:SQLiteDatabase): Promise<Page
   }
 }
 
-export async function getAyahPage(sura: number, ayahId: number, db:SQLiteDatabase) {
-      const assetDb = getAssetDb(db);
-
+/**
+ * Returns all distinct surah (chapter) numbers that appear on a given page,
+ * ordered ascending. Used to detect multi-chapter pages for the audio modal.
+ */
+export async function getChaptersForPage(page: number, db: SQLiteDatabase): Promise<number[]> {
+  const assetDb = getAssetDb(db);
   try {
-    const result = await assetDb.query.aya.findFirst({
-      where: and(eq(aya.soraid, sura), eq(aya.ayaid, ayahId)),
-      columns: { page: true }
-    });
-    return result?.page ?? null;
+    const rows = await assetDb
+      .selectDistinct({ soraid: aya.soraid })
+      .from(aya)
+      .where(eq(aya.page, page))
+      .orderBy(asc(aya.soraid));
+    return rows.map((r) => r.soraid!).filter(Boolean);
+  } catch (err) {
+    console.error("[AssetService] getChaptersForPage error:", err);
+    return [];
+  }
+}
+
+export async function getAyahPage(sura: number, ayahId: number, db: SQLiteDatabase) {
+  const assetDb = getAssetDb(db);
+  try {
+    const rows = await assetDb
+      .select({ page: aya.page })
+      .from(aya)
+      .where(and(eq(aya.soraid, sura), eq(aya.ayaid, ayahId)))
+      .limit(1);
+    return rows[0]?.page ?? null;
   } catch (err) {
     console.error("[AssetService] getAyahPage error:", err);
     return null;
   }
 }
 
-export async function getAyahBBoxesByPage(page: number,db:SQLiteDatabase): Promise<AyahBbox[]> {
-      const assetDb = getAssetDb(db);
-
+export async function getAyahBBoxesByPage(page: number, db: SQLiteDatabase): Promise<AyahBbox[]> {
+  const assetDb = getAssetDb(db);
   try {
-    const rows = await assetDb.query.ayahBbox.findMany({
-      where: eq(ayahBbox.page, page)
-    });
+    const rows = await assetDb
+      .select()
+      .from(ayahBbox)
+      .where(eq(ayahBbox.page, page));
     return rows.map(r => ({
       sura: r.sura!,
       ayah: r.ayah!,

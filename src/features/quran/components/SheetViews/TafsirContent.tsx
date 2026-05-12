@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { useReaderStore } from "../../hook/useReaderStore";
 import { getAyahTafsirCached } from "../../services";
+import { useReaderStore } from "../../hooks/useReaderStore";
 
 export const TafsirContent = () => {
   const { selectedAyah, selectedTafsir } = useReaderStore();

@@ -121,14 +121,14 @@ export default function Test() {
                 }}
                 className="flex-1 bg-white border-2 border-slate-100 py-3 rounded-xl items-center justify-center"
               >
-                <Text className="text-slate-700 font-medium">New Test</Text>
+                <Text className="text-slate-700 ">New Test</Text>
               </Pressable>
 
               <Pressable
                 onPress={resetUI}
                 className="flex-1 bg-slate-50 py-3 rounded-xl items-center justify-center"
               >
-                <Text className="text-slate-500 font-medium">Retake</Text>
+                <Text className="text-slate-500 ">Retake</Text>
               </Pressable>
             </View>
           </View>

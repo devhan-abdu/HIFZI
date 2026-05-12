@@ -204,7 +204,7 @@ export default function CreateHifzPlan() {
                     errors.start_date ? "border-red-200" : "border-slate-100"
                   }`}
                 >
-                  <Text className="text-slate-700 font-medium">
+                  <Text className="text-slate-700 ">
                     {new Date(value).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                   </Text>
                   <Ionicons name="calendar-outline" size={20} color="#276359" />

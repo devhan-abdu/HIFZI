@@ -294,6 +294,7 @@ export const hifzService = {
           habitType: "hifz",
           status: todayLog.status as any,
           date: todayLog.date,
+          rewards
         });
       }
     });

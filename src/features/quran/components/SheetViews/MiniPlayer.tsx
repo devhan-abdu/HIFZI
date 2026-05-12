@@ -1,7 +1,7 @@
 import { Text } from "@/src/components/common/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
 import { TouchableOpacity, View } from "react-native";
-import { useReaderStore } from "../../hook/useReaderStore";
+import { useReaderStore } from "../../hooks/useReaderStore";
 
 export const MiniPlayer = ({ progress }: { progress: number }) => {
   const { playingAyah, uiMode } = useReaderStore();

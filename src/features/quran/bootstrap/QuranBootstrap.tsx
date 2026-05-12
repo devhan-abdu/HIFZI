@@ -92,7 +92,6 @@ export function QuranBootstrap({ children }: PropsWithChildren) {
         });
         setReady(true);
       } catch (error) {
-        console.log(error, "errorrrr");
         if (cancelled) return;
         setCatalogError("Failed to bootstrap data.");
         setReady(true);
@@ -107,7 +106,6 @@ export function QuranBootstrap({ children }: PropsWithChildren) {
   }, [success]);
 
   if (migrationError) {
-    console.log(migrationError, "error from the database");
     return (
       <View
         style={{

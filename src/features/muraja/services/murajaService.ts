@@ -229,19 +229,19 @@ export const murajaService = {
     const todayLog = allLogs.find((l: any) => l.date === todayStr);
     const status = todayLog ? todayLog.status : "pending";
     
+    if (calculatedStreak > 0) {
+      const recentQuality = latestSuccessfulLog?.qualityScore ?? 3;
+      rewards = await GamificationService.processSessionCompletion(tx, userId, recentQuality, calculatedStreak);
+    }
+
     await notificationService.processHabitEvent({
       userId,
       habitType: "muraja",
       status: status as any,
       date: todayStr,
       displayName: displayName || "Hafiz",
+      rewards
     });
-
-  
-    if (calculatedStreak > 0) {
-      const recentQuality = latestSuccessfulLog?.qualityScore ?? 3;
-      rewards = await GamificationService.processSessionCompletion(tx, userId, recentQuality, calculatedStreak);
-    }
 
     return { rewards };
   },

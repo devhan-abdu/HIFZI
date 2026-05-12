@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSQLiteContext } from "expo-sqlite";
 import { useSession } from "@/src/hooks/useSession";
 import { useBookmarkStore } from "../store/bookmarkStore";
 import { parseVerseKey } from "../services/bookmarkApi";
@@ -6,10 +7,11 @@ import { bookmarkService } from "../services/bookmarkService";
 
 export const useBookmarks = () => {
   const { user } = useSession();
-  
+  const assetDb = useSQLiteContext();
+
   const bookmarks = useBookmarkStore((store) => store.items);
   const setBookmarks = useBookmarkStore((store) => store.setBookmarks);
-  
+
   const [isSyncing, setIsSyncing] = useState(false);
   const syncInFlightRef = useRef(false);
 
@@ -31,15 +33,16 @@ export const useBookmarks = () => {
     setIsSyncing(true);
 
     try {
-      await bookmarkService.sync(user.id);
+      // sync needs asset DB to resolve page numbers for remote bookmarks
+      await bookmarkService.sync(user.id, assetDb);
       await publishVisibleBookmarks(user.id);
     } finally {
       syncInFlightRef.current = false;
       setIsSyncing(false);
     }
-  }, [user?.id, publishVisibleBookmarks]);
+  }, [user?.id, assetDb, publishVisibleBookmarks]);
 
- 
+
   const queueSyncBookmarks = useCallback(() => {
     setTimeout(() => void syncBookmarks(), 0);
   }, [syncBookmarks]);
@@ -51,18 +54,20 @@ export const useBookmarks = () => {
     if (!parsed) return;
 
     const existing = bookmarks.find((item) => item.verseKey === parsed.verseKey);
-    const resolvedPage = pageNumber ?? (await bookmarkService.getPageFromVerseKey(parsed.verseKey));
+    // Falls back to asset DB lookup if pageNumber not supplied
+    const resolvedPage = pageNumber ?? (await bookmarkService.getPageFromVerseKey(parsed.verseKey, assetDb));
 
     await bookmarkService.upsertBookmark(user.id, parsed.verseKey, resolvedPage, existing?.localId);
     await publishVisibleBookmarks(user.id);
     queueSyncBookmarks();
-  }, [user?.id, bookmarks, publishVisibleBookmarks, queueSyncBookmarks]);
+  }, [user?.id, assetDb, bookmarks, publishVisibleBookmarks, queueSyncBookmarks]);
 
   const addBookmark = useCallback(async (pageNumber: number) => {
     if (!user?.id) return;
-    const verseKey = await bookmarkService.getFirstVerseKeyFromPage(pageNumber);
+    // Uses asset DB to find the first verse on the page
+    const verseKey = await bookmarkService.getFirstVerseKeyFromPage(pageNumber, assetDb);
     if (verseKey) await addBookmarkByVerseKey(verseKey, pageNumber);
-  }, [addBookmarkByVerseKey, user?.id]);
+  }, [addBookmarkByVerseKey, assetDb, user?.id]);
 
   const removeBookmarkByVerseKey = useCallback(async (verseKey: string) => {
     if (!user?.id) return;
@@ -76,9 +81,9 @@ export const useBookmarks = () => {
 
   const removeBookmark = useCallback(async (pageNumber: number) => {
     if (!user?.id) return;
-    const verseKey = await bookmarkService.getFirstVerseKeyFromPage(pageNumber);
+    const verseKey = await bookmarkService.getFirstVerseKeyFromPage(pageNumber, assetDb);
     if (verseKey) await removeBookmarkByVerseKey(verseKey);
-  }, [removeBookmarkByVerseKey, user?.id]);
+  }, [removeBookmarkByVerseKey, assetDb, user?.id]);
 
   return {
     bookmarks,

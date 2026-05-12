@@ -1,11 +1,10 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 export const StatusChip = ({
   status,
 }: {
   status: "pending" | "completed" | "partial" | "missed";
 }) => {
-  console.log(status, "statussss");
   const config = {
     completed: {
       label: "Completed",

@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from "react";
 import {
   View,
-  Text,
   ActivityIndicator,
   SectionList,
   FlatList,
   Pressable,
 } from "react-native";
+import { Text } from "@/src/components/common/ui/Text";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useGetSurahByJuz } from "@/src/hooks/useGetSurahByJuz";
@@ -77,7 +77,7 @@ export default function SurahIndex() {
                 }`}
               >
                 <Text
-                  className={`text-center text-sm font-semibold ${
+                  className={`text-center text-sm  ${
                     isActive ? "text-teal-800" : "text-slate-500"
                   }`}
                 >
@@ -112,7 +112,7 @@ export default function SurahIndex() {
       ) : bookmarkRows.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
           <Ionicons name="bookmark-outline" size={44} color="#94a3b8" />
-          <Text className="mt-4 text-lg font-semibold text-slate-800">
+          <Text className="mt-4 text-lg  text-slate-800">
             No bookmarks yet
           </Text>
           <Text className="mt-2 text-center text-slate-500">
@@ -139,14 +139,14 @@ export default function SurahIndex() {
             >
               <View className="flex-row items-start justify-between">
                 <View className="flex-1 pr-4">
-                  <Text className="text-base font-semibold text-slate-900">
+                  <Text className="text-base  text-slate-900">
                     {item.surahName}
                   </Text>
                   <Text className="mt-1 text-sm text-slate-500">
                     Ayah {item.verseKey} · Page {item.pageNumber || "-"}
                   </Text>
                   {/* {item.syncStatus !== "synced" && (
-                    <Text className="mt-2 text-xs font-medium text-amber-700">
+                    <Text className="mt-2 text-xs  text-amber-700">
                       {item.syncStatus === "failed" ? "Sync failed" : "Sync pending"}
                     </Text>
                   )}

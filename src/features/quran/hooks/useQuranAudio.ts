@@ -44,8 +44,12 @@ export const useQuranAudio = (chapterId: number) => {
 
   const loadChapterMetadata = useCallback(async () => {
     const response = await fetchChapterAudioMetadata(chapterId, selectedAudio);
+    // QF API returns verse timing under audio_file.timestamps; fall back to .segments for compat
     chapterSegmentsRef.current = normalizeSegments(
-      response.audio_file?.segments ?? response.segments ?? [],
+      response.audio_file?.timestamps ??
+      response.audio_file?.segments ??
+      response.segments ??
+      [],
     );
     currentSegmentIndexRef.current = 0;
     return response;
@@ -82,19 +86,7 @@ export const useQuranAudio = (chapterId: number) => {
     }
   }, [status.isBuffering, status.playing, status.currentTime, playerState, setPlayerState, updateActiveAyah]);
 
-  useEffect(() => {
-    if (status.isBuffering) {
-      setPlayerState("buffering");
-    } else if (status.playing) {
-      setPlayerState("playing");
-    } else if (playerState !== "downloading" && playerState !== "idle") {
-      setPlayerState("paused");
-    }
 
-    if (status.currentTime) {
-      updateActiveAyah(status.currentTime * 1000); 
-    }
-  }, [status.isBuffering, status.playing, status.currentTime, playerState, setPlayerState, updateActiveAyah]);
 
   useEffect(() => {
     if (status.playbackState === "finished") {

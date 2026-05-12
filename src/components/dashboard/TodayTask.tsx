@@ -114,7 +114,7 @@ export const RestDayCardSingle = ({ type, onLog }: { type: 'hifz' | 'muraja', on
                 <Ionicons name="cafe-outline" size={24} color={type === 'hifz' ? '#276359' : '#0891b2'} />
             </View>
             <View>
-                <Text className="text-slate-900 font-semibold">{type === 'hifz' ? 'Hifz Rest Day' : 'Muraja Rest Day'}</Text>
+                <Text className="text-slate-900 ">{type === 'hifz' ? 'Hifz Rest Day' : 'Muraja Rest Day'}</Text>
                 <Text className="text-slate-400 text-xs">No tasks for today</Text>
             </View>
         </View>
