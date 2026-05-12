@@ -50,8 +50,28 @@ export const translationResources = sqliteTable('translation_resources', {
   name: text('name').notNull(),
   version: text('version'),
   downloaded: integer('downloaded').notNull().default(0),
-  localPath: text('local_path'),
+  totalPages: integer('total_pages').notNull().default(0),
+  downloadProgress: real('download_progress').notNull().default(0),
   updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+/** Stores per-page translation JSON blobs for offline access */
+export const translationPageCache = sqliteTable('translation_page_cache', {
+  translationId: integer('translation_id').notNull(),
+  page: integer('page').notNull(),
+  /** JSON array of { verse_key, text } */
+  data: text('data').notNull(),
+  cachedAt: text('cached_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.translationId, table.page] }),
+}));
+
+/** Stores per-page Arabic uthmani text — shared across all translations */
+export const arabicPageCache = sqliteTable('arabic_page_cache', {
+  page: integer('page').primaryKey(),
+  /** JSON array of { verse_key, text_uthmani } */
+  data: text('data').notNull(),
+  cachedAt: text('cached_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const audioManifests = sqliteTable('audio_manifests', {

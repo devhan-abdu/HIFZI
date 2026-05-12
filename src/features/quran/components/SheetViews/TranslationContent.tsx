@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 
-import { useReaderStore } from "../../hook/useReaderStore";
 import { getAyahTranslationCached } from "../../services";
+import { useReaderStore } from "../../hooks/useReaderStore";
 
 export const TranslationContent = () => {
-  const { selectedAyah, selectedTranslation } = useReaderStore();
+  const { selectedAyah, selectedTranslations } = useReaderStore();
+  const selectedTranslation = selectedTranslations[0] ?? 85; // Fallback to Saheeh Intl
   const ayahLabel =
     selectedAyah ? `${selectedAyah.sura}:${selectedAyah.ayah}` : "None";
 
@@ -70,7 +71,7 @@ export const TranslationContent = () => {
     return () => {
       mounted = false;
     };
-  }, [selectedAyah, selectedTranslation]);
+  }, [selectedAyah, selectedTranslations]);
 
   return (
     <BottomSheetScrollView contentContainerStyle={{ padding: 20 }}>

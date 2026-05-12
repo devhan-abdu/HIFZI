@@ -33,13 +33,14 @@ interface ReaderState {
   tallyMode: boolean;
 
   selectedAudio: number;
-  selectedTranslation: number;
+  selectedTranslations: number[];
   selectedTafsir: number;
 
   setMode: (mode: UIMode) => void;
   setViewMode: (mode: ViewMode) => void;
   setAudio: (id: number) => void;
-  setTranslation: (id: number) => void;
+  setTranslations: (ids: number[]) => void;
+  toggleTranslation: (id: number) => void;
   setTafsir: (id: number) => void;
 
   setSelectedAyah: (a: Ayah | null) => void;
@@ -53,6 +54,10 @@ interface ReaderState {
   toggleUI: () => void;
   toggleTallyMode: () => void;
   setReaderActive: (active: boolean) => void;
+
+  translationSelectorOpen: boolean;
+  toggleTranslationSelector: () => void;
+  closeTranslationSelector: () => void;
 }
 
 export const useReaderStore = create<ReaderState>((set) => ({
@@ -66,8 +71,10 @@ export const useReaderStore = create<ReaderState>((set) => ({
   viewMode: "mushaf",
   tallyMode: false,
 
+  translationSelectorOpen: false,
+
   selectedAudio: 7,
-  selectedTranslation: 131,
+  selectedTranslations: [85],
   selectedTafsir: 169,
 
   setSelectedAyah: (a) =>
@@ -90,7 +97,14 @@ export const useReaderStore = create<ReaderState>((set) => ({
 
   setAudio: (id) => set({ selectedAudio: id }),
 
-  setTranslation: (id) => set({ selectedTranslation: id }),
+  setTranslations: (ids) => set({ selectedTranslations: ids }),
+  toggleTranslation: (id) => set((state) => {
+    const ids = state.selectedTranslations.includes(id)
+      ? state.selectedTranslations.filter(i => i !== id)
+      : [...state.selectedTranslations, id];
+    // Keep at least one if preferred, but allow empty if needed
+    return { selectedTranslations: ids.length > 0 ? ids : [id] };
+  }),
   setTafsir: (id) => set({ selectedTafsir: id }),
 
   showUI: () => set({ uiVisible: true }),
@@ -98,6 +112,9 @@ export const useReaderStore = create<ReaderState>((set) => ({
   toggleUI: () => set((state) => ({ uiVisible: !state.uiVisible })),
   toggleTallyMode: () => set((state) => ({ tallyMode: !state.tallyMode })),
   setReaderActive: (readerActive) => set({ readerActive }),
+
+  toggleTranslationSelector: () => set((s) => ({ translationSelectorOpen: !s.translationSelectorOpen })),
+  closeTranslationSelector: () => set({ translationSelectorOpen: false }),
 
   resetSelection: () =>
     set({

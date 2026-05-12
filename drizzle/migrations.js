@@ -16,6 +16,7 @@ import m0011 from './0011_brave_phantom_reporter.sql';
 import m0012 from './0012_panoramic_gideon.sql';
 import m0013 from './0013_bent_the_watchers.sql';
 import m0014 from './0014_oval_human_cannonball.sql';
+import m0015 from './0015_translation_page_cache.sql';
 
   export default {
     journal,
@@ -34,7 +35,8 @@ m0010,
 m0011,
 m0012,
 m0013,
-m0014
+m0014,
+m0015
     }
   }
   
