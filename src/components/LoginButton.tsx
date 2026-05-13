@@ -13,7 +13,7 @@ const BACKEND = process.env.EXPO_PUBLIC_BACKEND_URL!;
 
 const REDIRECT_URI = Linking.createURL("login");
 
-const authBaseUrl = "https://prelive-oauth2.quran.foundation";
+const authBaseUrl = "https://oauth2.quran.foundation";
 
 const discovery = {
   authorizationEndpoint: `${authBaseUrl}/oauth2/auth`,
@@ -62,9 +62,8 @@ export default function LoginButton() {
               access_token: data.access_token,
               refresh_token: data.refresh_token,
             });
-            // Session set, effect in parent will redirect
           } else {
-             setIsLoading(false);
+            setIsLoading(false);
           }
         } catch (err) {
           console.error("Login exchange failed", err);
@@ -97,7 +96,7 @@ export default function LoginButton() {
           <ActivityIndicator color="#0E1B1B" />
         ) : (
           <View className="flex-row items-center">
-            <Text className="text-[#0E1B1B] text-lg font-bold uppercase tracking-widest">
+            <Text className="text-primary text-lg  uppercase tracking-widest">
               Continue with Quran.com
             </Text>
           </View>

@@ -8,7 +8,7 @@ serve(async (req) => {
   const SUPABASE_JWT_SECRET = Deno.env.get("JWT_SECRET")!;
   const QF_CLIENT_ID = Deno.env.get("QF_CLIENT_ID")!;
   const QF_CLIENT_SECRET = Deno.env.get("QF_CLIENT_SECRET")!;
-  const authBaseUrl = "https://prelive-oauth2.quran.foundation";
+  const authBaseUrl = "https://oauth2.quran.foundation";
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -67,46 +67,46 @@ serve(async (req) => {
 
     let userId: string;
 
-   if (profile) {
-  userId = profile.id;
+    if (profile) {
+      userId = profile.id;
+    } else {
+      // User has no profile linked to this QF ID yet.
+      // Try to create a new user. If they already exist by email, we'll catch it.
+      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+        email,
+        email_confirm: true,
+        user_metadata: { qf_user_id: qfUserId }
+      });
 
-} else {
-  const { data: userList } = await supabase.auth.admin.listUsers();
-  const existingUser = userList?.users.find(u => u.email === email);
+      if (authError) {
+        if (authError.message.includes("already registered") || authError.message.includes("already exists")) {
+          // Find existing user by email
+          const { data: userList } = await supabase.auth.admin.listUsers();
+          const existingUser = userList?.users.find(u => u.email === email);
+          if (!existingUser) throw new Error("User exists but could not be retrieved");
+          
+          userId = existingUser.id;
+          
+          // Link QF ID to metadata if not already there
+          await supabase.auth.admin.updateUserById(userId, {
+            user_metadata: { qf_user_id: qfUserId }
+          });
+        } else {
+          throw authError;
+        }
+      } else {
+        userId = authUser.user.id;
+      }
 
-  if (existingUser) {
-    userId = existingUser.id;
-
-    const { error: updateError } = await supabase.auth.admin.updateUserById(
-      userId,
-      { user_metadata: { qf_user_id: qfUserId } }
-    );
-
-    if (updateError) {
-      console.error("Metadata update failed:", updateError.message);
+      // Ensure a profile exists for this user linking them to the QF ID
+      const { error: profileError } = await supabase.from("profiles").upsert({
+        id: userId,
+        qf_user_id: qfUserId,
+        email: email,
+        name: `${qfUser.first_name || ""} ${qfUser.last_name || ""}`.trim() || "User",
+      });
+      if (profileError) throw profileError;
     }
-
-  } else {
-    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-      email,
-      email_confirm: true,
-      user_metadata: { qf_user_id: qfUserId }
-    });
-
-    if (authError) throw authError;
-
-    userId = authUser.user.id;
-
-    const { error: profileError } = await supabase.from("profiles").upsert({
-      id: userId,
-      qf_user_id: qfUserId,
-      email: email,
-      name: `${qfUser.first_name || ""} ${qfUser.last_name || ""}`.trim() || "User",
-    });
-
-    if (profileError) throw profileError;
-  }
-}
       
     const expiryTimestamp = Date.now() + (tokenData.expires_in * 1000);
     const { error: tokenStoreError } = await supabase.from("qf_tokens").upsert({
