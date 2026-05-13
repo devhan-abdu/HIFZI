@@ -79,19 +79,16 @@ export function useRetentionLog() {
       });
 
       if (xpResult && user?.id) {
-        const totalXp = (await db.select({ total: userStats.totalXp }).from(userStats).where(eq(userStats.userId, user.id)))[0]?.total ?? 0;
-        const level = Math.floor(totalXp / 1000);
-        const nextLevelXp = (level + 1) * 1000;
-        const remaining = nextLevelXp - totalXp;
-
-        await notificationService.triggerXPReward(
-          user.id, 
-          'muraja', 
-          'completed', 
-          payload.date, 
-          xpResult.xpAwarded, 
-          remaining
-        );
+        await notificationService.processHabitEvent({
+          userId: user.id,
+          habitType: 'muraja',
+          status: 'completed',
+          date: payload.date,
+          rewards: {
+            levelUp: xpResult.levelUp,
+            badges: xpResult.badges
+          }
+        });
       }
 
       return { success: true };

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback, memo } from "react";
 import { View, Pressable, Dimensions } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
 import { router } from "expo-router";
@@ -9,6 +9,38 @@ import { useCatalogStore } from "../../quran/store/catalogStore";
 import { usePagePerformance, calculateRetrievability } from "../../user/hooks/usePagePerformance";
 
 const TOTAL_PAGES = 604;
+
+// ─── Memoized single cell ──────────────────────────────────────────────────
+interface PageCellProps {
+  page: number;
+  hex: string;
+  border: string;
+  isSelected: boolean;
+  onPress: (page: number) => void;
+}
+
+const PageCell = memo(({ page, hex, border, isSelected, onPress }: PageCellProps) => (
+  <Pressable
+    onPress={() => onPress(page)}
+    style={{
+      width: 7,
+      height: 7,
+      backgroundColor: isSelected ? border : hex,
+      borderRadius: 1.5,
+      borderWidth: 0.5,
+      borderColor: border,
+      transform: [{ scale: isSelected ? 1.8 : 1 }],
+      zIndex: isSelected ? 10 : 1,
+      shadowColor: isSelected ? border : 'transparent',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isSelected ? 0.5 : 0,
+      shadowRadius: 4,
+      elevation: isSelected ? 4 : 0,
+    }}
+  />
+));
+PageCell.displayName = 'PageCell';
+// ──────────────────────────────────────────────────────────────────────────
 const { width: screenWidth } = Dimensions.get('window');
 
 export const HeatmapOfHeart = () => {
@@ -17,7 +49,7 @@ export const HeatmapOfHeart = () => {
 
   const { data: performanceData } = usePagePerformance();
 
-  const pages = Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1);
+  const pages = useMemo(() => Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1), []);
 
   const getStrengthInfo = (page: number) => {
     const data = performanceData?.get(page);
@@ -47,19 +79,28 @@ export const HeatmapOfHeart = () => {
     return { label: "Strong", color: "#0f766e", hex: "rgba(24, 204, 177, 0.3)", border: "rgba(24, 204, 177, 0.6)", percentage };
   };
 
-  const handlePageSelect = (page: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedPage(selectedPage === page ? null : page);
-  };
+  // Pre-compute ALL page colors once when performance data changes.
+  // This avoids calling getStrengthInfo 604x on every selectedPage state change.
+  const pageInfoMap = useMemo(() => {
+    const map = new Map<number, ReturnType<typeof getStrengthInfo>>();
+    for (let p = 1; p <= TOTAL_PAGES; p++) map.set(p, getStrengthInfo(p));
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [performanceData]);
 
-  const handleNavigate = (page: number) => {
+  const handlePageSelect = useCallback((page: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedPage(prev => prev === page ? null : page);
+  }, []);
+
+  const handleNavigate = useCallback((page: number) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-     router.push(`/(app)/quran/reader?page=${page.toString()}`);
-  };
+    router.push(`/(app)/quran/reader?page=${page.toString()}`);
+  }, []);
 
  
 
-  const strengthInfo = selectedPage ? getStrengthInfo(selectedPage) : null;
+  const strengthInfo = selectedPage ? pageInfoMap.get(selectedPage) ?? null : null;
   const surahName = selectedPage ? getSurahByPage(selectedPage, surahs as any) : null;
 
   return (
@@ -69,7 +110,6 @@ export const HeatmapOfHeart = () => {
           <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] ">
             Heatmap of the Heart
           </Text>
-          <Text className="text-[9px] text-slate-300 ">Tap to explore • Long-press to open</Text>
         </View>
         {selectedPage && (
           <Pressable
@@ -86,30 +126,15 @@ export const HeatmapOfHeart = () => {
       
       <View className="flex-row flex-wrap gap-[3px] justify-center">
         {pages.map((page) => {
-          const info = getStrengthInfo(page);
-          const isSelected = selectedPage === page;
-          
+          const info = pageInfoMap.get(page)!;
           return (
-            <Pressable
+            <PageCell
               key={page}
-              onPress={() => handlePageSelect(page)}
-              onLongPress={() => handleNavigate(page)}
-              delayLongPress={300}
-              style={{
-                width: 7,
-                height: 7,
-                backgroundColor: isSelected ? info.border : info.hex,
-                borderRadius: 1.5,
-                borderWidth: 0.5,
-                borderColor: info.border,
-                transform: [{ scale: isSelected ? 1.8 : 1 }],
-                zIndex: isSelected ? 10 : 1,
-                shadowColor: isSelected ? info.border : "transparent",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isSelected ? 0.5 : 0,
-                shadowRadius: 4,
-                elevation: isSelected ? 4 : 0,
-              }}
+              page={page}
+              hex={info.hex}
+              border={info.border}
+              isSelected={selectedPage === page}
+              onPress={handlePageSelect}
             />
           );
         })}

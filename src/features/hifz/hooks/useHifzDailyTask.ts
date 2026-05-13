@@ -22,7 +22,8 @@ export function useHifzDailyTask() {
     
     const today = new Date();
     const evaluationDay = hifz.evaluationDay ?? 5;
-    if (today.getDay() === evaluationDay) {
+    const normalizedToday = (today.getDay() + 6) % 7;
+    if (normalizedToday === evaluationDay) {
         return null; // No task on evaluation day
     }
 
@@ -69,7 +70,8 @@ export function useHifzDailyTask() {
     
     const today = new Date();
     const evaluationDay = hifz.evaluationDay ?? 5;
-    if (today.getDay() === evaluationDay) return null;
+    const normalizedToday = (today.getDay() + 6) % 7;
+    if (normalizedToday === evaluationDay) return null;
 
     return getReinforcementRange(hifz, surah, 5);
   }, [hifz, surah]);
@@ -138,7 +140,7 @@ export function useHifzDailyTask() {
     srsSuggestions,
     completedReviews,
     analytics,
-    isEvaluationDay: hifz ? new Date().getDay() === (hifz.evaluationDay ?? 5) : false,
+    isEvaluationDay: hifz ? ((new Date().getDay() + 6) % 7) === (hifz.evaluationDay ?? 5) : false,
     loading: isLoading || surahLoading,
     error,
     refetch,

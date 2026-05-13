@@ -22,14 +22,15 @@ export default function SelectDays({ value, onChange, disabledDay, mode = 'multi
   return (
     <View className="flex-row flex-wrap gap-x-2 gap-y-2">
       {dayObjects.map((day) => {
+        const isEvaluationDay = disabledDay !== undefined && day.offset === disabledDay;
+        
         const isSelected = mode === 'multi' 
-          ? (value as number[]).includes(day.offset)
+          ? (value as number[]).includes(day.offset) && !isEvaluationDay
           : value === day.offset;
-          
-        const isEvaluationDay = day.offset === disabledDay;
 
         const handlePress = () => {
           if (isEvaluationDay) return;
+          
           if (mode === 'multi') {
             const currentVal = value as number[];
             if (isSelected) {
@@ -52,8 +53,8 @@ export default function SelectDays({ value, onChange, disabledDay, mode = 'multi
                         isSelected ?
                           "border-primary bg-primary"
                         : isEvaluationDay ?
-                          "border-amber-200 border-dashed bg-white"
-                        : "border-slate-200 bg-white"
+                          "border-amber-200 border-dashed bg-white "
+                        : "border-slate-100 bg-white"
                       }
                     items-center justify-center
                  active:opacity-90
@@ -61,8 +62,8 @@ export default function SelectDays({ value, onChange, disabledDay, mode = 'multi
           >
             <View className="items-center">
                 <Text
-                className={` text-xs  ${
-                    isSelected ? "text-white" : isEvaluationDay ? "text-amber-700/60" : "text-slate-600"
+                className={` text-sm ${
+                    isSelected ? "text-white" : isEvaluationDay ? "text-amber-700/60 " : "text-slate-600"
                 }`}
                 >
                 {day.name}

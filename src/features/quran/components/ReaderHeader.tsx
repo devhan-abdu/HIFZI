@@ -44,7 +44,8 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
       resetSelection();
     } else {
       closeTranslationSelector();
-      router.back();
+      // Ensure we go back to the Quran Index specifically
+      router.push("/(app)/quran");
     }
   }, [selectedAyah, resetSelection, closeTranslationSelector, router]);
 

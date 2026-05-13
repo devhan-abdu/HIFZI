@@ -41,7 +41,9 @@ export const useWeeklyMuraja = () => {
         const today = new Date();
         const todayStr = today.toISOString().slice(0, 10);
         const evaluationDay = data.evaluationDay ?? 5;
-        const isEvaluationDay = today.getDay() === evaluationDay;
+        const normalizedTodayDay = (today.getDay() + 6) % 7;
+        const isEvaluationDay = normalizedTodayDay === evaluationDay;
+
 
         const activeDays = typeof selected_days === "string" ? JSON.parse(selected_days) as number[] : selected_days as unknown as number[];
 

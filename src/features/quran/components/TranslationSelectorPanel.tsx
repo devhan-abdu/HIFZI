@@ -183,7 +183,7 @@ export function TranslationSelectorPanel() {
                         onPress={() => handleDownload(t)}
                         className="bg-slate-100 px-2.5 py-1 rounded-full"
                       >
-                        <Text className="text-[9px] text-slate-600 font-bold">GET</Text>
+                        <Text className="text-[9px] text-slate-600 ">GET</Text>
                       </TouchableOpacity>
                     )}
                   </TouchableOpacity>

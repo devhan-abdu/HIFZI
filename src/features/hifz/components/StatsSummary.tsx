@@ -49,65 +49,47 @@ const StatsSummary = ({
   }, [formData.start_surah, surah]);
 
   return (
-    <View className="bg-slate-50 p-6 rounded-[24px] mb-8 border border-slate-100">
-      <View className="flex-row justify-between items-start mb-6">
-        <View>
-          <Text className="text-slate-400 text-[10px] uppercase tracking-[1.5px] mb-1">
-            Estimated Completion
-          </Text>
-          <Text className="text-primary text-2xl tracking-tight">
-            {stats.finishDate.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </Text>
-        </View>
-        <View className="bg-white px-3 py-1 rounded-full border border-slate-200">
-          <Text className="text-slate-500 text-[9px] uppercase tracking-wider">
-            {formData.direction === "backward" ? "Juz Amma First" : "Traditional"}
-          </Text>
+    <View className="px-1 py-2">
+      <View className="flex-row justify-between items-center py-3 border-b border-slate-100">
+        <Text className="text-slate-400 text-[10px] uppercase tracking-widest">
+          Est. Completion
+        </Text>
+        <Text className="text-slate-700 ">
+          {stats.finishDate.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}
+        </Text>
+      </View>
+
+      <View className="flex-row justify-between items-center py-3 border-b border-slate-100">
+        <Text className="text-slate-400 text-[10px] uppercase tracking-widest">
+          Range
+        </Text>
+        <View className="flex-row items-center">
+          <Text className="text-slate-700 ">{startSurahName}</Text>
+          <Ionicons name="arrow-forward" size={10} color="#94a3b8" className="mx-2" />
+          <Text className="text-slate-700 ">{stats.targetSurah}</Text>
         </View>
       </View>
 
-      <View className="flex-row items-center justify-between py-4 border-y border-slate-100 mb-6">
-        <View className="flex-1">
-          <Text className="text-slate-400 text-[9px] uppercase mb-1">Start</Text>
-          <Text className="text-slate-900 text-sm" numberOfLines={1}>
-            {startSurahName}
-          </Text>
-        </View>
-
-        <View className="w-8 h-8 items-center justify-center bg-white rounded-full border border-slate-100 mx-4">
-          <Ionicons name="chevron-forward" size={14} color="#276359" />
-        </View>
-
-        <View className="flex-1 items-end">
-          <Text className="text-slate-400 text-[9px] uppercase mb-1">Target</Text>
-          <Text className="text-slate-900 text-sm" numberOfLines={1}>
-            {stats.targetSurah}
-          </Text>
-        </View>
+      <View className="flex-row justify-between items-center py-3 border-b border-slate-100">
+        <Text className="text-slate-400 text-[10px] uppercase tracking-widest">
+          Volume
+        </Text>
+        <Text className="text-slate-700 ">{stats.totalPages} Pages</Text>
       </View>
 
-      <View className="flex-row justify-between">
-        <View>
-          <Text className="text-slate-400 text-[9px] uppercase tracking-widest mb-1">
-            Volume
-          </Text>
-          <Text className="text-slate-700 text-lg">{stats.totalPages} Pages</Text>
-        </View>
-
-        <View className="items-end">
-          <Text className="text-slate-400 text-[9px] uppercase tracking-widest mb-1">
-            Duration
-          </Text>
-          <Text className="text-slate-700 text-lg">
-            {stats.daysNeeded >= 30 ?
-              `~${Math.round(stats.daysNeeded / 30)} Months`
-            : `${stats.daysNeeded} Days`}
-          </Text>
-        </View>
+      <View className="flex-row justify-between items-center py-3">
+        <Text className="text-slate-400 text-[10px] uppercase tracking-widest">
+          Total Duration
+        </Text>
+        <Text className="text-slate-700 ">
+          {stats.daysNeeded >= 30 ?
+            `~${Math.round(stats.daysNeeded / 30)} Months`
+          : `${stats.daysNeeded} Days`}
+        </Text>
       </View>
     </View>
   );

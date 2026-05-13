@@ -244,28 +244,6 @@ export default function Hifz() {
             </View>
           )}
 
-          {latestUnread && (
-            <View className="mt-8 px-1">
-              <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
-                Live Progress
-              </Text>
-              <NotificationCard
-                title={latestUnread.title}
-                message={latestUnread.message}
-                type={latestUnread.type as any}
-              />
-            </View>
-          )}
-          {__DEV__ && (
-            <Pressable
-              onPress={handleSendTestNotification}
-              className="mt-6 rounded-2xl border border-violet-200 bg-violet-50 p-4"
-            >
-              <Text className="text-violet-700 text-sm">
-                Send Test Notification
-              </Text>
-            </Pressable>
-          )}
           <View className="mt-10 mb-2 px-1">
             <Text className="text-gray-400   uppercase tracking-[2px] text-[10px] mb-2">
               Activity

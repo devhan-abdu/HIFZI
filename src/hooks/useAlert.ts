@@ -33,7 +33,10 @@ export const useAlert = () => {
       type: "success",
       title,
       message,
-      onConfirm: onConfirm || (() => hideAlert()),
+      onConfirm: () => {
+        hideAlert();
+        if (onConfirm) onConfirm();
+      },
     });
   }, [hideAlert]);
 

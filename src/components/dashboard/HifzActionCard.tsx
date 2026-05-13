@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text } from "react-native";
 import { useAddLog } from "@/src/features/hifz/hooks/useAddLog";
-import { IHifzPlan } from "@/src/features/hifz/types";
+import { IHifzPlan, IHifzLog } from "@/src/features/hifz/types";
 import { useSession } from "@/src/hooks/useSession";
 import { ActionTaskCard } from "../common/ActionCard";
 import { Alert } from "../common/Alert";
@@ -37,7 +37,7 @@ export const HifzActionCard = ({
   const today = new Date();
   const todayStr = today.toISOString().slice(0, 10);
   
-  const todaysLog = hifz.hifz_daily_logs?.find((log) => log.date === todayStr);
+  const todaysLog = hifz.hifzDailyLogs?.find((log) => log.date === todayStr);
   const currentStatus = todaysLog?.status || "pending";
 
   const isLoading = isAddingHifz;
@@ -58,18 +58,24 @@ export const HifzActionCard = ({
     try {
       const logDay = (new Date().getDay() + 6) % 7;
       
-      const payload = {
-        hifz_plan_id: hifz.id!,
-        actual_pages_completed: status === "completed" ? (task.target || hifz.pages_per_day) : 0,
-        actual_start_page: task.startPage,
-        actual_end_page: task.endPage,
-        status: status,
+      const payload: IHifzLog = {
+        hifzPlanId: hifz.id!,
+        actualPagesCompleted: status === "completed" ? (task.target || hifz.pagesPerDay) : 0,
+        actualStartPage: task.startPage,
+        actualEndPage: task.endPage,
+        status: status === "pending" ? "missed" : status as any, // Hifz logs don't use 'pending'
         date: todayStr,
-        log_day: logDay,
-        quality_score: quality,
+        logDay: logDay,
+        qualityScore: quality,
       };
 
-      const result = await addLog({ todayLog: payload as any, userId: user?.id }) as any;
+      // Special case for toggling back to pending: delete the log
+      if (status === "pending") {
+         // @ts-ignore - 'pending' status in todayLog triggers a delete
+        payload.status = "pending";
+      }
+
+      const result = await addLog({ todayLog: payload, userId: user?.id }) as any;
       
       if (status === "completed" && result?.rewards) {
         const rewards = result.rewards;
@@ -145,4 +151,3 @@ export const HifzActionCard = ({
     </>
   );
 };
-

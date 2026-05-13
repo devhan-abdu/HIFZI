@@ -14,7 +14,7 @@ export default function IntroScreen() {
   }, [session?.user]);
 
   return (
-    <View className="flex-1 bg-[#0E1B1B] px-8 pt-24 pb-16 justify-between">
+    <View className="flex-1 bg-primary px-8 pt-24 pb-16 justify-between">
       <StatusBar barStyle="light-content" />
 
       <View>

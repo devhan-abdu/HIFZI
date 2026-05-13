@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Text } from "@/src/components/common/ui/Text";
 import { View } from "react-native";
 
@@ -26,6 +26,9 @@ import { EvaluationRequiredCard, RestDayCardSingle } from "@/src/components/dash
 import { Ionicons } from "@expo/vector-icons";
 import { usePlanLifecycle } from "@/src/features/habits/hooks/usePlanLifecycle";
 import { PlanEndCard } from "@/src/features/habits/components/PlanEndCard";
+import { QualityModal } from "@/src/components/common/QualityModal";
+import { useAlert } from "@/src/hooks/useAlert";
+import { Alert } from "@/src/components/common/Alert";
 
 
 export default function MurajaIndex() {
@@ -47,10 +50,12 @@ export default function MurajaIndex() {
     isLoading: loadingReview,
   } = useWeeklyReview();
   const { updateLog, isUpdating } = useMurajaOperation();
+  const { alertConfig, hideAlert } = useAlert();
+  const [qualityModalVisible, setQualityModalVisible] = useState(false);
 
-  const handleUpdate = async (status: "completed" | "pending") => {
+  const handleUpdate = async (status: "completed" | "pending" | "missed", quality?: number) => {
     const todayStr = new Date().toISOString().slice(0, 10);
-    const isCompleted = status === "completed" ? true : false;
+    const isCompleted = status === "completed";
 
     if (!weeklyPlan || !todayTask) return;
     try {
@@ -66,7 +71,8 @@ export default function MurajaIndex() {
         sync_status: 0,
         remote_id: null,
         mistakes_count: 0,
-        hesitation_count: 0
+        hesitation_count: 0,
+        quality_score: quality
       });
     } catch (err: any) {
       console.log("Undo/Redo failed", err);
@@ -117,14 +123,13 @@ export default function MurajaIndex() {
                   status={todayTask.status} 
                   isCatchup={todayTask.isCatchup}
                   isLoading={isUpdating}
-                  onDone={() => handleUpdate(
-                    (
-                      todayTask.status === "completed" ||
-                      todayTask.status === "partial"
-                    ) ?
-                      "pending"
-                      : "completed"
-                  )}
+                  onDone={() => {
+                    if (todayTask.status === "completed" || todayTask.status === "partial") {
+                        handleUpdate("pending");
+                    } else {
+                        setQualityModalVisible(true);
+                    }
+                  }}
                   onStart={() => {
                     router.push(`/(app)/quran/reader?page=${todayTask.startPage}&planId=${weeklyPlan.id}&type=muraja&start=${todayTask.startPage}&end=${todayTask.endPage}`);
                   }}
@@ -197,13 +202,19 @@ export default function MurajaIndex() {
             </Button>
           </View>
         </ScreenFooter>
+        <QualityModal
+          visible={qualityModalVisible}
+          onClose={() => setQualityModalVisible(false)}
+          onSelect={(score) => {
+            setQualityModalVisible(false);
+            handleUpdate("completed", score);
+          }}
+          title="Rate your Muraja session"
+        />
+        <Alert {...alertConfig} onCancel={hideAlert} confirmText="OK" />
       </Screen>
     );
   }
-
-  // if (analytics && reviewPlan) {
-  //   return <MurajaReviewPage plan={reviewPlan} analytics={analytics} />;
-  // }
 
   return (
     <Screen>

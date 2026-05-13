@@ -140,7 +140,7 @@ export default function LogProgress() {
       const actualTask = getTodayTask(plan, surahData, pages);
       const actualStartPage =
         hasReviewPrefill ? reviewStartPage
-        : logContext?.startPage ?? plan.start_page;
+        : logContext?.startPage ?? plan.startPage;
       const actualEndPage =
         hasReviewPrefill ? reviewStartPage + Math.max(0, pages - 1)
         : actualTask?.endPage ?? actualStartPage;
@@ -154,16 +154,16 @@ export default function LogProgress() {
         });
       } else {
         const payload: IHifzLog = {
-          hifz_plan_id: plan.id,
-          actual_pages_completed: pages,
-          actual_start_page: actualStartPage,
-          actual_end_page: actualEndPage,
+          hifzPlanId: plan.id,
+          actualPagesCompleted: pages,
+          actualStartPage: actualStartPage,
+          actualEndPage: actualEndPage,
           status,
           date: today.toISOString().slice(0, 10),
-          log_day: logDay,
+          logDay: logDay,
           notes: notes.trim(),
-          mistakes_count: mistakes,
-          hesitation_count: hesitations,
+          mistakesCount: mistakes,
+          hesitationCount: hesitations,
         };
 
         await addLog({ todayLog: payload, userId: user?.id });
@@ -171,7 +171,8 @@ export default function LogProgress() {
       
       router.back();
     } catch (err: any) {
-      setErrorMessage(err.message);
+      console.error("[HifzLog] Save failed:", err);
+      setErrorMessage("We couldn't save your progress. Please check your connection and try again.");
       setErrorVisible(true);
     }
   };

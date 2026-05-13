@@ -28,6 +28,9 @@ const CACHE_ROOT = new Directory(Paths.document, "quran_pages_cache");
 const ARABIC_DIR = new Directory(CACHE_ROOT, "arabic");
 const TRANSLATION_DIR = new Directory(CACHE_ROOT, "translations");
 
+// Track active downloads in memory to prevent duplicate requests and provide UI feedback
+const activeDownloads = new Set<number>();
+
 function getArabicFile(page: number) {
   return new File(ARABIC_DIR, `page_${page}.json`);
 }
@@ -241,31 +244,48 @@ export async function downloadTranslation(
   name: string,
   onProgress: (p: number) => void,
 ) {
-  await db.insert(translationResources)
-    .values({
-      translationId: id,
-      name,
-      totalPages: 604,
-      downloadProgress: 0,
-    })
-    .onConflictDoNothing();
+  if (activeDownloads.has(id)) return;
+  activeDownloads.add(id);
 
-  const chunkSize = 20;
-  for (let i = 1; i <= 604; i += chunkSize) {
-    const end = Math.min(i + chunkSize - 1, 604);
-    const pages = Array.from({ length: end - i + 1 }, (_, idx) => i + idx);
+  console.log(`[TranslationService] Starting download for ${name} (${id})...`);
 
-    await Promise.all(pages.map((p) => fetchTranslationPage(id, p)));
+  try {
+    await db.insert(translationResources)
+      .values({
+        translationId: id,
+        name,
+        totalPages: 604,
+        downloadProgress: 0,
+      })
+      .onConflictDoUpdate({
+        target: translationResources.translationId,
+        set: { updatedAt: new Date().toISOString() }
+      });
 
-    const progress = end / 604;
-    await db.update(translationResources)
-      .set({ downloadProgress: progress })
-      .where(eq(translationResources.translationId, id));
-    
-    onProgress(progress);
+    const chunkSize = 5; // Production level: smaller chunks to avoid rate limits and network congestion
+    for (let i = 1; i <= 604; i += chunkSize) {
+      const end = Math.min(i + chunkSize - 1, 604);
+      const pages = Array.from({ length: end - i + 1 }, (_, idx) => i + idx);
+
+      // Fetch pages in parallel within the chunk
+      await Promise.all(pages.map((p) => fetchTranslationPage(id, p)));
+
+      const progress = end / 604;
+      await db.update(translationResources)
+        .set({ downloadProgress: progress })
+        .where(eq(translationResources.translationId, id));
+      
+      onProgress(progress);
+    }
+    console.log(`[TranslationService] Download complete for ${name} (${id})`);
+  } catch (error) {
+    console.error(`[TranslationService] Failed to download ${name} (${id}):`, error);
+    throw error;
+  } finally {
+    activeDownloads.delete(id);
   }
 }
 
 export function isDownloading(id: number) {
-  return false; 
+  return activeDownloads.has(id);
 }

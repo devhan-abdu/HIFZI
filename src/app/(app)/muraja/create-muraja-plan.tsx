@@ -100,12 +100,6 @@ export default function CreateWeeklyPlan() {
     if (!user?.id) return;
 
     try {
-      if (data.selectedDays.includes(data.evaluation_day)) {
-        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        showError("Invalid Schedule", `You cannot select ${dayNames[data.evaluation_day]} as a work day because it is your Evaluation Day.`);
-        return;
-      }
-       
       const totalPages = data.end_page - data.start_page + 1;
       const daysNeeded = Math.ceil(totalPages / data.planned_pages_per_day);
       
