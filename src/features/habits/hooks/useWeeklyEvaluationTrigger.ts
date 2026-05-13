@@ -19,7 +19,12 @@ export function useWeeklyEvaluationTrigger() {
     refetchInterval: 1000 * 60 * 60, 
   });
 
-  const duePlanIds = useMemo(() => duePlans.map(p => p.id), [duePlans]);
+  const duePlanIds = useMemo(() => 
+    duePlans
+      .map(p => p.localRefId)
+      .filter((id): id is number => id !== null), 
+    [duePlans]
+  );
 
   const isDue = duePlanIds.length > 0;
 

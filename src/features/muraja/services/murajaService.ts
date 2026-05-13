@@ -130,7 +130,6 @@ export const murajaService = {
     };
   },
 
- 
   async getPlanById(userId: string, planId: number) {
     const plan = await db.query.weeklyMurajaPlans.findFirst({
       where: and(eq(weeklyMurajaPlans.id, planId)),
@@ -156,9 +155,9 @@ export const murajaService = {
         is_catchup: l.isCatchup,
         sync_status: l.syncStatus,
         start_page: l.startPage,
-        mistakes_count: l.mistakesCount,
-        hesitation_count: l.hesitationCount,
-        quality_score: l.qualityScore,
+        mistakes_count: l.mistakes_count ?? 0,
+        hesitation_count: l.hesitation_count ?? 0,
+        quality_score: l.quality_score,
       })),
     };
   },
@@ -387,6 +386,7 @@ export const murajaService = {
           week_start_date: plan.weekStartDate,
           week_end_date: plan.weekEndDate,
           planned_pages_per_day: plan.plannedPagesPerDay,
+          planned_pages: plan.plannedPagesPerDay,
           start_page: plan.startPage,
           end_page: plan.endPage,
           is_active: plan.isActive,
@@ -396,6 +396,7 @@ export const murajaService = {
           note: plan.note,
           preferred_time: plan.preferredTime,
           is_custom_time: plan.isCustomTime,
+          evaluation_day: plan.evaluationDay,
         };
 
         const { data, error } = await supabase

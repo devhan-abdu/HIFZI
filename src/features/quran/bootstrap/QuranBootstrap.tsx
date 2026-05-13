@@ -44,6 +44,32 @@ export function QuranBootstrap({ children }: PropsWithChildren) {
             DROP INDEX IF EXISTS unq_user_notification_event;
             CREATE UNIQUE INDEX IF NOT EXISTS unq_user_notification_event ON notifications (user_id, event_key);
           `);
+
+          // Manual schema enforcement for translation system
+          try { await userStateRawDb.execAsync('ALTER TABLE translation_resources ADD COLUMN total_pages INTEGER DEFAULT 0 NOT NULL;'); } catch(e) {}
+          try { await userStateRawDb.execAsync('ALTER TABLE translation_resources ADD COLUMN download_progress REAL DEFAULT 0 NOT NULL;'); } catch(e) {}
+          
+          try {
+            await userStateRawDb.execAsync(`
+              CREATE TABLE IF NOT EXISTS translation_page_cache (
+                translation_id INTEGER NOT NULL,
+                page INTEGER NOT NULL,
+                data TEXT NOT NULL,
+                cached_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                PRIMARY KEY(translation_id, page)
+              );
+            `);
+          } catch(e) {}
+
+          try {
+            await userStateRawDb.execAsync(`
+              CREATE TABLE IF NOT EXISTS arabic_page_cache (
+                page INTEGER PRIMARY KEY NOT NULL,
+                data TEXT NOT NULL,
+                cached_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+              );
+            `);
+          } catch(e) {}
         } catch (e) {
           console.warn("Database self-healing failed:", e);
         }

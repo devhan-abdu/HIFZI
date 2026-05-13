@@ -329,6 +329,7 @@ export const hifzService = {
           preferred_time: plan.preferredTime,
           is_custom_time: plan.isCustomTime,
           is_reinforcement_enabled: plan.isReinforcementEnabled,
+          evaluation_day: plan.evaluationDay,
         };
 
         const { data, error } = await supabase
