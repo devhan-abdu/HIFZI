@@ -1,5 +1,5 @@
 
-import { db } from "@/src/lib/db/local-client";
+import { getStateDb } from "@/src/lib/db/local-client";
 import { hifzLogs, hifzPlans } from "../../hifz/database/hifzSchema";
 import { dailyMurajaLogs, weeklyMurajaPlans } from "../../muraja/database/murajaSchema";
 import { planAchievements, activityPlans } from "../database/habitSchema";
@@ -16,6 +16,7 @@ export interface FinishedPlan {
 export const planLifecycleService = {
   
     async getFinishedPlans(userId: string): Promise<FinishedPlan[]> {
+        const db = getStateDb()
         const activeActivityPlans = await db.query.activityPlans.findMany({
             where: and(eq(activityPlans.userId, userId), eq(activityPlans.status, 'active'))
         });
@@ -70,6 +71,7 @@ export const planLifecycleService = {
 
  
     async markAchievementSeen(userId: string, planType: 'HIFZ' | 'MURAJA', localRefId: number) {
+        const db = getStateDb()
         await db.insert(planAchievements).values({
             userId,
             planType,

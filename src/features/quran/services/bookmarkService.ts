@@ -1,4 +1,4 @@
-import { db } from "@/src/lib/db/local-client";
+import { getStateDb } from "@/src/lib/db/local-client";
 import { getAssetDb } from "@/src/lib/db/asset-client";
 import { bookmarksLocal } from "../database/quranStateSchema";
 import { aya } from "../database/quranAssetSchema";
@@ -18,6 +18,7 @@ export const bookmarkService = {
 
 
   async getVisibleBookmarks(userId: string) {
+    const db = getStateDb()
     return await db.query.bookmarksLocal.findMany({
       where: and(eq(bookmarksLocal.userId, userId), ne(bookmarksLocal.syncStatus, 'deleted')),
       orderBy: [desc(bookmarksLocal.updatedAt)],
@@ -55,6 +56,7 @@ export const bookmarkService = {
 
   async upsertBookmark(userId: string, verseKey: string, pageNumber: number, localId?: string) {
     const id = localId || Crypto.randomUUID();
+    const db = getStateDb()
 
     await db.insert(bookmarksLocal)
       .values({
@@ -79,6 +81,7 @@ export const bookmarkService = {
   },
 
   async markAsDeleted(userId: string, verseKey: string) {
+    const db = getStateDb()
     await db.update(bookmarksLocal)
       .set({
         syncStatus: 'deleted',
@@ -90,6 +93,7 @@ export const bookmarkService = {
 
 
   async sync(userId: string, assetDb: SQLiteDatabase) {
+    const db = getStateDb()
     try {
       const pending = await db.query.bookmarksLocal.findMany({
         where: and(eq(bookmarksLocal.userId, userId), eq(bookmarksLocal.syncStatus, 'pending')),

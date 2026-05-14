@@ -1,5 +1,5 @@
 import { eq, and, desc, sql } from 'drizzle-orm';
-import { db } from '@/src/lib/db/local-client';
+import { getStateDb } from '@/src/lib/db/local-client';
 import { hifzPlans, hifzLogs } from '../database/hifzSchema';
 import { activityPlans } from '../../habits/database/habitSchema';
 import { supabase } from "@/src/lib/supabase";
@@ -27,7 +27,7 @@ export const hifzService = {
 
     let localId = 0;
     
-    await db.transaction(async (tx) => {
+    await getStateDb().transaction(async (tx) => {
       await tx.update(hifzPlans)
         .set({ status: 'paused', syncStatus: 0, updatedAt: sql`CURRENT_TIMESTAMP` })
         .where(and(eq(hifzPlans.userId, userId), eq(hifzPlans.status, 'active')));
@@ -87,7 +87,7 @@ export const hifzService = {
   async getPlan(userId: string, planId?: number): Promise<IHifzPlan | null> {
     if (!userId) return null;
 
-    const localPlan = await db.query.hifzPlans.findFirst({
+    const localPlan = await getStateDb().query.hifzPlans.findFirst({
       where: planId 
         ? eq(hifzPlans.id, planId)
         : and(eq(hifzPlans.userId, userId), eq(hifzPlans.status, 'active')),
@@ -96,7 +96,7 @@ export const hifzService = {
 
     if (!localPlan) return null;
 
-    const logs = await db.query.hifzLogs.findMany({
+    const logs = await getStateDb().query.hifzLogs.findMany({
       where: and(eq(hifzLogs.userId, userId), eq(hifzLogs.hifzPlanId, localPlan.id)),
       orderBy: [hifzLogs.date],
     });
@@ -146,7 +146,7 @@ export const hifzService = {
     let previousStatus: IHifzLog["status"] | null = null;
     let rewards = null;
 
-    await db.transaction(async (tx) => {
+    await getStateDb().transaction(async (tx) => {
       const existing = await tx.query.hifzLogs.findFirst({
         where: and(
           eq(hifzLogs.userId, userId),
@@ -309,7 +309,7 @@ export const hifzService = {
 
   async syncPending(userId: string) {
     try {
-      const pendingPlans = await db.query.hifzPlans.findMany({
+      const pendingPlans = await getStateDb().query.hifzPlans.findMany({
         where: and(eq(hifzPlans.userId, userId), eq(hifzPlans.syncStatus, 0)),
       });
 
@@ -340,17 +340,17 @@ export const hifzService = {
 
         if (error) throw error;
 
-        await db.update(hifzPlans)
+        await getStateDb().update(hifzPlans)
           .set({ syncStatus: 1, remoteId: data?.id ? String(data.id) : null, updatedAt: sql`CURRENT_TIMESTAMP` })
           .where(eq(hifzPlans.id, plan.id));
       }
 
-      const pendingLogs = await db.query.hifzLogs.findMany({
+      const pendingLogs = await getStateDb().query.hifzLogs.findMany({
         where: and(eq(hifzLogs.userId, userId), eq(hifzLogs.syncStatus, 0)),
       });
 
       for (const log of pendingLogs) {
-        const plan = await db.query.hifzPlans.findFirst({
+        const plan = await getStateDb().query.hifzPlans.findFirst({
           where: eq(hifzPlans.id, log.hifzPlanId),
         });
 
@@ -378,7 +378,7 @@ export const hifzService = {
 
         if (error) throw error;
 
-        await db.update(hifzLogs)
+        await getStateDb().update(hifzLogs)
           .set({ syncStatus: 1, remoteId: data?.id ? String(data.id) : null, updatedAt: sql`CURRENT_TIMESTAMP` })
           .where(eq(hifzLogs.id, log.id));
       }
@@ -388,7 +388,7 @@ export const hifzService = {
   },
 
   async completePlan(userId: string, planId: number) {
-    await db.transaction(async (tx) => {
+    await getStateDb().transaction(async (tx) => {
       await tx.update(hifzPlans)
         .set({ status: 'completed', syncStatus: 0, updatedAt: sql`CURRENT_TIMESTAMP` })
         .where(and(eq(hifzPlans.userId, userId), eq(hifzPlans.id, planId)));

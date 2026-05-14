@@ -1,7 +1,7 @@
 
 import { useSession } from "@/src/hooks/useSession";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { db } from "@/src/lib/db/local-client";
+import { getStateDb } from "@/src/lib/db/local-client";
 import { PageMasteryService } from "@/src/services/PageMasteryService";
 import { PerformanceService } from "@/src/services/PerformanceService";
 import { GamificationService } from "@/src/services/GamificationService";
@@ -20,6 +20,8 @@ interface RetentionPayload {
 export function useRetentionLog() {
   const { user } = useSession();
   const queryClient = useQueryClient();
+    const db = getStateDb();
+  
 
   const mutation = useMutation({
     mutationFn: async (payload: RetentionPayload) => {

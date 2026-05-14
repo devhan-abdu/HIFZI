@@ -1,4 +1,4 @@
-import { db } from "@/src/lib/db/local-client";
+import { getStateDb } from "@/src/lib/db/local-client";
 import { activityLogs } from "../database/habitSchema";
 import { userStats } from "../../user/database/userSchema";
 import { eq, and, sql, desc, lte, asc } from "drizzle-orm";
@@ -9,6 +9,7 @@ export const habitAnalyticsService = {
 
   async getProgressSnapshot(userId: string, startDate: string, endDate: string): Promise<HabitProgressSnapshot> {
     const today = new Date().toISOString().split('T')[0];
+    const db =getStateDb() 
     
     const allLogs = await db.query.activityLogs.findMany({
       where: eq(activityLogs.userId, userId),
@@ -92,6 +93,7 @@ export const habitAnalyticsService = {
   },
 
   async recalculateStreaks(userId: string) {
+    const db = getStateDb()
     const logs = await db.select({ date: activityLogs.date })
       .from(activityLogs)
       .where(and(eq(activityLogs.userId, userId), sql`${activityLogs.unitsCompleted} > 0`))
@@ -117,6 +119,7 @@ export const habitAnalyticsService = {
   },
 
   async calculateDailyGoal(userId: string): Promise<number> {
+    const db = getStateDb()
     try {
       const { weeklyMurajaPlans, hifzPlans } = await import("@/src/lib/db/schema");
 

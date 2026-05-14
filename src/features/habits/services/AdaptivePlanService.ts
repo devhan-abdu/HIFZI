@@ -1,4 +1,4 @@
-import { db } from "@/src/lib/db/local-client";
+import { getStateDb } from "@/src/lib/db/local-client";
 import { hifzLogs, hifzPlans } from "../../hifz/database/hifzSchema";
 import { dailyMurajaLogs, weeklyMurajaPlans } from "../../muraja/database/murajaSchema";
 import { testLogs } from "../../test/database/testSchema";
@@ -43,6 +43,8 @@ export const AdaptivePlanService = {
     weekStartDate: string,
     duePlanIds: number[] = []
   ): Promise<WeeklyPerformanceReport> {
+      const db = getStateDb();
+    
     const plans = duePlanIds.length > 0 
       ? await db.query.activityPlans.findMany({ where: inArray(activityPlans.localRefId, duePlanIds) })
       : await db.query.activityPlans.findMany({ where: and(eq(activityPlans.userId, userId), eq(activityPlans.status, 'active')) });
@@ -311,6 +313,7 @@ export const AdaptivePlanService = {
   },
 
   async checkCachedMessage(userId: string, report: WeeklyPerformanceReport, isFinal: boolean) {
+    const db = getStateDb();
     const hash = await this.generateReportHash(report, isFinal);
     const cached = await habitProgressService.getCachedGuidance(db, userId);
     if (cached && cached.activityHash === hash) {
@@ -325,6 +328,7 @@ export const AdaptivePlanService = {
   },
 
   async getCoachMessage(userId: string, report: WeeklyPerformanceReport, isFinal: boolean) {
+    const db = getStateDb();
     const hash = await this.generateReportHash(report, isFinal);
     
     // Check cache first
@@ -389,6 +393,7 @@ export const AdaptivePlanService = {
     murajaTarget: number,
     evaluatedTypes: ("HIFZ" | "MURAJA")[]
   ) {
+    const db = getStateDb();
     await db.transaction(async (tx) => {
       if (evaluatedTypes.includes("HIFZ")) {
         await tx.update(hifzPlans)

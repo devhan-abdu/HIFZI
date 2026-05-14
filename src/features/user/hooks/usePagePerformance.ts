@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { db } from "@/src/lib/db/local-client";
+import { getStateDb } from "@/src/lib/db/local-client";
 import { pagePerformance } from "@/src/features/user/database/userSchema";
 
 export interface PagePerformanceData {
@@ -12,6 +12,7 @@ export interface PagePerformanceData {
 }
 
 export function usePagePerformance() {
+  const db = getStateDb()
   return useQuery({
     queryKey: ["page-performance-all"],
     queryFn: async () => {

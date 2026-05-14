@@ -1,5 +1,5 @@
 import { eq, and, sql, max, desc, gte, lte } from 'drizzle-orm';
-import { db } from '@/src/lib/db/local-client';
+import { getStateDb } from '@/src/lib/db/local-client';
 import { weeklyMurajaPlans, dailyMurajaLogs } from '../database/murajaSchema';
 import { activityPlans } from '../../habits/database/habitSchema';
 import { IDailyMurajaLog, IWeeklyMurajaPLan } from "../types";
@@ -26,7 +26,7 @@ export const murajaService = {
   async createPlan(planData: Omit<IWeeklyMurajaPLan, "id">) {
     let lastId = 0;
     
-    await db.transaction(async (tx) => {
+    await getStateDb().transaction(async (tx) => {
       await tx.update(weeklyMurajaPlans)
         .set({ isActive: false })
         .where(and(eq(weeklyMurajaPlans.userId, planData.user_id), eq(weeklyMurajaPlans.isActive, true)));
@@ -90,18 +90,18 @@ export const murajaService = {
   },
 
   async getDashboardState(userId: string) {
-    const plan = await db.query.weeklyMurajaPlans.findFirst({
+    const plan = await getStateDb().query.weeklyMurajaPlans.findFirst({
       where: and(eq(weeklyMurajaPlans.userId, userId), eq(weeklyMurajaPlans.isActive, true)),
       orderBy: [desc(weeklyMurajaPlans.id)],
     });
 
     if (!plan) return;
 
-    const stats = await db.query.userStats.findFirst({
+    const stats = await getStateDb().query.userStats.findFirst({
       where: eq(userStats.userId, userId),
     });
 
-    const logs = await db.query.dailyMurajaLogs.findMany({
+    const logs = await getStateDb().query.dailyMurajaLogs.findMany({
       where: eq(dailyMurajaLogs.planId, plan.id),
       orderBy: [dailyMurajaLogs.date],
     });
@@ -131,13 +131,13 @@ export const murajaService = {
   },
 
   async getPlanById(userId: string, planId: number) {
-    const plan = await db.query.weeklyMurajaPlans.findFirst({
+    const plan = await getStateDb().query.weeklyMurajaPlans.findFirst({
       where: and(eq(weeklyMurajaPlans.id, planId)),
     });
 
     if (!plan) return null;
 
-    const logs = await db.query.dailyMurajaLogs.findMany({
+    const logs = await getStateDb().query.dailyMurajaLogs.findMany({
       where: eq(dailyMurajaLogs.planId, planId),
       orderBy: [dailyMurajaLogs.date],
     });
@@ -155,9 +155,9 @@ export const murajaService = {
         is_catchup: l.isCatchup,
         sync_status: l.syncStatus,
         start_page: l.startPage,
-        mistakes_count: l.mistakes_count ?? 0,
-        hesitation_count: l.hesitation_count ?? 0,
-        quality_score: l.quality_score,
+        mistakes_count: l.mistakesCount ?? 0,
+        hesitation_count: l.hesitationCount ?? 0,
+        quality_score: l.qualityScore,
       })),
     };
   },
@@ -253,7 +253,7 @@ export const murajaService = {
     let currentStatus: IDailyMurajaLog["status"] | "pending" | null = null;
     let rewards = null;
 
-    await db.transaction(async (tx) => {
+    await getStateDb().transaction(async (tx) => {
       const existing = await tx.query.dailyMurajaLogs.findFirst({
         where: and(
           eq(dailyMurajaLogs.date, log.date ?? ''),
@@ -376,7 +376,7 @@ export const murajaService = {
 
   async syncPending(userId: string) {
     try {
-      const pendingPlans = await db.query.weeklyMurajaPlans.findMany({
+      const pendingPlans = await getStateDb().query.weeklyMurajaPlans.findMany({
         where: and(eq(weeklyMurajaPlans.userId, userId), eq(weeklyMurajaPlans.syncStatus, 0)),
       });
 
@@ -407,19 +407,19 @@ export const murajaService = {
 
         if (error) throw error;
 
-        await db.update(weeklyMurajaPlans)
+        await getStateDb().update(weeklyMurajaPlans)
           .set({ syncStatus: 1, remoteId: data?.id ? String(data.id) : null })
           .where(eq(weeklyMurajaPlans.id, plan.id));
       }
 
-      const pendingLogs = await db.query.dailyMurajaLogs.findMany({
+      const pendingLogs = await getStateDb().query.dailyMurajaLogs.findMany({
         where: and(eq(dailyMurajaLogs.syncStatus, 0)),
       });
 
       for (const log of pendingLogs) {
         if (!log.planId) continue;
 
-        const plan = await db.query.weeklyMurajaPlans.findFirst({
+        const plan = await getStateDb().query.weeklyMurajaPlans.findFirst({
           where: eq(weeklyMurajaPlans.id, log.planId),
         });
 
@@ -449,7 +449,7 @@ export const murajaService = {
 
         if (error) throw error;
 
-        await db.update(dailyMurajaLogs)
+        await getStateDb().update(dailyMurajaLogs)
           .set({ syncStatus: 1, remoteId: data?.id ? String(data.id) : null })
           .where(eq(dailyMurajaLogs.id, log.id));
       }
@@ -467,14 +467,14 @@ export const murajaService = {
       conditions.push(eq(weeklyMurajaPlans.id, planId));
     }
 
-    const plan = await db.query.weeklyMurajaPlans.findFirst({
+    const plan = await getStateDb().query.weeklyMurajaPlans.findFirst({
       where: and(...conditions),
       orderBy: [desc(weeklyMurajaPlans.weekEndDate)],
     });
 
     if (!plan) return null;
 
-    const logs = await db.query.dailyMurajaLogs.findMany({
+    const logs = await getStateDb().query.dailyMurajaLogs.findMany({
       where: eq(dailyMurajaLogs.planId, plan.id),
       orderBy: [dailyMurajaLogs.date],
     });
@@ -503,7 +503,11 @@ export const murajaService = {
     const startOfMonth = `${year}-${String(month).padStart(2, '0')}-01`;
     const endOfMonth = `${year}-${String(month).padStart(2, '0')}-31`;
 
-    return await db.query.dailyMurajaLogs.findMany({
+    const plans = await getStateDb().query.weeklyMurajaPlans.findMany({
+      where: eq(weeklyMurajaPlans.userId, userId),
+    });
+
+    const logs = await getStateDb().query.dailyMurajaLogs.findMany({
       where: and(
         gte(dailyMurajaLogs.date, startOfMonth),
         lte(dailyMurajaLogs.date, endOfMonth),
@@ -511,10 +515,15 @@ export const murajaService = {
       ),
       orderBy: [dailyMurajaLogs.date],
     });
+
+    return plans.map(plan => ({
+      ...plan,
+      daily_muraja_logs: logs.filter(l => l.planId === plan.id)
+    })).filter(plan => plan.daily_muraja_logs.length > 0);
   },
 
   async recyclePlan(userId: string, planId: number) {
-    const oldPlan = await db.query.weeklyMurajaPlans.findFirst({
+    const oldPlan = await getStateDb().query.weeklyMurajaPlans.findFirst({
       where: eq(weeklyMurajaPlans.id, planId),
     });
 
@@ -546,7 +555,7 @@ export const murajaService = {
   },
 
   async completePlan(userId: string, planId: number) {
-    await db.transaction(async (tx) => {
+    await getStateDb().transaction(async (tx) => {
       await tx.update(weeklyMurajaPlans)
         .set({ isActive: false, syncStatus: 0 })
         .where(and(eq(weeklyMurajaPlans.userId, userId), eq(weeklyMurajaPlans.id, planId)));

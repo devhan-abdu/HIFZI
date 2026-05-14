@@ -1,5 +1,5 @@
 import { supabase } from "@/src/lib/supabase";
-import { db } from "@/src/lib/db/local-client";
+import { getStateDb } from "@/src/lib/db/local-client";
 import { activityLogs } from "../database/habitSchema";
 import { eq, and, asc } from "drizzle-orm";
 import { habitProgressService } from "./habitProgressService";
@@ -20,11 +20,13 @@ export class HabitRepository {
     metadata?: string | null;
     localRefId?: number | null;
   }) {
+    const db = getStateDb()
     return habitProgressService.upsertHabitProgressLog(db, payload);
   }
 
  
   async getPendingLogs(userId: string) {
+    const db = getStateDb()
     return await db.query.activityLogs.findMany({
       where: and(eq(activityLogs.userId, userId), eq(activityLogs.isSynced, 0)),
       orderBy: [asc(activityLogs.id)],
@@ -34,6 +36,7 @@ export class HabitRepository {
 
 
   async markSynced(id: number, remoteId: string | null) {
+    const db = getStateDb()
     await db.update(activityLogs)
       .set({ isSynced: 1, remoteId, updatedAt: new Date().toISOString() })
       .where(eq(activityLogs.id, id));

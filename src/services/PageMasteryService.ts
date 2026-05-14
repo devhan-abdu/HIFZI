@@ -1,4 +1,4 @@
-import { db } from '@/src/lib/db/local-client';
+import { getStateDb } from '@/src/lib/db/local-client';
 import { pageActivityLogs } from '@/src/features/habits/database/habitSchema';
 import { pagePerformance } from '@/src/features/user/database/userSchema';
 import { eq, and, desc, sql } from 'drizzle-orm';
@@ -29,6 +29,7 @@ export interface IPageMasteryInfo {
 export const PageMasteryService = {
 
   async logPageActivity(activity: IPageActivity) {
+    const db = getStateDb()
     await db.insert(pageActivityLogs).values({
       userId: activity.userId,
       pageId: activity.pageId,
@@ -98,6 +99,7 @@ export const PageMasteryService = {
     mistakes: number = 0,
     hesitations: number = 0
   ) {
+    const db = getStateDb() 
     await tx.delete(pageActivityLogs).where(and(
       eq(pageActivityLogs.userId, userId),
       eq(pageActivityLogs.source, source),
@@ -114,6 +116,7 @@ export const PageMasteryService = {
 
 
   async getPageStatus(userId: string, pageId: number): Promise<IPageMasteryInfo> {
+    const db = getStateDb()   
     const history = await db.query.pageActivityLogs.findMany({
       where: and(eq(pageActivityLogs.userId, userId), eq(pageActivityLogs.pageId, pageId)),
       orderBy: [desc(pageActivityLogs.createdAt)],
@@ -202,6 +205,7 @@ export const PageMasteryService = {
 
 
   async getHeatmapData(userId: string): Promise<Record<number, IPageMasteryInfo>> {
+    const db = getStateDb()
     const performances = await db.query.pagePerformance.findMany({
       where: eq(pagePerformance.userId, userId),
     });

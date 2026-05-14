@@ -1,4 +1,4 @@
-import { db } from "@/src/lib/db/local-client";
+import { getStateDb } from "@/src/lib/db/local-client";
 import { 
   habitEvents, 
   notifications, 
@@ -13,6 +13,7 @@ export const notificationRepository = {
  
   
   async getNotifications(userId: string) {
+    const db = getStateDb()
     return await db.query.notifications.findMany({
       where: eq(notifications.userId, userId),
       orderBy: [desc(notifications.createdAt)],
@@ -20,6 +21,7 @@ export const notificationRepository = {
   },
 
   async getUnreadCount(userId: string) {
+    const db = getStateDb()
     const result = await db.select({ count: sql<number>`count(*)` })
       .from(notifications)
       .where(and(eq(notifications.userId, userId), eq(notifications.isRead, 0)));
@@ -27,12 +29,14 @@ export const notificationRepository = {
   },
 
   async markAsRead(userId: string, notificationId: number) {
+    const db = getStateDb()
     await db.update(notifications)
       .set({ isRead: 1, updatedAt: sql`CURRENT_TIMESTAMP`, syncStatus: 0 })
       .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)));
   },
 
   async markAllAsRead(userId: string) {
+    const db = getStateDb()
     await db.update(notifications)
       .set({ isRead: 1, updatedAt: sql`CURRENT_TIMESTAMP`, syncStatus: 0 })
       .where(and(eq(notifications.userId, userId), eq(notifications.isRead, 0)));
@@ -45,6 +49,7 @@ export const notificationRepository = {
     eventKey: string
   }) {
     const timestamp = new Date().toISOString();
+        const db = getStateDb()
     
     const inserted = await db.insert(notifications)
       .values({
@@ -77,6 +82,7 @@ export const notificationRepository = {
 
 
   async getHabitEvents(userId: string) {
+    const db = getStateDb()
     return await db.query.habitEvents.findMany({
       where: eq(habitEvents.userId, userId),
       orderBy: [desc(habitEvents.date)],
@@ -89,6 +95,7 @@ export const notificationRepository = {
     date: string,
     xpGained: number
   }) {
+    const db = getStateDb()
     const existing = await db.query.habitEvents.findFirst({
       where: and(
         eq(habitEvents.userId, userId),
@@ -119,6 +126,7 @@ export const notificationRepository = {
   },
 
   async deleteHabitEvent(userId: string, habitType: 'hifz' | 'muraja', date: string) {
+    const db = getStateDb()
     await db.delete(habitEvents)
       .where(and(
         eq(habitEvents.userId, userId),
@@ -129,6 +137,7 @@ export const notificationRepository = {
 
 
   async getScheduledNotification(userId: string, eventKey: string) {
+    const db = getStateDb()
     return await db.query.scheduledNotifications.findFirst({
       where: and(eq(scheduledNotifications.userId, userId), eq(scheduledNotifications.eventKey, eventKey)),
     });
@@ -141,6 +150,7 @@ export const notificationRepository = {
     scheduledFor: string,
     notificationIdentifier: string
   }) {
+    const db = getStateDb()
     await db.insert(scheduledNotifications)
       .values({
         userId,
@@ -163,11 +173,13 @@ export const notificationRepository = {
   },
 
   async deleteScheduledNotification(userId: string, eventKey: string) {
+    const db = getStateDb()
     await db.delete(scheduledNotifications)
       .where(and(eq(scheduledNotifications.userId, userId), eq(scheduledNotifications.eventKey, eventKey)));
   },
 
   async getExpiredSchedules(userId: string, todayKey: string) {
+    const db = getStateDb()
     return await db.query.scheduledNotifications.findMany({
       where: and(eq(scheduledNotifications.userId, userId), lte(scheduledNotifications.scheduledFor, todayKey)),
     });

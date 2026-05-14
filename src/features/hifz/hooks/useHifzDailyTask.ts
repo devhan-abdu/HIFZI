@@ -1,5 +1,8 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { and, gte, eq } from "drizzle-orm";
+import { getStateDb } from "@/src/lib/db/local-client";
+import { pageActivityLogs } from "@/src/features/habits/database/habitSchema";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { getTargetPage } from "../utils/getTargetPage";
 import { getTodayTask } from "../utils/quran-logic";
@@ -80,9 +83,7 @@ export function useHifzDailyTask() {
     queryKey: ['today-muraja-logs', hifz?.userId],
     queryFn: async () => {
       if (!hifz?.userId) return [];
-      const { db } = await import("@/src/lib/db/local-client");
-      const { pageActivityLogs } = await import("@/src/features/habits/database/habitSchema");
-      const { and, gte, eq } = await import("drizzle-orm");
+      const db = getStateDb();
       
       const todayStr = new Date().toISOString().slice(0, 10);
       return await db.query.pageActivityLogs.findMany({
