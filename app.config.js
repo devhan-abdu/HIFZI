@@ -8,13 +8,22 @@ export default ({ config }) => {
       appName: "Hifzi (Dev)",
       scheme: "hifzi-dev",
     },
+
     preview: {
       androidPackage: "com.devhananabdu.hifzi.preview",
       iosBundle: "com.devhananabdu.hifzi.preview",
       appName: "Hifzi (Preview)",
       scheme: "hifzi-preview",
     },
+
     production: {
+      androidPackage: "com.devhananabdu.hifzi",
+      iosBundle: "com.devhananabdu.hifzi",
+      appName: "Hifzi",
+      scheme: "hifzi",
+    },
+
+    "production-apk": {
       androidPackage: "com.devhananabdu.hifzi",
       iosBundle: "com.devhananabdu.hifzi",
       appName: "Hifzi",
@@ -26,37 +35,82 @@ export default ({ config }) => {
 
   return {
     ...config,
+
     name: active.appName,
     slug: "hifzi",
-    scheme: active.scheme,
     version: "1.0.0",
-    icon: "./assets/images/minilogo.png", 
+
+    scheme: active.scheme,
+
+    orientation: "portrait",
     userInterfaceStyle: "automatic",
-    
+    newArchEnabled: true,
+
+    icon: "./assets/images/minilogo.png",
+
     splash: {
-      image: "./assets/images/minilogo.png", 
+      image: "./assets/images/hifzilogowhite.png",
       resizeMode: "contain",
-      backgroundColor: "#276359"
+      backgroundColor: "#276359",
     },
 
     ios: {
       bundleIdentifier: active.iosBundle,
-      supportsTablet: true
+      supportsTablet: true,
     },
 
     android: {
       package: active.androidPackage,
+
       adaptiveIcon: {
-        foregroundImage: "./assets/images/minilogo.png", 
-        backgroundColor: "#276359"
-      }
+        foregroundImage: "./assets/images/minilogo.png",
+        backgroundColor: "#E6F4FE",
+        monochromeImage: "./assets/images/minilogo.png",
+      },
+
+      edgeToEdgeEnabled: true,
+      predictiveBackGestureEnabled: false,
+    },
+
+    web: {
+      bundler: "metro",
+      favicon: "./assets/images/favicon.png",
     },
 
     extra: {
       eas: {
-        projectId: "ac7a8e6c-fbf0-4338-935a-6c887e67d6d4"
-      }
+        projectId: "b30fb5cd-a8e2-4463-bbea-5df0ca4348bb",
+      },
     },
-    plugins: ["expo-sqlite", "expo-audio", "expo-asset"]
+
+    plugins: [
+      [
+        "expo-splash-screen",
+        {
+          image: "./assets/images/hifzilogowhite.png",
+          imageWidth: 200,
+          resizeMode: "contain",
+          backgroundColor: "#276359",
+
+          dark: {
+            backgroundColor: "#1e293b",
+          },
+        },
+      ],
+
+      "expo-sqlite",
+      "expo-audio",
+      "expo-asset",
+
+      [
+        "expo-font",
+        {
+          fonts: [
+            "./assets/fonts/rosemary.ttf",
+            "./assets/fonts/uthman.ttf",
+          ],
+        },
+      ],
+    ],
   };
 };
