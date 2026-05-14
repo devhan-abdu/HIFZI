@@ -146,9 +146,9 @@ export default function LogProgress() {
         : actualTask?.endPage ?? actualStartPage;
 
       if (hasReviewPrefill) {
+        const pagesArray = Array.from({ length: Math.max(0, actualEndPage - actualStartPage + 1) }, (_, i) => actualStartPage + i);
         await logRetention({
-          startPage: actualStartPage,
-          endPage: actualEndPage,
+          pages: pagesArray,
           quality: PerformanceService.deriveQualityScore(mistakes, hesitations),
           date: today.toISOString().slice(0, 10),
         });

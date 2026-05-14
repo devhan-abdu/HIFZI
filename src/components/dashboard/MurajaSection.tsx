@@ -13,17 +13,15 @@ export function MurajaSection() {
   if (error || !weeklyPlan) return null;
 
   const dateRange = `${format(
-    new Date(weeklyPlan.week_start_date),
+    new Date(weeklyPlan.week_start_date || new Date()),
     "MMM dd",
-  )} - ${format(new Date(weeklyPlan.week_end_date), "MMM dd")}`;
+  )} - ${format(new Date(weeklyPlan.week_end_date || new Date()), "MMM dd")}`;
 
   return (
     <View>
       <SectionHeader title="Muraja Plan" />
       <WeeklyOverviewCard
         weeklyPlan={weeklyPlan}
-        dayCount={weekProgress?.length || 0}
-        dateRange={dateRange}
       />
     </View>
   );

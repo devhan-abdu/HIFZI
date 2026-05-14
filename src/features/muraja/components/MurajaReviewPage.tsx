@@ -24,6 +24,7 @@ import {
   IWeeklyMurajaDayInsert,
   WeeklyMurajaType,
 } from "@/src/types";
+import { IWeeklyMurajaPLan } from "../types";
 import { useAlert } from "@/src/hooks/useAlert";
 import { Alert } from "@/src/components/common/Alert";
 
@@ -94,7 +95,7 @@ export default function MurajaReviewPage({
         }),
       );
 
-      await createPlan({ planData: planPayload, days: daysPayload });
+      await createPlan(planPayload as unknown as Omit<IWeeklyMurajaPLan, "id">);
 
       showSuccess("Success!", "Plan created!.", () => router.back());
     } catch (error: any) {
