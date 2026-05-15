@@ -48,7 +48,7 @@ export default function RootLayout() {
         <Suspense fallback={<AppLoadingScreen />}>
           <SQLiteProvider
             databaseName={QURAN_CORE_DB_NAME}
-            assetSource={{ assetId: require("../../assets/db/quran.sqlite") }}
+            assetSource={{ assetId: require("@/assets/db/quran.sqlite") }}
           >
             <QuranBootstrap>
               <NotificationBootstrap />

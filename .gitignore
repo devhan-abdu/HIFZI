@@ -50,7 +50,6 @@ _vscode
 /src/app/(app)/mushaf.tsx
 docs.tx
 /src/hooks/usePushNotification.ts
-*.ttf
 *.aab
 *.apk
 # protobuf / generated binaries

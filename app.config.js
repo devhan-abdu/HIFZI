@@ -1,5 +1,6 @@
 export default ({ config }) => {
   const profile = process.env.EAS_BUILD_PROFILE ?? "development";
+
   const profiles = {
     development: {
       androidPackage: "com.devhananabdu.hifzi.dev",
@@ -34,25 +35,30 @@ export default ({ config }) => {
     name: active.appName,
     slug: "hifzi",
     version: "1.0.0",
+    runtimeVersion: "1.0.0",
     scheme: active.scheme,
     orientation: "portrait",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     icon: "./assets/images/minilogo.png",
-    // REMOVED: root splash config (use plugin instead)
     ios: {
       bundleIdentifier: active.iosBundle,
       supportsTablet: true,
+      buildNumber: "1",
     },
     android: {
       package: active.androidPackage,
+      versionCode: 1,
       adaptiveIcon: {
         foregroundImage: "./assets/images/minilogo.png",
         backgroundColor: "#E6F4FE",
         monochromeImage: "./assets/images/minilogo.png",
       },
-      edgeToEdgeEnabled: true,
-      predictiveBackGestureEnabled: false,
+      permissions: [
+        "android.permission.INTERNET",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+      ],
     },
     web: {
       bundler: "metro",
