@@ -155,9 +155,9 @@ export const murajaService = {
         is_catchup: l.isCatchup,
         sync_status: l.syncStatus,
         start_page: l.startPage,
-        mistakes_count: l.mistakes_count ?? 0,
-        hesitation_count: l.hesitation_count ?? 0,
-        quality_score: l.quality_score,
+        mistakes_count: l.mistakesCount ?? 0,
+        hesitation_count: l.hesitationCount ?? 0,
+        quality_score: l.qualityScore,
       })),
     };
   },
