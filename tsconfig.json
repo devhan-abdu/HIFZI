@@ -13,5 +13,8 @@
     "**/*.tsx",
     "nativewind-env.d.ts",
     "babel.config.js"
+  ],
+  "exclude": [
+    "supabase/functions"
   ]
 }

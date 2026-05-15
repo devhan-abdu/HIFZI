@@ -18,8 +18,8 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    Rosemary: require("../../assets/fonts/rosemary.ttf"),
-    Uthman: require("../../assets/fonts/uthman.ttf"),
+    Rosemary: require("@/assets/fonts/rosemary.ttf"),
+    Uthman: require("@/assets/fonts/uthman.ttf"),
   });
   
   const [queryClient] = useState(() => new QueryClient());

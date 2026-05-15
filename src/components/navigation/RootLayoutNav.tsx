@@ -24,7 +24,7 @@ export function RootLayoutNav() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(auth)" />
           <Stack.Protected guard={!!session}>
-            <Stack.Screen name="(app)" />
+          <Stack.Screen name="(app)" />
           </Stack.Protected>
         </Stack>
       </ThemeProvider>
