@@ -1,4 +1,4 @@
-import { getStateDb } from "@/src/lib/db/local-client";
+import { db as drizzleDb } from "@/src/lib/db/local-client";
 import { userStats, userBadges } from "@/src/features/user/database/userSchema";
 import { eq, sql, and } from "drizzle-orm";
 import { notificationRepository } from "../features/notifications/services/notificationRepository";
@@ -13,7 +13,7 @@ export type BadgeType =
 
 export const GamificationService = {
   async awardXP(db: any, userId: string, amount: number, options?: { silent?: boolean }) {
-    const tx = db || getStateDb();
+    const tx = db || drizzleDb;
     
     const stats = await tx.query.userStats.findFirst({
       where: eq(userStats.userId, userId),
@@ -49,7 +49,7 @@ export const GamificationService = {
   },
 
   async awardBadge(db: any, userId: string, type: BadgeType, metadata?: any, options?: { silent?: boolean }) {
-    const tx = db || getStateDb();
+    const tx = db || drizzleDb;
     const existing = await tx.query.userBadges.findFirst({
       where: and(eq(userBadges.userId, userId), eq(userBadges.badgeType, type))
     });
@@ -85,7 +85,7 @@ export const GamificationService = {
     qualityScore: number,
     streak: number
   ) {
-    const tx = db || getStateDb();
+    const tx = db || drizzleDb;
     
     // Base XP is 10. Quality multiplier: score 1 = 1x, score 5 = 1.5x
     const qualityMultiplier = 1 + ((qualityScore - 1) * 0.125); // 1 = 1x, 3 = 1.25x, 5 = 1.5x

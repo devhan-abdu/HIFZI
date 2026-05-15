@@ -1,4 +1,4 @@
-import { getStateDb } from "@/src/lib/db/local-client";
+import { db } from "@/src/lib/db/local-client";
 import { userStats } from "@/src/features/user/database/userSchema";
 import { habitEvents, notifications } from "../database/notificationSchema";
 import { activityPlans } from "@/src/features/habits/database/habitSchema";
@@ -24,7 +24,6 @@ export const notificationService = {
 
   async syncWithRemote(userId: string) {
     try {
-       const db = getStateDb()
       const pendingNotifs = await db.query.notifications.findMany({
         where: and(eq(notifications.userId, userId), eq(notifications.syncStatus, 0)),
         limit: 50
@@ -91,7 +90,6 @@ export const notificationService = {
   }) {
     const xpGained = payload.status === 'completed' ? 50 : (payload.status === 'partial' ? 20 : 0);
     const todayKey = this.toDateKey();
-    const db = getStateDb()
 
     await notificationRepository.upsertHabitEvent(payload.userId, {
       habitType: payload.habitType,
@@ -166,7 +164,6 @@ export const notificationService = {
   },
 
   async removeHabitEvent(userId: string, habitType: 'hifz' | 'muraja', date: string) {
-    const db = getStateDb()
     await notificationRepository.deleteHabitEvent(userId, habitType, date);
     
     const todayKey = this.toDateKey();

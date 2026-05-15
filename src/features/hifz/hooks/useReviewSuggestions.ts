@@ -4,7 +4,7 @@ import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { getSurahByPage } from "@/src/features/muraja/utils/quranMapping";
 import { ReviewPriority } from "@/src/features/hifz/utils/reviewPriority";
 import { PerformanceService, PagePerformance } from "@/src/services/PerformanceService";
-import { getStateDb } from "@/src/lib/db/local-client";
+import { db } from "@/src/lib/db/local-client";
 
 export type ReviewSuggestion = {
   sourceLogId: number; 
@@ -36,7 +36,6 @@ export function useReviewSuggestions(planId?: number) {
   const { user } = useSession();
   const { items: surah } = useLoadSurahData();
   const userId = user?.id;
-  const db = getStateDb()
 
   const query = useQuery({
     queryKey: ["hifz-review-suggestions-v2", userId, planId],

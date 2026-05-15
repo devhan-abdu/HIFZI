@@ -1,5 +1,5 @@
 import { Directory, File, Paths } from "expo-file-system";
-import { getStateDb } from "@/src/lib/db/local-client";
+import { db } from "@/src/lib/db/local-client";
 import { eq } from "drizzle-orm";
 import { translationResources } from "../database/quranStateSchema";
 import { callQF, QF_ENV, QFRequestError } from "./qfClient";
@@ -222,7 +222,6 @@ export function prefetchTranslationPages(page: number, translationIds: number[])
 // ─── Translation Manager: List & Download ────────────────────────────────────
 
 export async function getTranslationsWithDownloadStatus(): Promise<DownloadedTranslation[]> {
-  const db = getStateDb()
   const [allTranslations, localResources] = await Promise.all([
     getTranslationsCached(),
     db.select().from(translationResources),
@@ -245,7 +244,6 @@ export async function downloadTranslation(
   name: string,
   onProgress: (p: number) => void,
 ) {
-  const db = getStateDb()
   if (activeDownloads.has(id)) return;
   activeDownloads.add(id);
 

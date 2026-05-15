@@ -1,4 +1,4 @@
-import { getStateDb } from "@/src/lib/db/local-client";
+import { db as drizzleDb } from "@/src/lib/db/local-client";
 import { pagePerformance, userStats } from "@/src/features/user/database/userSchema";
 import { pageActivityLogs } from "@/src/features/habits/database/habitSchema";
 import { eq, and, sql, lte, asc } from "drizzle-orm";
@@ -71,7 +71,7 @@ export const PerformanceService = {
   },
 
   async getPagePerformance(db: any, pageNumber: number): Promise<PagePerformance> {
-    const tx = db || getStateDb();
+    const tx = db || drizzleDb;
     const row = await tx.query.pagePerformance.findFirst({
       where: eq(pagePerformance.pageNumber, pageNumber),
     });
@@ -106,7 +106,7 @@ export const PerformanceService = {
     qualityScore: number,
     reviewDate: Date
   ) {
-    const tx = db || getStateDb();
+    const tx = db || drizzleDb;
     const current = await this.getPagePerformance(tx, pageNumber);
     const next = this.calculateNextState(current, qualityScore, reviewDate);
 
@@ -258,7 +258,7 @@ export const PerformanceService = {
     pages: number[],
     qualityScore: number
   ) {
-    const tx = db || getStateDb();
+    const tx = db || drizzleDb;
     const today = new Date();
     for (const p of pages) {
       await this.updatePagePerformance(tx, userId, p, qualityScore, today);
@@ -266,7 +266,7 @@ export const PerformanceService = {
   },
 
   async getDuePages(db: any, limit = 10): Promise<PagePerformance[]> {
-    const tx = db || getStateDb();
+    const tx = db || drizzleDb;
     const today = new Date().toISOString();
     const rows = await tx.query.pagePerformance.findMany({
       where: lte(pagePerformance.nextReviewAt, today),

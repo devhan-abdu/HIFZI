@@ -1,4 +1,4 @@
-import { getStateDb } from "@/src/lib/db/local-client";
+import { db as drizzleDb } from "@/src/lib/db/local-client";
 import { activityLogs, activityPlans, weeklySummarySeen, adaptiveGuidanceCache } from "../database/habitSchema";
 import { eq, and, sql } from "drizzle-orm";
 import { 
@@ -39,7 +39,7 @@ export const habitProgressService = {
       recordedAt: payload.recordedAt ?? new Date().toISOString(),
     } satisfies HabitLogMetadata;
 
-    const tx = db || getStateDb();
+    const tx = db || drizzleDb;
 
     const existing = payload.localRefId ? await tx.query.activityLogs.findFirst({
       where: and(
@@ -83,7 +83,7 @@ export const habitProgressService = {
     }
   ) {
     const type = this.normalizeActivityType(payload.activityType);
-    const tx = db || getStateDb();
+    const tx = db || drizzleDb;
     await tx.delete(activityLogs).where(and(
       eq(activityLogs.userId, payload.userId),
       eq(activityLogs.activityType, type),
@@ -105,7 +105,7 @@ export const habitProgressService = {
       evaluationDay?: number | null;
     }
   ) {
-    const tx = db || getStateDb();
+    const tx = db || drizzleDb;
     
     await tx.update(activityPlans)
       .set({ status: 'paused', updatedAt: sql`CURRENT_TIMESTAMP` })
@@ -137,7 +137,7 @@ export const habitProgressService = {
     if (day !== 0 && day !== 1) return false;
 
     const weekKey = this.getWeekKey(now);
-    const tx = db || getStateDb();
+    const tx = db || drizzleDb;
     
     const seen = await tx.query.weeklySummarySeen.findFirst({
       where: and(
@@ -151,18 +151,18 @@ export const habitProgressService = {
 
   async markWeeklySummarySeen(db: any, userId: string) {
     const weekKey = this.getWeekKey(new Date());
-    const tx = db?.insert ? db : getStateDb();
+    const tx = db?.insert ? db : drizzleDb;
     await tx.insert(weeklySummarySeen).values({ userId, weekKey });
   },
 
   async getCachedGuidance(db: any, userId: string) {
-    const tx = db?.select ? db : getStateDb();
+    const tx = db?.select ? db : drizzleDb;
     const result = await tx.select().from(adaptiveGuidanceCache).where(eq(adaptiveGuidanceCache.userId, userId));
     return result[0];
   },
 
   async upsertCachedGuidance(db: any, params: { userId: string, activityHash: string, data: any }) {
-    const tx = db?.insert ? db : getStateDb();
+    const tx = db?.insert ? db : drizzleDb;
     const payloadStr = JSON.stringify(params.data);
     await tx.insert(adaptiveGuidanceCache)
       .values({

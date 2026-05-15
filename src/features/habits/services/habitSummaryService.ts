@@ -1,4 +1,4 @@
-import { getStateDb } from "@/src/lib/db/local-client";
+import { db } from "@/src/lib/db/local-client";
 import { weeklySummarySeen, activityPlans } from "../database/habitSchema";
 import { and, eq } from "drizzle-orm";
 
@@ -13,7 +13,6 @@ export const habitSummaryService = {
   
  
   async getDueEvaluationPlans(userId: string, now = new Date()): Promise<DuePlanInfo[]> {
-    const db = getStateDb()
     const activePlans = await db.query.activityPlans.findMany({
       where: and(eq(activityPlans.userId, userId), eq(activityPlans.status, 'active')),
       orderBy: (plans, { desc }) => [desc(plans.startDate)]
@@ -64,7 +63,6 @@ export const habitSummaryService = {
 
 
   async markWeeklySummarySeen(userId: string, now = new Date()) {
-    const db = getStateDb()
     const activePlans = await db.query.activityPlans.findMany({
       where: and(eq(activityPlans.userId, userId), eq(activityPlans.status, 'active')),
     });

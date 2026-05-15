@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { getStateDb } from '@/src/lib/db/local-client';
+import { db } from '@/src/lib/db/local-client';
 import { userStats, userBadges } from '../database/userSchema';
 import { GamificationService } from '@/src/services/GamificationService';
 
@@ -7,7 +7,7 @@ export const userService = {
   async getUserStats(userId: string) {
     if (!userId) return null;
     
-    const stats = await getStateDb().query.userStats.findFirst({
+    const stats = await db.query.userStats.findFirst({
       where: eq(userStats.userId, userId),
     });
     return stats ?? null;
@@ -16,7 +16,7 @@ export const userService = {
   async getUserBadges(userId: string) {
     if (!userId) return [];
     
-    return await getStateDb().query.userBadges.findMany({
+    return await db.query.userBadges.findMany({
       where: eq(userBadges.userId, userId),
       orderBy: (badges, { desc }) => [desc(badges.achievedAt)],
     });
@@ -24,6 +24,6 @@ export const userService = {
   
   async updateXp(userId: string, amount: number) {
     if (!userId) return;
-    await GamificationService.awardXP(getStateDb() as any, userId, amount);
+    await GamificationService.awardXP(db, userId, amount);
   }
 };

@@ -1,13 +1,11 @@
 import { PropsWithChildren, useEffect, useState } from "react";
-import { View } from "react-native";
-import { Text } from "@/src/components/common/ui/Text";
 import { AppLoadingScreen } from "@/src/components/common/AppLoadingScreen";
 import { getJuz, getSurah } from "../services";
 import { ensureQuranStorageDirectories } from "../storage/quranStorage";
 import { useBookmarkStore } from "../store/bookmarkStore";
 import { useCatalogStore } from "../store/catalogStore";
 import { useDownloadStore } from "../store/downloadStore";
-import { getStateDb } from "@/src/lib/db/local-client"; 
+import { db as stateDb, expoDb as userStateRawDb } from "@/src/lib/db/local-client";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import migrations from "@/drizzle/migrations";
 import {
@@ -15,24 +13,22 @@ import {
   quranDownloadJobs,
   quranPackages,
 } from "../../quran/database/quranStateSchema";
-import { eq, desc, asc, isNull } from "drizzle-orm";
+import { eq, desc, asc } from "drizzle-orm";
+import { View } from "react-native";
+import { Text } from "@/src/components/common/ui/Text";
 import { useSQLiteContext } from "expo-sqlite";
 
 export function QuranBootstrap({ children }: PropsWithChildren) {
-  // Fetch the safe shared instance safely at render runtime
-  const stateDb = getStateDb();
-  
   const { success, error: migrationError } = useMigrations(stateDb, migrations);
+  const status = useCatalogStore((store) => store.status);
   const setCatalog = useCatalogStore((store) => store.setCatalog);
   const startHydration = useCatalogStore((store) => store.startHydration);
   const setCatalogError = useCatalogStore((store) => store.setError);
   const setBookmarks = useBookmarkStore((store) => store.setBookmarks);
   const setDownloads = useDownloadStore((store) => store.setDownloads);
-
   const [ready, setReady] = useState(false);
-  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
 
-  const expoDb = useSQLiteContext(); 
+   const expoDb = useSQLiteContext(); 
 
   useEffect(() => {
     if (!success) return;
@@ -40,6 +36,44 @@ export function QuranBootstrap({ children }: PropsWithChildren) {
 
     const bootstrap = async () => {
       try {
+        try {
+          await userStateRawDb.execAsync(`
+            DROP INDEX IF EXISTS unq_user_habit_date;
+            CREATE UNIQUE INDEX IF NOT EXISTS unq_user_habit_date ON habit_events (user_id, habit_type, date);
+            
+            DROP INDEX IF EXISTS unq_user_notification_event;
+            CREATE UNIQUE INDEX IF NOT EXISTS unq_user_notification_event ON notifications (user_id, event_key);
+          `);
+
+          // Manual schema enforcement for translation system
+          try { await userStateRawDb.execAsync('ALTER TABLE translation_resources ADD COLUMN total_pages INTEGER DEFAULT 0 NOT NULL;'); } catch(e) {}
+          try { await userStateRawDb.execAsync('ALTER TABLE translation_resources ADD COLUMN download_progress REAL DEFAULT 0 NOT NULL;'); } catch(e) {}
+          
+          try {
+            await userStateRawDb.execAsync(`
+              CREATE TABLE IF NOT EXISTS translation_page_cache (
+                translation_id INTEGER NOT NULL,
+                page INTEGER NOT NULL,
+                data TEXT NOT NULL,
+                cached_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                PRIMARY KEY(translation_id, page)
+              );
+            `);
+          } catch(e) {}
+
+          try {
+            await userStateRawDb.execAsync(`
+              CREATE TABLE IF NOT EXISTS arabic_page_cache (
+                page INTEGER PRIMARY KEY NOT NULL,
+                data TEXT NOT NULL,
+                cached_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+              );
+            `);
+          } catch(e) {}
+        } catch (e) {
+          console.warn("Database self-healing failed:", e);
+        }
+
         ensureQuranStorageDirectories();
         startHydration();
 
@@ -52,23 +86,26 @@ export function QuranBootstrap({ children }: PropsWithChildren) {
         ] = await Promise.all([
           getSurah(expoDb),
           getJuz(expoDb),
-          stateDb
-            .select()
-            .from(bookmarksLocal)
-            .where(isNull(bookmarksLocal.deletedAt))
-            .orderBy(desc(bookmarksLocal.updatedAt)),
-          stateDb
-            .select()
-            .from(quranDownloadJobs)
-            .orderBy(desc(quranDownloadJobs.priority), asc(quranDownloadJobs.createdAt)),
-          stateDb
-            .select()
-            .from(quranPackages)
-            .orderBy(asc(quranPackages.packageType), asc(quranPackages.packageKey)),
+          stateDb.query.bookmarksLocal.findMany({
+            where: eq(bookmarksLocal.deletedAt, null as any),
+            orderBy: [desc(bookmarksLocal.updatedAt)],
+          }),
+          stateDb.query.quranDownloadJobs.findMany({
+            orderBy: [
+              desc(quranDownloadJobs.priority),
+              asc(quranDownloadJobs.createdAt),
+            ],
+          }),
+          stateDb.query.quranPackages.findMany({
+            orderBy: [
+              asc(quranPackages.packageType),
+              asc(quranPackages.packageKey),
+            ],
+          }),
         ]);
 
         if (!surahs || !juzSections) {
-          throw new Error("Core Quran asset catalog data returned empty.");
+          throw new Error("Failed to hydrate Quran catalog.");
         }
 
         if (cancelled) return;
@@ -79,12 +116,11 @@ export function QuranBootstrap({ children }: PropsWithChildren) {
           jobs: downloadJobs as any,
           packages: downloadPackages as any,
         });
-        
         setReady(true);
-      } catch (error: any) {
+      } catch (error) {
         if (cancelled) return;
         setCatalogError("Failed to bootstrap data.");
-        setBootstrapError(error?.message || "Unknown data boot exception.");
+        setReady(true);
       }
     };
 
@@ -93,22 +129,22 @@ export function QuranBootstrap({ children }: PropsWithChildren) {
     return () => {
       cancelled = true;
     };
-  }, [success, expoDb]);
+  }, [success]);
 
   if (migrationError) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20, backgroundColor: "#fff" }}>
-        <Text style={{ fontWeight: "bold", color: "red", fontSize: 16 }}>Migration Blocked</Text>
-        <Text style={{ textAlign: "center", marginTop: 10, color: "#333" }}>{migrationError.message}</Text>
-      </View>
-    );
-  }
-
-  if (bootstrapError) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20, backgroundColor: "#fff" }}>
-        <Text style={{ fontWeight: "bold", color: "red", fontSize: 16 }}>Bootstrap Process Blocked</Text>
-        <Text style={{ textAlign: "center", marginTop: 10, color: "#333" }}>{bootstrapError}</Text>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 20,
+        }}
+      >
+        <Text>Something went wrong</Text>
+        <Text style={{ textAlign: "center", marginTop: 10 }}>
+          We encountered an error updating the database. Please restart the app.
+        </Text>
       </View>
     );
   }
