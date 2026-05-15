@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "1ae39fb0-3835-4d22-b58b-394b02b26e15",
+  "id": "1b4378c1-d91d-4c41-9ab7-e6740812aeb2",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "quran_activity_logs": {
@@ -224,6 +224,14 @@
           "notNull": false,
           "autoincrement": false
         },
+        "evaluation_day": {
+          "name": "evaluation_day",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 7
+        },
         "remote_id": {
           "name": "remote_id",
           "type": "text",
@@ -327,6 +335,180 @@
             "user_id"
           ],
           "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "page_activity_logs": {
+      "name": "page_activity_logs",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "page_id": {
+          "name": "page_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "local_log_id": {
+          "name": "local_log_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "log_date": {
+          "name": "log_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "''"
+        },
+        "session_quality": {
+          "name": "session_quality",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "mistakes_count": {
+          "name": "mistakes_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 0
+        },
+        "hesitations_count": {
+          "name": "hesitations_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "idx_page_activity_user_page": {
+          "name": "idx_page_activity_user_page",
+          "columns": [
+            "user_id",
+            "page_id"
+          ],
+          "isUnique": false
+        },
+        "idx_page_activity_log_id": {
+          "name": "idx_page_activity_log_id",
+          "columns": [
+            "user_id",
+            "source",
+            "local_log_id"
+          ],
+          "isUnique": false
+        },
+        "idx_page_activity_date": {
+          "name": "idx_page_activity_date",
+          "columns": [
+            "user_id",
+            "log_date"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "plan_achievements": {
+      "name": "plan_achievements",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "plan_type": {
+          "name": "plan_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "local_ref_id": {
+          "name": "local_ref_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "achievement_type": {
+          "name": "achievement_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "seen_at": {
+          "name": "seen_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "idx_plan_achievements_user_plan": {
+          "name": "idx_plan_achievements_user_plan",
+          "columns": [
+            "user_id",
+            "plan_type",
+            "local_ref_id"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {},
@@ -649,6 +831,37 @@
           "notNull": true,
           "autoincrement": false,
           "default": "CURRENT_TIMESTAMP"
+        },
+        "preferred_time": {
+          "name": "preferred_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "is_custom_time": {
+          "name": "is_custom_time",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": false
+        },
+        "is_reinforcement_enabled": {
+          "name": "is_reinforcement_enabled",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": true
+        },
+        "evaluation_day": {
+          "name": "evaluation_day",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 7
         }
       },
       "indexes": {
@@ -926,6 +1139,29 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "preferred_time": {
+          "name": "preferred_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "is_custom_time": {
+          "name": "is_custom_time",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": false
+        },
+        "evaluation_day": {
+          "name": "evaluation_day",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 6
         }
       },
       "indexes": {
@@ -1036,7 +1272,7 @@
             "habit_type",
             "date"
           ],
-          "isUnique": false
+          "isUnique": true
         },
         "idx_habit_events_user_date": {
           "name": "idx_habit_events_user_date",
@@ -1107,7 +1343,7 @@
             "user_id",
             "notification_id"
           ],
-          "isUnique": false
+          "isUnique": true
         }
       },
       "foreignKeys": {},
@@ -1215,7 +1451,7 @@
             "user_id",
             "event_key"
           ],
-          "isUnique": false
+          "isUnique": true
         },
         "idx_notifications_user_created": {
           "name": "idx_notifications_user_created",
@@ -1315,7 +1551,7 @@
             "user_id",
             "event_key"
           ],
-          "isUnique": false
+          "isUnique": true
         },
         "idx_scheduled_user_kind": {
           "name": "idx_scheduled_user_kind",
@@ -2003,15 +2239,99 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "test_logs": {
+      "name": "test_logs",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "plan_id": {
+          "name": "plan_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "pages_range": {
+          "name": "pages_range",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "score": {
+          "name": "score",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "total_questions": {
+          "name": "total_questions",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "date": {
+          "name": "date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "test_logs_user_date_idx": {
+          "name": "test_logs_user_date_idx",
+          "columns": [
+            "user_id",
+            "date"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "page_performance": {
       "name": "page_performance",
       "columns": {
         "page_number": {
           "name": "page_number",
           "type": "integer",
-          "primaryKey": true,
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'unknown'"
         },
         "strength": {
           "name": "strength",
@@ -2051,6 +2371,37 @@
           "autoincrement": false,
           "default": 1
         },
+        "consecutive_perfects": {
+          "name": "consecutive_perfects",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "last_session_quality": {
+          "name": "last_session_quality",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "last_mistakes_count": {
+          "name": "last_mistakes_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 0
+        },
+        "last_hesitations_count": {
+          "name": "last_hesitations_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 0
+        },
         "updated_at": {
           "name": "updated_at",
           "type": "text",
@@ -2062,7 +2413,15 @@
       },
       "indexes": {},
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
+      "compositePrimaryKeys": {
+        "page_performance_user_id_page_number_pk": {
+          "columns": [
+            "user_id",
+            "page_number"
+          ],
+          "name": "page_performance_user_id_page_number_pk"
+        }
+      },
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
@@ -2106,7 +2465,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_user_badges_user": {
+          "name": "idx_user_badges_user",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -2191,6 +2558,29 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "has_recovery_shield": {
+          "name": "has_recovery_shield",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": false
+        },
+        "last_test_date": {
+          "name": "last_test_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "consecutive_perfects": {
+          "name": "consecutive_perfects",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
         }
       },
       "indexes": {},

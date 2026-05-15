@@ -1,1 +1,0 @@
-ALTER TABLE `user_stats` ADD `consecutive_perfects` integer DEFAULT 0 NOT NULL;
