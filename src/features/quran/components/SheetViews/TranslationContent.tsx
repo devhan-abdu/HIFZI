@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 
-import { useReaderStore } from "../../hook/useReaderStore";
+import { useReaderStore } from "../../hooks/useReaderStore";
 import { getAyahTranslationCached } from "../../services";
 
 export const TranslationContent = () => {

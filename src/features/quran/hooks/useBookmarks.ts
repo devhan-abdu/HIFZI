@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "@/src/hooks/useSession";
 import { useBookmarkStore } from "../store/bookmarkStore";
+import { useSQLiteContext } from "expo-sqlite";
 import { parseVerseKey } from "../services/bookmarkApi";
 import { bookmarkService } from "../services/bookmarkService";
 
 export const useBookmarks = () => {
   const { user } = useSession();
   
+  const db = useSQLiteContext();
   const bookmarks = useBookmarkStore((store) => store.items);
   const setBookmarks = useBookmarkStore((store) => store.setBookmarks);
   
@@ -31,7 +33,7 @@ export const useBookmarks = () => {
     setIsSyncing(true);
 
     try {
-      await bookmarkService.sync(user.id);
+      await bookmarkService.sync(user.id, db);
       await publishVisibleBookmarks(user.id);
     } finally {
       syncInFlightRef.current = false;
@@ -51,7 +53,7 @@ export const useBookmarks = () => {
     if (!parsed) return;
 
     const existing = bookmarks.find((item) => item.verseKey === parsed.verseKey);
-    const resolvedPage = pageNumber ?? (await bookmarkService.getPageFromVerseKey(parsed.verseKey));
+    const resolvedPage = pageNumber ?? (await bookmarkService.getPageFromVerseKey(parsed.verseKey, db));
 
     await bookmarkService.upsertBookmark(user.id, parsed.verseKey, resolvedPage, existing?.localId);
     await publishVisibleBookmarks(user.id);
@@ -60,9 +62,9 @@ export const useBookmarks = () => {
 
   const addBookmark = useCallback(async (pageNumber: number) => {
     if (!user?.id) return;
-    const verseKey = await bookmarkService.getFirstVerseKeyFromPage(pageNumber);
+    const verseKey = await bookmarkService.getFirstVerseKeyFromPage(pageNumber, db);
     if (verseKey) await addBookmarkByVerseKey(verseKey, pageNumber);
-  }, [addBookmarkByVerseKey, user?.id]);
+  }, [addBookmarkByVerseKey, user?.id, db]);
 
   const removeBookmarkByVerseKey = useCallback(async (verseKey: string) => {
     if (!user?.id) return;
@@ -76,9 +78,9 @@ export const useBookmarks = () => {
 
   const removeBookmark = useCallback(async (pageNumber: number) => {
     if (!user?.id) return;
-    const verseKey = await bookmarkService.getFirstVerseKeyFromPage(pageNumber);
+    const verseKey = await bookmarkService.getFirstVerseKeyFromPage(pageNumber, db);
     if (verseKey) await removeBookmarkByVerseKey(verseKey);
-  }, [removeBookmarkByVerseKey, user?.id]);
+  }, [removeBookmarkByVerseKey, user?.id, db]);
 
   return {
     bookmarks,

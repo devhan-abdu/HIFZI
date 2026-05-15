@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useReaderStore } from "../../hook/useReaderStore";
-import { useBookmarks } from "../../hook/useBookmarks";
+import { useReaderStore } from "../../hooks/useReaderStore";
+import { useBookmarks } from "../../hooks/useBookmarks";
 
 export const AyahActionMenu = () => {
   const { setMode, selectedAyah } = useReaderStore();
