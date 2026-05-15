@@ -37,7 +37,7 @@ export const HifzActionCard = ({
   const today = new Date();
   const todayStr = today.toISOString().slice(0, 10);
   
-  const todaysLog = hifz.hifz_daily_logs?.find((log) => log.date === todayStr);
+  const todaysLog = hifz.hifzDailyLogs?.find((log) => log.date === todayStr);
   const currentStatus = todaysLog?.status || "pending";
 
   const isLoading = isAddingHifz;
@@ -60,7 +60,7 @@ export const HifzActionCard = ({
       
       const payload = {
         hifz_plan_id: hifz.id!,
-        actual_pages_completed: status === "completed" ? (task.target || hifz.pages_per_day) : 0,
+        actual_pages_completed: status === "completed" ? (task.target || hifz.pagesPerDay) : 0,
         actual_start_page: task.startPage,
         actual_end_page: task.endPage,
         status: status,
