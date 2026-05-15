@@ -1,3 +1,40 @@
+CREATE TABLE `sora` (
+	`soraid` integer PRIMARY KEY NOT NULL,
+	`name` text,
+	`name_english` text,
+	`place` integer
+);
+--> statement-breakpoint
+CREATE TABLE `aya` (
+	`soraid` integer NOT NULL,
+	`ayaid` integer NOT NULL,
+	`page` integer,
+	`quarter` integer,
+	`hezb` integer,
+	`joza` integer,
+	`sajda` integer,
+	`text` text,
+	`uthmanitext` integer,
+	`searchtext` integer,
+	`quarterstart` integer,
+	PRIMARY KEY(`soraid`, `ayaid`)
+);
+--> statement-breakpoint
+CREATE INDEX `idx_aya_page` ON `aya` (`page`);--> statement-breakpoint
+CREATE INDEX `idx_aya_joza` ON `aya` (`joza`);--> statement-breakpoint
+CREATE INDEX `idx_aya_sura` ON `aya` (`soraid`);--> statement-breakpoint
+CREATE TABLE `ayah_bbox` (
+	`sura` integer,
+	`ayah` integer,
+	`min_x` integer,
+	`max_x` integer,
+	`min_y` integer,
+	`max_y` integer,
+	`page` integer
+);
+--> statement-breakpoint
+CREATE INDEX `idx_ayah_bbox_page` ON `ayah_bbox` (`page`);--> statement-breakpoint
+CREATE INDEX `idx_page_sura` ON `ayah_bbox` (`page`,`sura`);--> statement-breakpoint
 CREATE TABLE `quran_activity_plans` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` text NOT NULL,
@@ -37,6 +74,48 @@ CREATE TABLE `quran_activity_logs` (
 CREATE INDEX `idx_quran_activity_logs_user_date` ON `quran_activity_logs` (`user_id`,`date`);--> statement-breakpoint
 CREATE INDEX `idx_quran_activity_logs_sync` ON `quran_activity_logs` (`user_id`,`is_synced`);--> statement-breakpoint
 CREATE INDEX `idx_quran_activity_logs_type` ON `quran_activity_logs` (`user_id`,`activity_type`,`date`);--> statement-breakpoint
+CREATE TABLE `weekly_muraja_plan` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`remote_id` text,
+	`user_id` text,
+	`week_start_date` text,
+	`week_end_date` text,
+	`planned_pages_per_day` integer,
+	`start_page` integer,
+	`end_page` integer,
+	`is_active` integer DEFAULT true,
+	`selected_days` text,
+	`sync_status` integer DEFAULT 1,
+	`estimated_time_min` integer,
+	`place` text,
+	`note` text,
+	`preferred_time` text,
+	`is_custom_time` integer DEFAULT false,
+	`evaluation_day` integer DEFAULT 6 NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX `idx_weekly_muraja_plan_user_id` ON `weekly_muraja_plan` (`user_id`);--> statement-breakpoint
+CREATE INDEX `idx_weekly_muraja_plan_active_user` ON `weekly_muraja_plan` (`user_id`,`is_active`);--> statement-breakpoint
+CREATE TABLE `daily_muraja_logs` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`remote_id` text,
+	`plan_id` integer,
+	`date` text,
+	`completed_pages` integer DEFAULT 0,
+	`actual_time_min` integer DEFAULT 0,
+	`status` text,
+	`is_catchup` integer DEFAULT false,
+	`sync_status` integer DEFAULT 0,
+	`start_page` integer,
+	`mistakes_count` integer DEFAULT 0 NOT NULL,
+	`hesitation_count` integer DEFAULT 0 NOT NULL,
+	`quality_score` integer,
+	FOREIGN KEY (`plan_id`) REFERENCES `weekly_muraja_plan`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE INDEX `idx_daily_muraja_logs_plan_date` ON `daily_muraja_logs` (`plan_id`,`date`);--> statement-breakpoint
+CREATE INDEX `idx_daily_muraja_logs_date` ON `daily_muraja_logs` (`date`);--> statement-breakpoint
+CREATE INDEX `idx_daily_muraja_logs_sync` ON `daily_muraja_logs` (`sync_status`);--> statement-breakpoint
 CREATE TABLE `adaptive_guidance_cache` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` text NOT NULL,
@@ -129,48 +208,6 @@ CREATE TABLE `hifz_logs_local` (
 CREATE INDEX `idx_hifz_logs_local_date` ON `hifz_logs_local` (`date`);--> statement-breakpoint
 CREATE INDEX `idx_hifz_logs_local_sync` ON `hifz_logs_local` (`sync_status`);--> statement-breakpoint
 CREATE UNIQUE INDEX `idx_hifz_logs_local_user_plan_date` ON `hifz_logs_local` (`user_id`,`hifz_plan_id`,`date`);--> statement-breakpoint
-CREATE TABLE `weekly_muraja_plan` (
-	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-	`remote_id` text,
-	`user_id` text,
-	`week_start_date` text,
-	`week_end_date` text,
-	`planned_pages_per_day` integer,
-	`start_page` integer,
-	`end_page` integer,
-	`is_active` integer DEFAULT true,
-	`selected_days` text,
-	`sync_status` integer DEFAULT 1,
-	`estimated_time_min` integer,
-	`place` text,
-	`note` text,
-	`preferred_time` text,
-	`is_custom_time` integer DEFAULT false,
-	`evaluation_day` integer DEFAULT 6 NOT NULL
-);
---> statement-breakpoint
-CREATE INDEX `idx_weekly_muraja_plan_user_id` ON `weekly_muraja_plan` (`user_id`);--> statement-breakpoint
-CREATE INDEX `idx_weekly_muraja_plan_active_user` ON `weekly_muraja_plan` (`user_id`,`is_active`);--> statement-breakpoint
-CREATE TABLE `daily_muraja_logs` (
-	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-	`remote_id` text,
-	`plan_id` integer,
-	`date` text,
-	`completed_pages` integer DEFAULT 0,
-	`actual_time_min` integer DEFAULT 0,
-	`status` text,
-	`is_catchup` integer DEFAULT false,
-	`sync_status` integer DEFAULT 0,
-	`start_page` integer,
-	`mistakes_count` integer DEFAULT 0 NOT NULL,
-	`hesitation_count` integer DEFAULT 0 NOT NULL,
-	`quality_score` integer,
-	FOREIGN KEY (`plan_id`) REFERENCES `weekly_muraja_plan`(`id`) ON UPDATE no action ON DELETE no action
-);
---> statement-breakpoint
-CREATE INDEX `idx_daily_muraja_logs_plan_date` ON `daily_muraja_logs` (`plan_id`,`date`);--> statement-breakpoint
-CREATE INDEX `idx_daily_muraja_logs_date` ON `daily_muraja_logs` (`date`);--> statement-breakpoint
-CREATE INDEX `idx_daily_muraja_logs_sync` ON `daily_muraja_logs` (`sync_status`);--> statement-breakpoint
 CREATE TABLE `habit_events` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` text NOT NULL,
@@ -186,16 +223,6 @@ CREATE TABLE `habit_events` (
 --> statement-breakpoint
 CREATE UNIQUE INDEX `unq_user_habit_date` ON `habit_events` (`user_id`,`habit_type`,`date`);--> statement-breakpoint
 CREATE INDEX `idx_habit_events_user_date` ON `habit_events` (`user_id`,`date`);--> statement-breakpoint
-CREATE TABLE `notification_queue` (
-	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-	`user_id` text NOT NULL,
-	`notification_id` integer NOT NULL,
-	`sync_status` integer DEFAULT 0 NOT NULL,
-	`remote_id` text,
-	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL
-);
---> statement-breakpoint
-CREATE UNIQUE INDEX `unq_notif_queue_user_notif` ON `notification_queue` (`user_id`,`notification_id`);--> statement-breakpoint
 CREATE TABLE `notifications` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` text NOT NULL,
@@ -213,6 +240,16 @@ CREATE TABLE `notifications` (
 --> statement-breakpoint
 CREATE UNIQUE INDEX `unq_user_notification_event` ON `notifications` (`user_id`,`event_key`);--> statement-breakpoint
 CREATE INDEX `idx_notifications_user_created` ON `notifications` (`user_id`,`created_at`);--> statement-breakpoint
+CREATE TABLE `notification_queue` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`user_id` text NOT NULL,
+	`notification_id` integer NOT NULL,
+	`sync_status` integer DEFAULT 0 NOT NULL,
+	`remote_id` text,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `unq_notif_queue_user_notif` ON `notification_queue` (`user_id`,`notification_id`);--> statement-breakpoint
 CREATE TABLE `scheduled_notifications` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` text NOT NULL,
@@ -228,49 +265,6 @@ CREATE TABLE `scheduled_notifications` (
 --> statement-breakpoint
 CREATE UNIQUE INDEX `unq_scheduled_user_event` ON `scheduled_notifications` (`user_id`,`event_key`);--> statement-breakpoint
 CREATE INDEX `idx_scheduled_user_kind` ON `scheduled_notifications` (`user_id`,`kind`,`scheduled_for`);--> statement-breakpoint
-CREATE TABLE `aya` (
-	`soraid` integer NOT NULL,
-	`ayaid` integer NOT NULL,
-	`page` integer,
-	`quarter` integer,
-	`hezb` integer,
-	`joza` integer,
-	`sajda` integer,
-	`text` text,
-	`uthmanitext` integer,
-	`searchtext` integer,
-	`quarterstart` integer,
-	PRIMARY KEY(`soraid`, `ayaid`)
-);
---> statement-breakpoint
-CREATE INDEX `idx_aya_page` ON `aya` (`page`);--> statement-breakpoint
-CREATE INDEX `idx_aya_joza` ON `aya` (`joza`);--> statement-breakpoint
-CREATE INDEX `idx_aya_sura` ON `aya` (`soraid`);--> statement-breakpoint
-CREATE TABLE `ayah_bbox` (
-	`sura` integer,
-	`ayah` integer,
-	`min_x` integer,
-	`max_x` integer,
-	`min_y` integer,
-	`max_y` integer,
-	`page` integer
-);
---> statement-breakpoint
-CREATE INDEX `idx_ayah_bbox_page` ON `ayah_bbox` (`page`);--> statement-breakpoint
-CREATE INDEX `idx_page_sura` ON `ayah_bbox` (`page`,`sura`);--> statement-breakpoint
-CREATE TABLE `sora` (
-	`soraid` integer PRIMARY KEY NOT NULL,
-	`name` text,
-	`name_english` text,
-	`place` integer
-);
---> statement-breakpoint
-CREATE TABLE `arabic_page_cache` (
-	`page` integer PRIMARY KEY NOT NULL,
-	`data` text NOT NULL,
-	`cached_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE `audio_manifests` (
 	`reciter_id` integer NOT NULL,
 	`surah_id` integer NOT NULL,
@@ -330,22 +324,13 @@ CREATE TABLE `quran_sync_state` (
 	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `translation_page_cache` (
-	`translation_id` integer NOT NULL,
-	`page` integer NOT NULL,
-	`data` text NOT NULL,
-	`cached_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	PRIMARY KEY(`translation_id`, `page`)
-);
---> statement-breakpoint
 CREATE TABLE `translation_resources` (
 	`translation_id` integer PRIMARY KEY NOT NULL,
 	`language` text,
 	`name` text NOT NULL,
 	`version` text,
 	`downloaded` integer DEFAULT 0 NOT NULL,
-	`total_pages` integer DEFAULT 0 NOT NULL,
-	`download_progress` real DEFAULT 0 NOT NULL,
+	`local_path` text,
 	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
