@@ -2,6 +2,7 @@ import * as React from "react";
 import { View, ActivityIndicator } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import * as AuthSession from "expo-auth-session";
+import Constants from "expo-constants";
 import { Text, Button } from "./common/ui/Text";
 import { supabase } from "../lib/supabase";
 
@@ -10,8 +11,11 @@ WebBrowser.maybeCompleteAuthSession();
 const CLIENT_ID = process.env.EXPO_PUBLIC_QF_CLIENT_ID!;
 const BACKEND = process.env.EXPO_PUBLIC_BACKEND_URL!;
 
+const schemeRaw = Constants.expoConfig?.scheme;
+const scheme = Array.isArray(schemeRaw) ? schemeRaw[0] : (schemeRaw ?? "hifzi");
+
 const REDIRECT_URI = AuthSession.makeRedirectUri({
-  scheme: "hifzi",
+  scheme,
   path: "login",
 });
 
