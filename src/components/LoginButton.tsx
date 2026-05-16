@@ -1,20 +1,21 @@
 import * as React from "react";
 import { View, ActivityIndicator } from "react-native";
 import * as WebBrowser from "expo-web-browser";
-import { useAuthRequest } from "expo-auth-session";
+import * as AuthSession from "expo-auth-session";
 import { Text, Button } from "./common/ui/Text";
 import { supabase } from "../lib/supabase";
-import * as Linking from "expo-linking";
 
 WebBrowser.maybeCompleteAuthSession();
 
 const CLIENT_ID = process.env.EXPO_PUBLIC_QF_CLIENT_ID!;
 const BACKEND = process.env.EXPO_PUBLIC_BACKEND_URL!;
 
-const REDIRECT_URI = Linking.createURL("login");
+const REDIRECT_URI = AuthSession.makeRedirectUri({
+  scheme: "hifzi",
+  path: "login",
+});
 
 const authBaseUrl = "https://oauth2.quran.foundation";
-
 const discovery = {
   authorizationEndpoint: `${authBaseUrl}/oauth2/auth`,
   tokenEndpoint: `${authBaseUrl}/oauth2/token`,
@@ -22,7 +23,7 @@ const discovery = {
 
 export default function LoginButton() {
   const [isLoading, setIsLoading] = React.useState(false);
-  const [request, response, promptAsync] = useAuthRequest(
+  const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
       clientId: CLIENT_ID,
       scopes: [
@@ -40,33 +41,37 @@ export default function LoginButton() {
   );
 
   React.useEffect(() => {
-    const run = async () => {
+    const exchangeCodeForSession = async () => {
+      // Exit early if there's no response from the browser yet
       if (!response) return;
 
       if (response.type === "success") {
         setIsLoading(true);
         try {
+          // Send the authorization code and codeVerifier to your server backend
           const res = await fetch(`${BACKEND}/qf-login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               code: response.params.code,
-              codeVerifier: request?.codeVerifier,
+              codeVerifier: request?.codeVerifier, // Re-included for strict PKCE security check
               redirectUri: REDIRECT_URI,
             }),
           });
 
           const data = await res.json();
+
           if (res.ok && data.access_token) {
             await supabase.auth.setSession({
               access_token: data.access_token,
               refresh_token: data.refresh_token,
             });
           } else {
+            console.error("Backend error response:", data);
             setIsLoading(false);
           }
         } catch (err) {
-          console.error("Login exchange failed", err);
+          console.error("Login token exchange network failure:", err);
           setIsLoading(false);
         }
       } else {
@@ -74,13 +79,18 @@ export default function LoginButton() {
       }
     };
 
-    run();
-  }, [response]);
+    exchangeCodeForSession();
+  }, [response, request?.codeVerifier]);
 
   const handleLogin = async () => {
     setIsLoading(true);
-    const result = await promptAsync();
-    if (result?.type !== "success") {
+    try {
+      const result = await promptAsync();
+      if (result?.type !== "success") {
+        setIsLoading(false);
+      }
+    } catch (e) {
+      console.error("Failed to open browser authentication window", e);
       setIsLoading(false);
     }
   };
@@ -92,15 +102,14 @@ export default function LoginButton() {
         onPress={handleLogin}
         className="bg-white p-5 rounded-2xl my-8 flex-row items-center justify-center shadow-lg active:opacity-90"
       >
-        {isLoading ? (
+        {isLoading ?
           <ActivityIndicator color="#0E1B1B" />
-        ) : (
-          <View className="flex-row items-center">
-            <Text className="text-primary text-lg  uppercase tracking-widest">
+        : <View className="flex-row items-center">
+            <Text className="text-primary text-lg uppercase tracking-widest">
               Continue with Quran.com
             </Text>
           </View>
-        )}
+        }
       </Button>
       <Text className="text-white/40 text-center text-xs -mt-4">
         Secure authentication via Quran Foundation
