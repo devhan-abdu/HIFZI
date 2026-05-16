@@ -15,7 +15,7 @@ const REDIRECT_URI = AuthSession.makeRedirectUri({
   path: "login",
 });
 
-const authBaseUrl = "https://oauth2.quran.foundation";
+const authBaseUrl = "https://prelive-oauth2.quran.foundation";
 const discovery = {
   authorizationEndpoint: `${authBaseUrl}/oauth2/auth`,
   tokenEndpoint: `${authBaseUrl}/oauth2/token`,

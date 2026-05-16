@@ -6,7 +6,7 @@ const BACKEND_BASE_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
  * QF API environment. Change to "production" to target apis.quran.foundation.
  * All service files read this — one place to flip.
  */
-export const QF_ENV: "prelive" | "production" = "production";
+export const QF_ENV: "prelive" | "production" = "prelive";
 
 export type QFOptions = {
   method?: "GET" | "POST" | "PATCH" | "DELETE";

@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const OAUTH_URL = "https://oauth2.quran.foundation/oauth2/token";
+const OAUTH_URL = "https://prelive-oauth2.quran.foundation/oauth2/token";
 
 async function refreshQFToken(
   supabaseUrl: string,

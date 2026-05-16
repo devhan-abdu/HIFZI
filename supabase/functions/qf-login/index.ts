@@ -8,7 +8,7 @@ serve(async (req) => {
   const SUPABASE_JWT_SECRET = Deno.env.get("JWT_SECRET")!;
   const QF_CLIENT_ID = Deno.env.get("QF_CLIENT_ID")!;
   const QF_CLIENT_SECRET = Deno.env.get("QF_CLIENT_SECRET")!;
-  const authBaseUrl = "https://oauth2.quran.foundation";
+  const authBaseUrl = "https://prelive-oauth2.quran.foundation";
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
