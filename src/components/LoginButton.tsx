@@ -19,7 +19,7 @@ const REDIRECT_URI = AuthSession.makeRedirectUri({
   path: "login",
 });
 
-const authBaseUrl = "https://prelive-oauth2.quran.foundation";
+const authBaseUrl = process.env.EXPO_PUBLIC_QF_URL || "https://prelive-oauth2.quran.foundation";
 const discovery = {
   authorizationEndpoint: `${authBaseUrl}/oauth2/auth`,
   tokenEndpoint: `${authBaseUrl}/oauth2/token`,
@@ -106,6 +106,10 @@ export default function LoginButton() {
         onPress={handleLogin}
         className="bg-white p-5 rounded-2xl my-8 flex-row items-center justify-center shadow-lg active:opacity-90"
       >
+        <View className="absolute -top-10 bg-black/50 p-1 rounded">
+          <Text className="text-white text-xs">Debug ID: {CLIENT_ID || "UNDEFINED"}</Text>
+          <Text className="text-white text-xs">Debug Scheme: {scheme || "UNDEFINED"}</Text>
+        </View>
         {isLoading ?
           <ActivityIndicator color="#0E1B1B" />
         : <View className="flex-row items-center">
