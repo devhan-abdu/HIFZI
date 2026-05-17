@@ -12,13 +12,8 @@ export const AyahHighlight: React.FC<AyahHighlightProps> = ({ rect, type }) => {
 
   const backgroundColor = 
     type === 'playing' 
-      ? 'rgba(34, 197, 94, 0.3)' // Green for playing
-      : 'rgba(52, 152, 219, 0.3)'; // Blue for selected
-
-  const borderColor = 
-    type === 'playing' 
-      ? 'rgba(34, 197, 94, 0.5)' 
-      : 'rgba(52, 152, 219, 0.5)';
+      ? 'rgba(34, 197, 94, 0.35)' // Green for playing
+      : 'rgba(52, 152, 219, 0.35)'; // Blue for selected
 
   return (
     <View
@@ -30,7 +25,6 @@ export const AyahHighlight: React.FC<AyahHighlightProps> = ({ rect, type }) => {
           width: rect.width,
           height: rect.height,
           backgroundColor,
-          borderColor,
         },
       ]}
     />
@@ -40,7 +34,6 @@ export const AyahHighlight: React.FC<AyahHighlightProps> = ({ rect, type }) => {
 const styles = StyleSheet.create({
   highlight: {
     position: 'absolute',
-    borderRadius: 4,
-    borderWidth: 1.5,
+    borderRadius: 2,
   },
 });

@@ -61,6 +61,7 @@ export default function QuranReaderScreen() {
     setReaderActive,
     setSelectedAyah,
     tallyMode,
+    playingAyah,
   } = useReaderStore();
 
   const [tallyCounts, setTallyCounts] = useState({ mistakes: 0, hesitations: 0 });
@@ -68,6 +69,25 @@ export default function QuranReaderScreen() {
   const habitUserId = user?.id ?? "local-user";
 
   useFullscreenSystemUI(!uiVisible);
+
+  useEffect(() => {
+    const syncPageToRecitation = async () => {
+      if (playingAyah) {
+        const parsed = parseVerseKey(playingAyah);
+        if (parsed) {
+          const targetPage = await getAyahPage(parsed.sura, parsed.ayah, db);
+          if (targetPage && targetPage !== currentPage) {
+            setCurrentPage(targetPage);
+            listRef.current?.scrollToIndex({
+              index: targetPage - 1,
+              animated: true,
+            });
+          }
+        }
+      }
+    };
+    syncPageToRecitation();
+  }, [playingAyah]);
 
   useFocusEffect(
     useCallback(() => {

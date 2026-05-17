@@ -6,6 +6,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Directory, File, Paths } from "expo-file-system";
 
 import { Text } from "@/src/components/common/ui/Text";
 import { useQuranAudio } from "../../hooks/useQuranAudio";
@@ -54,8 +55,16 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
     }
   }, [recitations, selectedAudio, setAudio]);
 
+  const isAudioDownloaded = (reciterId: number) => {
+    const dir = new Directory(Paths.document, "audio", String(reciterId));
+    const file = new File(dir, `${chapterId}.mp3`);
+    return file.exists;
+  };
+
   const activeReciter =
     recitations.find((r) => r.id === selectedAudio) ?? recitations[0];
+
+  const activeReciterDownloaded = activeReciter ? isAudioDownloaded(activeReciter.id) : false;
 
   const getErrorMessage = (err: string) => {
     if (err.includes("network") || err.includes("fetch"))
@@ -86,13 +95,17 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
 
           <TouchableOpacity
             onPress={() => void togglePlayback()}
-            disabled={playerState === "buffering"}
+            disabled={playerState === "buffering" || isDownloading}
             className="h-14 w-14 items-center justify-center rounded-full bg-white shadow-lg"
           >
-            {playerState === "buffering" ?
+            {playerState === "buffering" || isDownloading ?
               <ActivityIndicator size="small" color="#000" />
             : <Ionicons
-                name={playerState === "playing" ? "pause" : "play"}
+                name={
+                  playerState === "playing" ? "pause" 
+                  : !activeReciterDownloaded ? "cloud-download-outline"
+                  : "play"
+                }
                 size={30}
                 color="#000"
               />
@@ -141,6 +154,7 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
             >
               {recitations.map((item) => {
                 const isSelected = selectedAudio === item.id;
+                const isDownloaded = isAudioDownloaded(item.id);
                 return (
                   <TouchableOpacity
                     key={item.id}
@@ -161,16 +175,26 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
                       </Text>
                     </View>
                     <Text
-                      className={`ml-4 font-semibold ${isSelected ? "text-teal-900" : "text-slate-700"}`}
+                      className={`ml-4 flex-1 font-semibold ${isSelected ? "text-teal-900" : "text-slate-700"}`}
+                      numberOfLines={1}
                     >
                       {item.name}
                     </Text>
+                    
+                    {isDownloaded && !isSelected && (
+                      <Ionicons
+                        name="cloud-done-outline"
+                        size={18}
+                        color="#94a3b8"
+                        className="mr-2"
+                      />
+                    )}
+                    
                     {isSelected && (
                       <Ionicons
                         name="checkmark-circle"
                         size={20}
                         color="#0d9488"
-                        className="ml-auto"
                       />
                     )}
                   </TouchableOpacity>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef } from "react";
 import {
   View,
   ActivityIndicator,
@@ -22,9 +22,15 @@ export default function SurahIndex() {
   const { bookmarks } = useBookmarks();
   const surahs = useCatalogStore((store) => store.surahs);
   const [activeTab, setActiveTab] = useState<"surahs" | "bookmarks">("surahs");
+  const isNavigating = useRef(false);
 
   const handlePress = (item: Surah) => {
+    if (isNavigating.current) return;
+    isNavigating.current = true;
     router.push(`/quran/reader?page=${item.startingPage}`);
+    setTimeout(() => {
+      isNavigating.current = false;
+    }, 500);
   };
 
   const bookmarkRows = useMemo(() => {
