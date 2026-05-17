@@ -1,17 +1,18 @@
 import { Header } from "@/src/components/navigation/Header";
 import { Text } from "@/src/components/common/ui/Text";
 import Screen from "@/src/components/screen/Screen";
-import { ScreenContent } from "@/src/components/screen/ScreenContent";
 import { askQuranQuestion } from "@/src/features/ai/services/quranAI";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import { 
   Pressable, 
   View, 
-  ScrollView
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  TextInput
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Input from "@/src/components/ui/Input";
 
 type ChatItem = {
   role: "user" | "assistant";
@@ -38,7 +39,7 @@ export default function AIChatScreen() {
   useEffect(() => {
     setTimeout(() => {
       scrollRef.current?.scrollToEnd({ animated: true });
-    }, 50);
+    }, 100);
   }, [messages, loading]);
 
   const sendQuestion = async () => {
@@ -69,73 +70,101 @@ export default function AIChatScreen() {
 
   return (
     <>
-      <Header title="Quran AI" />
+      <Header title="HIFZI" />
 
       <Screen>
-        <ScreenContent>
-          <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
-            Assistant
-          </Text>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }} 
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+        >
+          <View className="flex-1 bg-slate-50">
+            {/* --------------------------------------------------
+                CHAT WINDOW
+            -------------------------------------------------- */}
+            <ScrollView
+              ref={scrollRef}
+              className="flex-1 px-4 pt-4"
+              contentContainerStyle={{ paddingBottom: 24 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {messages.map((message, index) => {
+                const isUser = message.role === "user";
+                return (
+                  <View
+                    key={`${message.role}-${index}`}
+                    className={`mb-6 flex-row ${isUser ? "justify-end" : "justify-start"}`}
+                  >
+                    {!isUser && (
+                      <View className="w-8 h-8 rounded-full bg-emerald-100 items-center justify-center mr-3 mt-1">
+                        <Ionicons name="sparkles" size={16} color="#047857" />
+                      </View>
+                    )}
+                    
+                    <View
+                      className={`max-w-[80%] rounded-2xl p-4 ${
+                        isUser 
+                          ? "bg-emerald-700 rounded-tr-sm" 
+                          : "bg-white shadow-sm border border-slate-100 rounded-tl-sm"
+                      }`}
+                    >
+                      <Text className={`text-[15px] leading-6 ${isUser ? "text-white" : "text-slate-800"}`}>
+                        {message.text}
+                      </Text>
+                    </View>
 
-          <Text className="text-slate-900 text-2xl mb-4">Quran Questions</Text>
+                    {isUser && (
+                      <View className="w-8 h-8 rounded-full bg-slate-200 items-center justify-center ml-3 mt-1 overflow-hidden">
+                        <Ionicons name="person" size={16} color="#64748b" />
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
 
-          {/* --------------------------------------------------
-              CHAT WINDOW
-          -------------------------------------------------- */}
-          <ScrollView
-            ref={scrollRef}
-            className="rounded-2xl bg-white border border-slate-200 p-3 mb-4"
-            contentContainerStyle={{ paddingBottom: 20 }}
-            showsVerticalScrollIndicator={false}
-          >
-            {messages.map((message, index) => (
-              <View
-                key={`${message.role}-${index}`}
-                className={`mb-3 rounded-xl p-3 ${
-                  message.role === "assistant" ?
-                    "bg-slate-100"
-                  : "bg-emerald-100"
-                }`}
-              >
-                <Text className="text-[11px] text-slate-500 uppercase mb-1">
-                  {message.role === "assistant" ? "Quran AI" : "You"}
-                </Text>
+              {loading && (
+                <View className="mb-6 flex-row justify-start">
+                  <View className="w-8 h-8 rounded-full bg-emerald-100 items-center justify-center mr-3 mt-1">
+                    <Ionicons name="sparkles" size={16} color="#047857" />
+                  </View>
+                  <View className="max-w-[80%] rounded-2xl rounded-tl-sm bg-white shadow-sm border border-slate-100 p-4">
+                    <Text className="text-[15px] text-slate-500">Thinking...</Text>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
 
-                <Text className="text-slate-900 text-sm">{message.text}</Text>
+            {/* --------------------------------------------------
+                INPUT
+            -------------------------------------------------- */}
+            <View className="px-4 py-3 bg-white border-t border-slate-100" style={{ paddingBottom: Math.max(insets.bottom, 12) }}>
+              <View className="flex-row items-end bg-slate-50 border border-slate-200 rounded-3xl px-4 py-2 min-h-[50px] max-h-[120px]">
+                <TextInput
+                  value={question}
+                  onChangeText={setQuestion}
+                  placeholder="Ask me anything about Quran..."
+                  placeholderTextColor="#94a3b8"
+                  className="flex-1 text-slate-900 text-base py-2 mr-2"
+                  multiline
+                  style={{ minHeight: 34, maxHeight: 100 }}
+                />
+                <Pressable
+                  onPress={sendQuestion}
+                  disabled={loading || !question.trim()}
+                  className={`w-10 h-10 rounded-full items-center justify-center mb-1 ${
+                    loading || !question.trim() ? "bg-slate-200" : "bg-emerald-700"
+                  }`}
+                >
+                  <Ionicons name="arrow-up" size={20} color={loading || !question.trim() ? "#94a3b8" : "#fff"} />
+                </Pressable>
               </View>
-            ))}
-
-            {loading && (
-              <View className="rounded-xl p-3 bg-slate-100">
-                <Text className="text-slate-500 text-sm">Thinking...</Text>
-              </View>
-            )}
-          </ScrollView>
-
-          {/* --------------------------------------------------
-              INPUT
-          -------------------------------------------------- */}
-          <Input
-            value={question}
-            setValue={setQuestion}
-            placeholder="Ask about tafsir, ayah meaning, or memorization tips"
-            returnKeyType="send"
-            onSubmitEditing={sendQuestion}
-          />
-
-          <Pressable
-            onPress={sendQuestion}
-            disabled={loading || !question.trim()}
-            className={`rounded-xl py-3 px-4 items-center flex-row justify-center ${
-              loading || !question.trim() ? "bg-slate-300" : "bg-emerald-700"
-            }`}
-          >
-            <Ionicons name="send" size={16} color="#fff" />
-            <Text className="text-white ml-2">
-              {loading ? "Sending..." : "Send"}
-            </Text>
-          </Pressable>
-        </ScreenContent>
+              <Text className="text-center text-[10px] text-slate-400 mt-2 font-medium">
+                Hifzi AI can make mistakes. Verify important information.
+              </Text>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </Screen>
     </>
   );
