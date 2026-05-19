@@ -23,10 +23,8 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/hifzilogo.png",
-        "backgroundImage": "./assets/images/hifzilogo.png",
-        "backgroundColor": "#276359",
-        "monochromeImage": "./assets/images/hifzilogo.png"
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
       },
       "permissions": [
         "android.permission.INTERNET",

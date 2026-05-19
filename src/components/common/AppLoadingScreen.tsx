@@ -5,12 +5,11 @@ export function AppLoadingScreen() {
     <View className="flex-1 justify-center items-center w-full h-full bg-primary">
       <View className="items-center gap-2 w-full">
         <Image
-          source={require("@/assets/images/hifzilogo.png")}
+          source={require("@/assets/images/hifzilogowhite.png")}
           style={{
-            width: 130,
-            height: 130,
+            width: 120,
+            height: 120,
             marginBottom: 12,
-            tintColor: "white",
           }}
           resizeMode="contain"
         />
