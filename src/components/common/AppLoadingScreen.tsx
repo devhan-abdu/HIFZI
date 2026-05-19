@@ -5,7 +5,7 @@ export function AppLoadingScreen() {
     <View className="flex-1 justify-center items-center w-full h-full bg-primary">
       <View className="items-center gap-2 w-full">
         <Image
-          source={require("@/assets/images/minilogo.png")}
+          source={require("@/assets/images/hifzilogo.png")}
           style={{
             width: 130,
             height: 130,
