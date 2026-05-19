@@ -211,10 +211,10 @@ export const TranslationPage = React.memo(function TranslationPage({
 
   const keyExtractor = useCallback((item: ListItem) => item.key, []);
 
-  if (loading) {
+  if (loading && verses.length === 0) {
     return (
       <View style={{ flex: 1, backgroundColor: "#fff", justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#0d9488" />
+        <ActivityIndicator size="small" color="#0d9488" />
       </View>
     );
   }

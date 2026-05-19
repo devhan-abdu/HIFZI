@@ -12,9 +12,15 @@ interface ReaderHeaderProps {
   pageData?: PageData;
   isDownloadingAll?: boolean;
   downloadProgress?: { downloaded: number; total: number } | null;
+  onOpenDownload?: () => void;
 }
 
-export default function ReaderHeader({ pageData, isDownloadingAll, downloadProgress }: ReaderHeaderProps) {
+export default function ReaderHeader({
+  pageData,
+  isDownloadingAll,
+  downloadProgress,
+  onOpenDownload,
+}: ReaderHeaderProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -159,6 +165,24 @@ export default function ReaderHeader({ pageData, isDownloadingAll, downloadProgr
                 name="analytics"
                 size={20}
                 color={tallyMode ? "#fff" : "#0d9488"}
+              />
+            </TouchableOpacity>
+
+            {/* Offline download */}
+            <TouchableOpacity
+              className="p-2"
+              onPress={onOpenDownload}
+              disabled={!onOpenDownload}
+            >
+              <Ionicons
+                name={
+                  downloadProgress &&
+                  downloadProgress.downloaded >= downloadProgress.total
+                    ? "cloud-done-outline"
+                    : "cloud-download-outline"
+                }
+                size={22}
+                color="#0d9488"
               />
             </TouchableOpacity>
 

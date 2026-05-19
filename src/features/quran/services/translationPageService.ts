@@ -168,12 +168,45 @@ async function fetchTranslationPage(
   }
 }
 
+// ─── Merged page cache (instant navigation when warmed) ───────────────────────
+
+const MAX_MERGED_PAGES = 40;
+const mergedPageCache = new Map<string, VerseTranslationEntry[]>();
+
+function mergedCacheKey(page: number, translationIds: number[]) {
+  return `${page}:${[...translationIds].sort((a, b) => a - b).join(",")}`;
+}
+
+export function peekTranslationPage(
+  page: number,
+  translationIds: number[],
+): VerseTranslationEntry[] | undefined {
+  return mergedPageCache.get(mergedCacheKey(page, translationIds));
+}
+
+function cacheMergedPage(
+  page: number,
+  translationIds: number[],
+  verses: VerseTranslationEntry[],
+) {
+  if (verses.length === 0) return;
+  const key = mergedCacheKey(page, translationIds);
+  if (mergedPageCache.size >= MAX_MERGED_PAGES) {
+    const first = mergedPageCache.keys().next().value;
+    if (first !== undefined) mergedPageCache.delete(first);
+  }
+  mergedPageCache.set(key, verses);
+}
+
 // ─── Public: Load merged page ────────────────────────────────────────────────
 
 export async function loadTranslationPage(
   page: number,
   translationIds: number[],
 ): Promise<VerseTranslationEntry[]> {
+  const cached = peekTranslationPage(page, translationIds);
+  if (cached && cached.length > 0) return cached;
+
   try {
     const [arabicVerses, ...allTranslations] = await Promise.all([
       fetchArabicPage(page),
@@ -190,7 +223,7 @@ export async function loadTranslationPage(
       };
     });
 
-    return arabicVerses.map((v, verseIndex) => {
+    const verses = arabicVerses.map((v, verseIndex) => {
       const [, ayahStr] = v.verse_key.split(":");
       return {
         verseKey: v.verse_key,
@@ -207,6 +240,9 @@ export async function loadTranslationPage(
         }),
       };
     });
+
+    cacheMergedPage(page, translationIds, verses);
+    return verses;
   } catch (e) {
     throw e;
   }
