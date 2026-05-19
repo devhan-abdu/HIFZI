@@ -16,14 +16,9 @@ import {
     getLocalDateString,
 } from "../utils/murajaAnalytics";
 
-/**
- * Range-based Muraja dashboard hook.
- * Replaces the old week-based model — all progress is tracked across the
- * full plan range (startPage → endPage), not a weekly window.
- */
 export const useWeeklyMuraja = () => {
     const { user } = useSession();
-    const { items: surah } = useLoadSurahData();
+    const { items: surah, loading: surahLoading } = useLoadSurahData();
 
     const { data, isLoading, isError, refetch } = useQuery({
         queryKey: ["muraja-dashboard", user?.id],
@@ -183,7 +178,7 @@ export const useWeeklyMuraja = () => {
 
     return {
         ...processedData,
-        loading: isLoading,
+        loading: isLoading || surahLoading || (!surah.length && !isError),
         error: isError,
         refetch,
     };

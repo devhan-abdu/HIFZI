@@ -9,13 +9,14 @@ import StatCard from "@/src/features/hifz/components/StatCard";
 import { DashboardSkeleton } from "@/src/components/dashboard/Skeleton";
 import { Header } from "@/src/components/navigation/Header";
 import { hifzStatus } from "@/src/features/hifz/utils/plan-status";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Text } from "@/src/components/common/ui/Text";
 import { HabitProgressRing } from "@/src/features/habits/components/HabitProgressRing";
 import { HeatmapOfHeart } from "@/src/features/quran/components/HeatmapOfHeart";
 import { useHabitProgress } from "@/src/features/habits/hooks/useHabitProgress";
 import { useWeeklyMuraja } from "@/src/features/muraja/hooks/useWeeklyMuraja";
 import { useHifzPlan } from "@/src/features/hifz/hooks/useHifzPlan";
+import { useFocusEffect } from "expo-router";
 
 import { useUserStats } from "@/src/hooks/useUserStats";
 import { useUserBadges } from "@/src/hooks/useUserBadges";
@@ -25,8 +26,8 @@ import { AchievementSection } from "@/src/components/dashboard/AchievementSectio
 import { useHifzDailyTask } from "@/src/features/hifz/hooks/useHifzDailyTask";
 
 export default function Dashboard() {
-  const { items: surah, loading } = useLoadSurahData();
-  const { hifz: hifzPlan, isLoading: loadingHifz } = useHifzPlan();
+  const { items: surah, loading: surahLoading } = useLoadSurahData();
+  const { hifz: hifzPlan, isLoading: loadingHifz, refetch: refetchHifz } = useHifzPlan();
   const habitProgress = useHabitProgress();
   const { analytics } = habitProgress;
   const {
@@ -34,18 +35,25 @@ export default function Dashboard() {
     stats: murajaStats,
     loading: loadingMuraja,
     todayTask: murajaTodayTask,
+    refetch: refetchMuraja,
   } = useWeeklyMuraja();
   const { todayTask: hifzTodayTask } = useHifzDailyTask();
   const { data: badges = [] } = useUserBadges();
 
   const { data: userStats } = useUserStats();
-  
 
+ 
+  useFocusEffect(
+    useCallback(() => {
+      refetchHifz();
+      refetchMuraja();
+    }, [refetchHifz, refetchMuraja])
+  );
 
-
+  const surahReady = surah.length > 0;
 
   const hifzAnalytics = useMemo(() => {
-    if (!hifzPlan || !surah.length) return null;
+    if (!hifzPlan || !surahReady) return null;
     const status = hifzStatus(hifzPlan, surah);
     if (!status) return null;
     const stripSurah = (name?: string) =>
@@ -58,7 +66,7 @@ export default function Dashboard() {
         .filter(Boolean)
         .join(" – "),
     };
-  }, [hifzPlan, surah]);
+  }, [hifzPlan, surah, surahReady]);
 
   const murajaHero = useMemo(() => {
     if (!murajaPlan) return null;
@@ -82,24 +90,25 @@ export default function Dashboard() {
 
   const dynamicGoalPages = useMemo(() => {
     let goal = 0;
-    
+
     if (murajaPlan && murajaTodayTask && !murajaTodayTask.isVirtualTask) {
       const start = murajaTodayTask.startPage;
       const end = murajaTodayTask.quotaEnd ?? murajaTodayTask.endPage;
       goal += Math.max(0, end - start + 1);
     }
-    
+
     if (hifzPlan && hifzTodayTask && !hifzTodayTask.isVirtualTask) {
       goal += hifzTodayTask.totalTarget ?? 0;
     }
-    
+
     return goal > 0 ? goal : (habitProgress.todayStats.goalPages || 4);
   }, [murajaPlan, murajaTodayTask, hifzPlan, hifzTodayTask, habitProgress.todayStats.goalPages]);
 
- 
-
- 
-  if (loadingHifz || loadingMuraja || loading) return <DashboardSkeleton />;
+  // Show skeleton while plans are fetching OR while surah catalog is still hydrating.
+  // We check surahLoading AND !surahReady to handle the 'idle' → 'loading' → 'ready'
+  // transition correctly — the idle state also means data hasn't arrived yet.
+  const isLoading = loadingHifz || loadingMuraja || surahLoading || !surahReady;
+  if (isLoading) return <DashboardSkeleton />;
 
   if (!hifzPlan && !murajaPlan) {
     return <Redirect href="/onboarding" />;
