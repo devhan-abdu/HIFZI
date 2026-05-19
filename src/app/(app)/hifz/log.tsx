@@ -23,6 +23,10 @@ import { LogProgressSkeleton } from "@/src/features/hifz/components/skeleton";
 import { Switch } from "@/src/features/hifz/components/Switch";
 import { getTodayTask } from "@/src/features/hifz/utils/quran-logic";
 import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
+import { usePlanLifecycle } from "@/src/features/habits/hooks/usePlanLifecycle";
+import SurahDropdown, {
+  SurahPageDropdown,
+} from "@/src/features/muraja/components/SurahDropdown";
 
 export default function LogProgress() {
   const router = useRouter();
@@ -41,6 +45,7 @@ export default function LogProgress() {
   const { items: surahData, loading: quranLoading } = useLoadSurahData();
   const { addLog, isCreating: isAddingHifz } = useAddLog();
   const { logRetention, isLogging: isLoggingRetention } = useRetentionLog();
+  const { getPlanState } = usePlanLifecycle();
 
   const [pages, setPages] = useState(1);
   const [status, setStatus] = useState<"completed" | "partial" | "missed">(
@@ -52,37 +57,101 @@ export default function LogProgress() {
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [reviewed, setReviewed] = useState(false);
+
+  const [startSurah, setStartSurah] = useState(1);
+  const [startPage, setStartPage] = useState(1);
+  const [endSurah, setEndSurah] = useState(1);
+  const [endPage, setEndPage] = useState(1);
+
   const reviewStartPage = Number(params.reviewStartPage ?? 0);
   const reviewEndPage = Number(params.reviewEndPage ?? 0);
-  const hasReviewPrefill = Number.isFinite(reviewStartPage) && reviewStartPage > 0;
+  const hasReviewPrefill =
+    Number.isFinite(reviewStartPage) && reviewStartPage > 0;
+
+  const planState = getPlanState(plan?.id, "HIFZ");
+  const isLocked =
+    planState === "EVALUATION_DUE" || planState === "COMPLETION_DUE";
+
+  const isRestDay =
+    !hasReviewPrefill && (!logContext || logContext.isVirtualTask);
 
   const sessionMistakes = useReaderSessionStore((s) => s.mistakes);
   const sessionHesitations = useReaderSessionStore((s) => s.hesitations);
   const resetSessionTally = useReaderSessionStore((s) => s.resetTally);
 
+  const formattedDate = new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date());
+
+  const getSurahNameByNumber = (num: number) => {
+    const found = surahData.find((s) => s.number === num);
+    return found ? found.englishName.replace(/^Surat\s+/i, "").trim() : "Surah";
+  };
+
   useEffect(() => {
     if (sessionMistakes > 0) setMistakes(sessionMistakes);
     if (sessionHesitations > 0) setHesitations(sessionHesitations);
-    
+
     if (sessionMistakes > 0 || sessionHesitations > 0) {
       resetSessionTally();
     }
   }, [sessionMistakes, sessionHesitations, resetSessionTally]);
 
   useEffect(() => {
+    if (isRestDay) {
+      setStatus("completed");
+      return;
+    }
     if (hasReviewPrefill && reviewEndPage >= reviewStartPage) {
       setPages(Math.max(1, reviewEndPage - reviewStartPage + 1));
       return;
     }
     if (!logContext) return;
     setPages(logContext.totalTarget);
-  }, [hasReviewPrefill, logContext, reviewEndPage, reviewStartPage]);
+  }, [hasReviewPrefill, isRestDay, logContext, reviewEndPage, reviewStartPage]);
 
   useEffect(() => {
-    const targetPages =
-      hasReviewPrefill && reviewEndPage >= reviewStartPage ?
-        Math.max(1, reviewEndPage - reviewStartPage + 1)
-      : logContext?.totalTarget;
+    if (isRestDay) {
+      setPages(Math.max(1, endPage - startPage + 1));
+    }
+  }, [startPage, endPage, isRestDay]);
+
+  useEffect(() => {
+    if (isRestDay && surahData.length > 0) {
+      const startFound = surahData.find((s) => s.number === startSurah);
+      if (startFound) {
+        setStartPage(startFound.startingPage);
+      }
+    }
+  }, [startSurah, isRestDay, surahData]);
+
+  useEffect(() => {
+    if (isRestDay && surahData.length > 0) {
+      const endFound = surahData.find((s) => s.number === endSurah);
+      if (endFound) {
+        setEndPage(endFound.startingPage);
+      }
+    }
+  }, [endSurah, isRestDay, surahData]);
+
+  useEffect(() => {
+    if (startSurah > endSurah) {
+      setEndSurah(startSurah);
+    }
+  }, [startSurah]);
+
+  useEffect(() => {
+    if (startPage > endPage) {
+      setEndPage(startPage);
+    }
+  }, [startPage]);
+
+  useEffect(() => {
+    if (isRestDay || hasReviewPrefill) return;
+
+    const targetPages = logContext?.totalTarget;
     if (!targetPages) return;
     if (pages >= targetPages) {
       setStatus("completed");
@@ -91,15 +160,16 @@ export default function LogProgress() {
     } else {
       setStatus("partial");
     }
-  }, [hasReviewPrefill, logContext?.totalTarget, pages, reviewEndPage, reviewStartPage]);
+  }, [hasReviewPrefill, isRestDay, logContext?.totalTarget, pages]);
 
   const handleStatusSelection = (
     selectedStatus: "completed" | "partial" | "missed",
   ) => {
     const targetPages =
-      hasReviewPrefill && reviewEndPage >= reviewStartPage ?
-        Math.max(1, reviewEndPage - reviewStartPage + 1)
-      : (logContext?.totalTarget ?? 1);
+      hasReviewPrefill && reviewEndPage >= reviewStartPage
+        ? Math.max(1, reviewEndPage - reviewStartPage + 1)
+        : (logContext?.totalTarget ?? 1);
+
     if (selectedStatus === "completed") {
       setPages(targetPages);
     } else if (pages === 0 || selectedStatus === "missed") {
@@ -117,7 +187,7 @@ export default function LogProgress() {
     return (
       <Screen>
         <View className="flex-1 items-center justify-center p-6">
-          <Text className="text-xl  text-slate-900 text-center">
+          <Text className="text-xl text-slate-900 text-center">
             No Active Plan Found
           </Text>
           <Button className="mt-4" onPress={() => router.back()}>
@@ -128,25 +198,35 @@ export default function LogProgress() {
     );
   }
 
-  const isRestDayLog = !logContext?.isPlannedDay && !hasReviewPrefill;
-
   const handleSave = async () => {
-    if (!plan || isAddingHifz || isLoggingRetention || !plan.id)
+    if (!plan || isAddingHifz || isLoggingRetention || !plan.id || isLocked)
       return;
 
     try {
       const today = new Date();
       const logDay = (today.getDay() + 6) % 7;
-      const actualTask = getTodayTask(plan, surahData, pages);
-      const actualStartPage =
-        hasReviewPrefill ? reviewStartPage
-        : logContext?.startPage ?? plan.startPage;
-      const actualEndPage =
-        hasReviewPrefill ? reviewStartPage + Math.max(0, pages - 1)
-        : actualTask?.endPage ?? actualStartPage;
+
+      const actualStartPage = isRestDay
+        ? startPage
+        : hasReviewPrefill
+          ? reviewStartPage
+          : (logContext?.startPage ?? plan.startPage);
+
+      const actualEndPage = isRestDay
+        ? endPage
+        : hasReviewPrefill
+          ? reviewStartPage + Math.max(0, pages - 1)
+          : (getTodayTask(plan, surahData, pages)?.endPage ?? actualStartPage);
+
+      const pagesCompleted = isRestDay
+        ? Math.max(1, endPage - startPage + 1)
+        : pages;
 
       if (hasReviewPrefill) {
-        const pagesArray = Array.from({ length: Math.max(0, actualEndPage - actualStartPage + 1) }, (_, i) => actualStartPage + i);
+        const pagesArray = Array.from(
+          { length: Math.max(0, actualEndPage - actualStartPage + 1) },
+          (_, i) => actualStartPage + i,
+        );
         await logRetention({
           pages: pagesArray,
           quality: PerformanceService.deriveQualityScore(mistakes, hesitations),
@@ -155,12 +235,12 @@ export default function LogProgress() {
       } else {
         const payload: IHifzLog = {
           hifzPlanId: plan.id,
-          actualPagesCompleted: pages,
-          actualStartPage: actualStartPage,
-          actualEndPage: actualEndPage,
+          actualPagesCompleted: pagesCompleted,
+          actualStartPage,
+          actualEndPage,
           status,
           date: today.toISOString().slice(0, 10),
-          logDay: logDay,
+          logDay,
           notes: notes.trim(),
           mistakesCount: mistakes,
           hesitationCount: hesitations,
@@ -168,14 +248,36 @@ export default function LogProgress() {
 
         await addLog({ todayLog: payload, userId: user?.id });
       }
-      
+
       router.back();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[HifzLog] Save failed:", err);
-      setErrorMessage("We couldn't save your progress. Please check your connection and try again.");
+      setErrorMessage(
+        "We couldn't save your progress. Please check your connection and try again.",
+      );
       setErrorVisible(true);
     }
   };
+
+  const heroSurahLabel = isRestDay
+    ? startSurah === endSurah
+      ? getSurahNameByNumber(startSurah)
+      : `${getSurahNameByNumber(startSurah)} – ${getSurahNameByNumber(endSurah)}`
+    : hasReviewPrefill
+      ? "Targeted Review"
+      : (logContext?.displaySurah ?? "—");
+
+  const heroRangeLabel = isRestDay
+    ? `${startPage}—${endPage}`
+    : hasReviewPrefill
+      ? `${reviewStartPage}—${reviewEndPage}`
+      : `${logContext?.startPage ?? 0}—${logContext?.endPage ?? 0}`;
+
+  const heroPageCount = isRestDay
+    ? Math.max(1, endPage - startPage + 1)
+    : hasReviewPrefill
+      ? Math.max(1, reviewEndPage - reviewStartPage + 1)
+      : pages;
 
   return (
     <>
@@ -186,102 +288,178 @@ export default function LogProgress() {
         >
           <Ionicons name="arrow-back" size={22} color="#0f172a" />
         </Pressable>
-        <Text className="text-lg text-slate-900 ml-2">Log Progress</Text>
+        <Text className="text-lg text-slate-900 ml-2">{formattedDate}</Text>
       </View>
       <Screen>
         <ScreenContent>
-          {/* 1. Session Summary Card - Green Pop (Pro) */}
+          {isLocked && (
+            <View className="bg-red-50 border border-red-100 p-4 rounded-2xl mb-8 flex-row items-center gap-3">
+              <Ionicons name="lock-closed" size={24} color="#ef4444" />
+              <View className="flex-1">
+                <Text className="text-red-900 text-sm">Logging Locked</Text>
+                <Text className="text-red-700/70 text-xs">
+                  {planState === "EVALUATION_DUE"
+                    ? "Please complete your evaluation exam to unlock logging."
+                    : "This plan is completed. Start a new plan to resume logging."}
+                </Text>
+              </View>
+            </View>
+          )}
+
           <View className="bg-primary rounded-[40px] p-7 mb-8 shadow-xl shadow-primary/30 overflow-hidden relative">
             <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
-            
+
             <View className="flex-row justify-between items-center mb-6">
               <View className="bg-white/10 px-2.5 py-1 rounded-lg border border-white/10">
                 <Text className="text-white text-[10px] uppercase tracking-[2px]">
-                  {hasReviewPrefill ? "Revision Session" : 
-                   logContext?.isPlannedDay ? "Scheduled" : "Extra"}
+                  {hasReviewPrefill
+                    ? "Revision Session"
+                    : isRestDay
+                      ? "Extra Session"
+                      : logContext?.isPlannedDay
+                        ? "Today's Target"
+                        : "Extra"}
                 </Text>
               </View>
               <Text className="text-white/60 text-[10px] uppercase tracking-widest">
-                {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                Hifz
               </Text>
             </View>
 
             <View className="flex-row items-end justify-between">
               <View className="flex-1">
                 <Text className="text-white text-3xl tracking-tighter">
-                  {hasReviewPrefill ? "Targeted Review" : logContext?.displaySurah}
+                  {heroSurahLabel}
                 </Text>
                 <Text className="text-white/50 text-xs mt-1">
-                  Range: {hasReviewPrefill ? reviewStartPage : (logContext?.startPage ?? 0)} — {hasReviewPrefill ? reviewEndPage : (logContext?.endPage ?? 0)}
+                  Range: {heroRangeLabel}
                 </Text>
               </View>
               <View className="items-end">
                 <View className="flex-row items-baseline">
                   <Text className="text-white text-2xl tracking-tighter">
-                    {pages}
+                    {heroPageCount}
                   </Text>
                   <Text className="text-white/40 text-sm ml-1">Pgs</Text>
                 </View>
-                <Text className="text-white/40 text-[9px] uppercase tracking-widest">Progress</Text>
+                <Text className="text-white/40 text-[9px] uppercase tracking-widest">
+                  Target Volume
+                </Text>
               </View>
             </View>
           </View>
 
-          <View className="bg-slate-50/50 border border-slate-100 p-4 rounded-2xl mb-8 flex-row items-center justify-between">
-            <View className="flex-row items-center gap-3">
-              <View className={`w-8 h-8 rounded-full items-center justify-center ${reviewed ? 'bg-primary/10' : 'bg-slate-100'}`}>
-                <Ionicons name="refresh" size={16} color={reviewed ? '#276359' : '#94a3b8'} />
-              </View>
-              <View>
-                <Text className="text-slate-900">Revision Done</Text>
-                <Text className="text-slate-400 text-[10px]">Verified previous 5 pages</Text>
-              </View>
-            </View>
-            <Switch value={reviewed} onValueChange={setReviewed} />
-          </View>
+          {isRestDay && !isLocked && (
+            <View className="p-5 mb-8 rounded-[32px] border border-slate-100 bg-white shadow-sm gap-y-4">
+              <Text className="text-slate-900 text-base mb-2 ml-1">
+                Voluntary Study Range
+              </Text>
 
-          <View className="mb-8">
-            <Text className="text-slate-900 text-base mb-4 ml-1">How did it go?</Text>
-            <View className="flex-row justify-between">
-              <StatusTab
-                label="Completed"
-                icon="checkmark-circle"
-                active={status === "completed"}
-                onPress={() => handleStatusSelection("completed")}
+              <SurahDropdown
+                label="Start Surah"
+                surah={startSurah}
+                setSurah={setStartSurah}
               />
-              <StatusTab
-                label="Partial"
-                icon="contrast"
-                active={status === "partial"}
-                onPress={() => handleStatusSelection("partial")}
+
+              <SurahPageDropdown
+                label="Start Page"
+                surah={startSurah}
+                setPage={setStartPage}
+                page={startPage}
               />
-              <StatusTab
-                label="Missed"
-                icon="close-circle"
-                active={status === "missed"}
-                onPress={() => handleStatusSelection("missed")}
+
+              <View className="h-[1px] bg-slate-100 my-2" />
+
+              <SurahDropdown
+                label="End Surah"
+                surah={endSurah}
+                setSurah={setEndSurah}
+              />
+
+              <SurahPageDropdown
+                label="End Page"
+                surah={endSurah}
+                setPage={setEndPage}
+                page={endPage}
               />
             </View>
-          </View>
+          )}
 
-          {status !== "missed" && (
+          {!isRestDay && !hasReviewPrefill && (
+            <View className="bg-slate-50/50 border border-slate-100 p-4 rounded-2xl mb-8 flex-row items-center justify-between">
+              <View className="flex-row items-center gap-3">
+                <View
+                  className={`w-8 h-8 rounded-full items-center justify-center ${reviewed ? "bg-primary/10" : "bg-slate-100"}`}
+                >
+                  <Ionicons
+                    name="refresh"
+                    size={16}
+                    color={reviewed ? "#276359" : "#94a3b8"}
+                  />
+                </View>
+                <View>
+                  <Text className="text-slate-900">Revision Done</Text>
+                  <Text className="text-slate-400 text-[10px]">
+                    Verified previous 5 pages
+                  </Text>
+                </View>
+              </View>
+              <Switch value={reviewed} onValueChange={setReviewed} />
+            </View>
+          )}
+
+          {!isLocked && !isRestDay && (
             <View className="mb-8">
-              <Text className="text-slate-900 text-base mb-4 ml-1">Reading Quality</Text>
+              <Text className="text-slate-900 text-base mb-4 ml-1">
+                How did it go?
+              </Text>
+              <View className="flex-row justify-between">
+                <StatusTab
+                  label="Completed"
+                  icon="checkmark-circle"
+                  active={status === "completed"}
+                  onPress={() => handleStatusSelection("completed")}
+                />
+                <StatusTab
+                  label="Partial"
+                  icon="contrast"
+                  active={status === "partial"}
+                  onPress={() => handleStatusSelection("partial")}
+                />
+                <StatusTab
+                  label="Missed"
+                  icon="close-circle"
+                  active={status === "missed"}
+                  onPress={() => handleStatusSelection("missed")}
+                />
+              </View>
+            </View>
+          )}
+
+          {status !== "missed" && !isLocked && (
+            <View className="mb-8">
+              <Text className="text-slate-900 text-base mb-4 ml-1">
+                Reading Quality
+              </Text>
               <View className="flex-row gap-4">
                 <View className="flex-1 bg-white border border-slate-100 p-4 rounded-2xl">
                   <View className="flex-row items-center gap-2 mb-3">
-                    <Ionicons name="alert-circle-outline" size={16} color="#ef4444" />
+                    <Ionicons
+                      name="alert-circle-outline"
+                      size={16}
+                      color="#ef4444"
+                    />
                     <Text className="text-slate-700 text-xs">Mistakes</Text>
                   </View>
                   <View className="flex-row items-center justify-between">
-                    <Pressable 
+                    <Pressable
                       onPress={() => setMistakes(Math.max(0, mistakes - 1))}
                       className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
                     >
                       <Ionicons name="remove" size={16} color="#64748b" />
                     </Pressable>
                     <Text className="text-lg text-slate-900">{mistakes}</Text>
-                    <Pressable 
+                    <Pressable
                       onPress={() => setMistakes(mistakes + 1)}
                       className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
                     >
@@ -296,14 +474,14 @@ export default function LogProgress() {
                     <Text className="text-slate-700 text-xs">Hesitations</Text>
                   </View>
                   <View className="flex-row items-center justify-between">
-                    <Pressable 
+                    <Pressable
                       onPress={() => setHesitations(Math.max(0, hesitations - 1))}
                       className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
                     >
                       <Ionicons name="remove" size={16} color="#64748b" />
                     </Pressable>
                     <Text className="text-lg text-slate-900">{hesitations}</Text>
-                    <Pressable 
+                    <Pressable
                       onPress={() => setHesitations(hesitations + 1)}
                       className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
                     >
@@ -315,53 +493,62 @@ export default function LogProgress() {
             </View>
           )}
 
-          {/* 5. Progress Adjustment & Notes */}
-          <View className="mb-8">
-            <Text className="text-slate-900 text-base mb-4 ml-1">Actual Progress</Text>
-            <View className="bg-white border border-slate-100 p-5 rounded-3xl">
-              <View className="flex-row items-center justify-between mb-6">
-                <View>
-                  <Text className="text-slate-900">Pages Completed</Text>
-                  <Text className="text-slate-400 text-[10px]">Adjust if you did more/less</Text>
+          {!isLocked && (
+            <View className="mb-8">
+              <Text className="text-slate-900 text-base mb-4 ml-1">
+                Actual Progress
+              </Text>
+              <View className="bg-white border border-slate-100 p-5 rounded-3xl">
+                <View className="flex-row items-center justify-between mb-6">
+                  <View>
+                    <Text className="text-slate-900">Pages Completed</Text>
+                    <Text className="text-slate-400 text-[10px]">
+                      Adjust if you did more/less
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center bg-slate-50 rounded-xl p-1 border border-slate-100">
+                    <Pressable
+                      onPress={() => setPages((prev) => Math.max(0, prev - 1))}
+                      className="w-9 h-9 items-center justify-center active:bg-white rounded-lg"
+                    >
+                      <Ionicons name="remove" size={18} color="#276359" />
+                    </Pressable>
+                    <Text className="text-xl text-slate-900 px-4">{pages}</Text>
+                    <Pressable
+                      onPress={() => setPages((prev) => prev + 1)}
+                      className="w-9 h-9 items-center justify-center active:bg-white rounded-lg"
+                    >
+                      <Ionicons name="add" size={18} color="#276359" />
+                    </Pressable>
+                  </View>
                 </View>
-                <View className="flex-row items-center bg-slate-50 rounded-xl p-1 border border-slate-100">
-                  <Pressable
-                    onPress={() => setPages((prev) => Math.max(0, prev - 1))}
-                    className="w-9 h-9 items-center justify-center active:bg-white rounded-lg"
-                  >
-                    <Ionicons name="remove" size={18} color="#276359" />
-                  </Pressable>
-                  <Text className="text-xl text-slate-900 px-4">{pages}</Text>
-                  <Pressable
-                    onPress={() => setPages((prev) => prev + 1)}
-                    className="w-9 h-9 items-center justify-center active:bg-white rounded-lg"
-                  >
-                    <Ionicons name="add" size={18} color="#276359" />
-                  </Pressable>
-                </View>
-              </View>
 
-              <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-2 ml-1">Notes & Reflection</Text>
-              <TextInput
-                multiline
-                placeholder="Specific difficulties or ayahs to focus on?"
-                placeholderTextColor="#cbd5e1"
-                value={notes}
-                onChangeText={setNotes}
-                className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 h-24 text-slate-900 text-sm"
-                textAlignVertical="top"
-              />
+                <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-2 ml-1">
+                  Notes & Reflection
+                </Text>
+                <TextInput
+                  multiline
+                  placeholder="Specific difficulties or ayahs to focus on?"
+                  placeholderTextColor="#cbd5e1"
+                  value={notes}
+                  onChangeText={setNotes}
+                  className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 h-24 text-slate-900 text-sm"
+                  textAlignVertical="top"
+                />
+              </View>
             </View>
-          </View>
+          )}
         </ScreenContent>
         <ScreenFooter>
           <Button
             onPress={handleSave}
-            disabled={isAddingHifz || isLoggingRetention}
+            disabled={isAddingHifz || isLoggingRetention || isLocked}
             className="bg-primary h-14 rounded-2xl shadow-sm"
           >
             <View className="flex-row items-center justify-center">
-              <Text className="text-white text-base mr-2">Save Progress</Text>
+              <Text className="text-white text-base mr-2">
+                {isLocked ? "Logging Locked" : "Save Progress"}
+              </Text>
               <Ionicons name="arrow-forward" size={18} color="white" />
             </View>
           </Button>

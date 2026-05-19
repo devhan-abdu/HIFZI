@@ -287,6 +287,12 @@ export const hifzService = {
       const { currentStreak } = await habitAnalyticsService.recalculateStreaks(userId);
       rewards = await GamificationService.processSessionCompletion(tx as any, userId, qualityScore, currentStreak);
 
+      const progressBadges = await GamificationService.checkPlanProgressBadges(tx as any, userId, "hifz", todayLog.hifzPlanId);
+      if (progressBadges && progressBadges.length > 0) {
+        if (!rewards.badges) rewards.badges = [];
+        rewards.badges.push(...progressBadges);
+      }
+
       if (changed && (todayLog.status === "completed" || todayLog.status === "partial" || todayLog.status === "missed")) {
         await notificationService.processHabitEvent({
           userId,
@@ -308,83 +314,9 @@ export const hifzService = {
   },
 
   async syncPending(userId: string) {
-    try {
-      const pendingPlans = await db.query.hifzPlans.findMany({
-        where: and(eq(hifzPlans.userId, userId), eq(hifzPlans.syncStatus, 0)),
-      });
-
-      for (const plan of pendingPlans) {
-        const payload = {
-          user_id: plan.userId,
-          start_surah: plan.startSurah,
-          start_page: plan.startPage,
-          total_pages: plan.totalPages,
-          pages_per_day: plan.pagesPerDay,
-          selected_days: JSON.parse(plan.selectedDays ?? "[]"),
-          days_per_week: plan.daysPerWeek,
-          start_date: plan.startDate,
-          estimated_end_date: plan.estimatedEndDate,
-          direction: plan.direction,
-          status: plan.status,
-          preferred_time: plan.preferredTime,
-          is_custom_time: plan.isCustomTime,
-          is_reinforcement_enabled: plan.isReinforcementEnabled,
-          evaluation_day: plan.evaluationDay,
-        };
-
-        const { data, error } = await supabase
-          .from("hifz_plan")
-          .upsert({ ...payload, local_id: plan.id }, { onConflict: "user_id,local_id" })
-          .select("id")
-          .single();
-
-        if (error) throw error;
-
-        await db.update(hifzPlans)
-          .set({ syncStatus: 1, remoteId: data?.id ? String(data.id) : null, updatedAt: sql`CURRENT_TIMESTAMP` })
-          .where(eq(hifzPlans.id, plan.id));
-      }
-
-      const pendingLogs = await db.query.hifzLogs.findMany({
-        where: and(eq(hifzLogs.userId, userId), eq(hifzLogs.syncStatus, 0)),
-      });
-
-      for (const log of pendingLogs) {
-        const plan = await db.query.hifzPlans.findFirst({
-          where: eq(hifzPlans.id, log.hifzPlanId),
-        });
-
-        const hifzPlanId = Number(plan?.remoteId ?? log.hifzPlanId);
-
-        const { data, error } = await supabase
-          .from("hifz_daily_logs")
-          .upsert({
-            user_id: log.userId,
-            hifz_plan_id: hifzPlanId,
-            actual_start_page: log.actualStartPage,
-            actual_end_page: log.actualEndPage,
-            actual_pages_completed: log.actualPagesCompleted,
-            date: log.date,
-            log_day: log.logDay,
-            status: log.status,
-            notes: log.notes,
-            mistakes_count: log.mistakesCount,
-            hesitation_count: log.hesitationCount,
-            quality_score: log.qualityScore,
-            local_id: log.id,
-          }, { onConflict: "user_id,hifz_plan_id,date" })
-          .select("id")
-          .single();
-
-        if (error) throw error;
-
-        await db.update(hifzLogs)
-          .set({ syncStatus: 1, remoteId: data?.id ? String(data.id) : null, updatedAt: sql`CURRENT_TIMESTAMP` })
-          .where(eq(hifzLogs.id, log.id));
-      }
-    } catch (e) {
-      console.warn("Hifz sync failed", e);
-    }
+    const { sync } = await import("@/src/services/sync");
+    await sync.push("hifz_plans");
+    await sync.push("hifz_logs");
   },
 
   async completePlan(userId: string, planId: number) {

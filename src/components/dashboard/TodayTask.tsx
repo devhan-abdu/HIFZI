@@ -10,6 +10,7 @@ import { router } from "expo-router";
 import { PlanEndCard } from "@/src/features/habits/components/PlanEndCard";
 
 import { usePlanLifecycle } from "@/src/features/habits/hooks/usePlanLifecycle";
+import { useWeeklyEvaluationTrigger } from "@/src/features/habits/hooks/useWeeklyEvaluationTrigger";
 
 export const TodayTasksSection = ({ 
   onLogHifz, 
@@ -30,9 +31,17 @@ export const TodayTasksSection = ({
   } = useHifzDailyTask();
 
   const { getPlanState } = usePlanLifecycle();
-  
-  const hifzState = getPlanState(hifz?.id, 'HIFZ');
-  const murajaState = getPlanState(weeklyPlan?.id, 'MURAJA');
+  const { duePlans } = useWeeklyEvaluationTrigger();
+
+  const hifzEvalDue = duePlans.some((p) => p.activityType === "HIFZ");
+  const murajaEvalDue = duePlans.some((p) => p.activityType === "MURAJA");
+
+  const hifzState = hifzEvalDue
+    ? "EVALUATION_DUE"
+    : getPlanState(hifz?.id, "HIFZ");
+  const murajaState = murajaEvalDue
+    ? "EVALUATION_DUE"
+    : getPlanState(weeklyPlan?.id, "MURAJA");
 
 
   if (murajaLoading || hifzLoading) {
@@ -68,7 +77,7 @@ export const TodayTasksSection = ({
           <EvaluationRequiredCard type="muraja" />
       ) : murajaState === 'COMPLETION_DUE' ? (
           <PlanEndCard activityType="MURAJA" localRefId={weeklyPlan?.id ?? 0} title="Muraja Plan" />
-      ) : !!weeklyPlan && todayPlan ? (
+      ) : !!weeklyPlan && todayPlan && !todayPlan.isVirtualTask ? (
         <MurajaActionCard 
           todayPlan={todayPlan} 
           weeklyPlan={weeklyPlan} 

@@ -249,7 +249,7 @@ export const TranslationPage = React.memo(function TranslationPage({
           className="bg-teal-600 px-6 py-2.5 rounded-full flex-row items-center"
         >
           <Ionicons name="refresh" size={16} color="#fff" style={{ marginRight: 8 }} />
-          <Text className="text-white font-semibold">Retry</Text>
+          <Text className="text-white ">Retry</Text>
         </TouchableOpacity>
       </View>
     );

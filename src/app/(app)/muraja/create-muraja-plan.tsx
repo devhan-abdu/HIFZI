@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Pressable,
   TextInput,
@@ -28,6 +28,8 @@ import { HabitTriggerSelector } from "@/src/components/common/HabitTriggerSelect
 import { useSession } from "@/src/hooks/useSession";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { useCreatePlan } from "@/src/features/muraja/hooks/useCreatePlan";
+import { useQuery } from "@tanstack/react-query";
+import { murajaService } from "@/src/features/muraja/services/murajaService";
 import {
   IWeeklyMurajaPLan,
   WeeklyMurajaFormType,
@@ -44,23 +46,33 @@ export default function CreateWeeklyPlan() {
   const { createPlan, isCreating } = useCreatePlan();
   const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
 
+  const { data: existingPlan } = useQuery({
+    queryKey: ["muraja-dashboard", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      return await murajaService.getDashboardState(user.id);
+    },
+    enabled: !!user?.id,
+  });
+
   const {
     handleSubmit,
     formState: { errors },
     control,
     setValue,
     getValues,
+    reset,
   } = useForm({
     resolver: yupResolver(WeeklyMurajaSchema),
     defaultValues: {
-      week_start_date: "",
+      week_start_date: new Date().toISOString().slice(0, 10),
       planned_pages_per_day: 20,
       start_surah: 1,
       start_page: 1,
       end_surah: 114,
       end_page: 604,
       estimated_time_min: 20,
-      selectedDays: [],
+      selectedDays: [(new Date().getDay() + 6) % 7],
       place: "",
       note: "",
       preferred_time: "fajr",
@@ -75,6 +87,24 @@ export default function CreateWeeklyPlan() {
   const selectedEndPage = useWatch({ control, name: "end_page" });
   const selectedEvalDay = useWatch({ control, name: 'evaluation_day' });
   const weekStart = useWatch({ control, name: "week_start_date" });
+
+  React.useEffect(() => {
+    if (selectedSurah && items.length > 0) {
+      const found = items.find((s) => s.number === Number(selectedSurah));
+      if (found) {
+        setValue("start_page", found.startingPage);
+      }
+    }
+  }, [selectedSurah, items]);
+
+  React.useEffect(() => {
+    if (selectedEndSurah && items.length > 0) {
+      const found = items.find((s) => s.number === Number(selectedEndSurah));
+      if (found) {
+        setValue("end_page", found.startingPage);
+      }
+    }
+  }, [selectedEndSurah, items]);
 
   React.useEffect(() => {
     if (selectedStartPage > selectedEndPage) {
@@ -95,6 +125,29 @@ export default function CreateWeeklyPlan() {
       setValue('selectedDays', currentDays.filter(d => d !== selectedEvalDay));
     }
   }, [selectedEvalDay]);
+
+  // Pre-fill form from existing plan when available
+  useEffect(() => {
+    if (existingPlan) {
+      const parsedDays = typeof existingPlan.selectedDays === "string"
+        ? JSON.parse(existingPlan.selectedDays as any)
+        : (existingPlan.selectedDays ?? []);
+
+      reset({
+        week_start_date: existingPlan.weekStartDate ?? new Date().toISOString().slice(0, 10),
+        planned_pages_per_day: existingPlan.plannedPagesPerDay ?? 20,
+        start_page: existingPlan.startPage ?? 1,
+        end_page: existingPlan.endPage ?? 604,
+        estimated_time_min: existingPlan.estimatedTimeMin ?? 20,
+        selectedDays: parsedDays,
+        place: "",
+        note: "",
+        preferred_time: existingPlan.preferredTime ?? "fajr",
+        is_custom_time: existingPlan.isCustomTime ?? false,
+        evaluation_day: existingPlan.evaluationDay ?? 5,
+      });
+    }
+  }, [existingPlan]);
 
   const onSubmit = async (data: WeeklyMurajaFormType) => {
     if (!user?.id) return;
@@ -130,13 +183,14 @@ export default function CreateWeeklyPlan() {
       await createPlan(planPayload);
 
       showSuccess(
-        "Plan Launched!",
-        "Your weekly Muraja journey has been created successfully.",
+        existingPlan ? "Plan Updated!" : "Plan Launched!",
+        existingPlan
+          ? "Your Muraja plan has been updated successfully."
+          : "Your weekly Muraja journey has been created successfully.",
         () => router.back(),
       );
     } catch (error: any) {
       showError("Oops!", "We couldn't create your plan right now. Please  try again.");
-      console.log(error.message , "when i create table ")
     }
   };
 
@@ -173,7 +227,7 @@ export default function CreateWeeklyPlan() {
 
         <View className="flex-1 ml-2">
           <Text className="text-lg  text-primary leading-tight">
-            Create Muraja Plan
+            {existingPlan ? "Edit Muraja Plan" : "Create Muraja Plan"}
           </Text>
         </View>
       </View>

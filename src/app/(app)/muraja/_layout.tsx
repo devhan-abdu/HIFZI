@@ -14,9 +14,15 @@ export default function MurajaLayout() {
         }}
       >
         <Stack.Screen
-          name="(tabs)"
+          name="index"
           options={{
             animation: "fade",
+          }}
+        />
+        <Stack.Screen
+          name="log"
+          options={{
+            animation: "slide_from_right",
           }}
         />
         <Stack.Screen

@@ -13,6 +13,8 @@ import { QuranBootstrap } from "@/src/features/quran/bootstrap/QuranBootstrap";
 import { NotificationBootstrap } from "@/src/components/common/NotificationBootstrap";
 import { QURAN_CORE_DB_NAME } from "@/src/lib/db/constants";
 import { CelebrationOverlay } from "@/src/components/common/CelebrationOverlay";
+import { SyncBootstrap } from "@/src/components/common/SyncBootstrap";
+import { warmTranslationsCache } from "@/src/features/quran/services";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -23,6 +25,10 @@ export default function RootLayout() {
   });
   
   const [queryClient] = useState(() => new QueryClient());
+
+  useEffect(() => {
+    warmTranslationsCache();
+  }, []);
 
   useEffect(() => {
     if (fontsLoaded) {
@@ -52,6 +58,7 @@ export default function RootLayout() {
           >
             <QuranBootstrap>
               <NotificationBootstrap />
+              <SyncBootstrap />
               <RootLayoutNav />
               <CelebrationOverlay />
             </QuranBootstrap>

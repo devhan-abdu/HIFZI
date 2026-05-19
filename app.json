@@ -3,8 +3,78 @@
     "name": "Hifzi",
     "slug": "hifzi",
     "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/hifzilogo.png",
+    "scheme": "hifzi",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/hifzilogowhite.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#276359"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.devhananabdu.hifzi"
+    },
+    "android": {
+      "package": "com.devhananabdu.hifzi",
+      "softwareKeyboardLayoutMode": "resize",
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/hifzilogo.png",
+        "backgroundImage": "./assets/images/hifzilogo.png",
+        "backgroundColor": "#276359",
+        "monochromeImage": "./assets/images/hifzilogo.png"
+      },
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png",
+      "bundler": "metro"
+    },
     "assetBundlePatterns": [
-      "**/*"
-    ]
+      "assets/fonts/*",
+      "assets/images/*",
+      "assets/db/*"
+    ],
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-audio",
+      "expo-asset",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/rosemary.ttf",
+            "./assets/fonts/uthman.ttf"
+          ]
+        }
+      ],
+      "expo-notifications",
+      "@react-native-community/datetimepicker"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b30fb5cd-a8e2-4463-bbea-5df0ca4348bb"
+      }
+    },
+    "owner": "devhan-abdu",
+    "updates": {},
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
   }
 }

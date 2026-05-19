@@ -7,11 +7,11 @@ export const QuickNav = () => (
     <View className="flex-row space-x-4">
       <TouchableOpacity className="flex-1 bg-gray-100 p-4 rounded-2xl items-center">
         <Ionicons name="list" size={24} color="#276359" />
-        <Text className="mt-2 font-medium">Surah List</Text>
+        <Text className="mt-2 ">Surah List</Text>
       </TouchableOpacity>
       <TouchableOpacity className="flex-1 bg-gray-100 p-4 rounded-2xl items-center">
         <Ionicons name="grid" size={24} color="#276359" />
-        <Text className="mt-2 font-medium">Juz Index</Text>
+        <Text className="mt-2 ">Juz Index</Text>
       </TouchableOpacity>
     </View>
   </View>

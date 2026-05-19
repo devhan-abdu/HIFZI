@@ -1,4 +1,3 @@
-
 import { useSession } from "@/src/hooks/useSession";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/src/lib/db/local-client";
@@ -7,9 +6,13 @@ import { PerformanceService } from "@/src/services/PerformanceService";
 import { GamificationService } from "@/src/services/GamificationService";
 import { habitProgressService } from "@/src/features/habits/services/habitProgressService";
 import { habitAnalyticsService } from "@/src/features/habits/services/habitAnalyticsService";
+import { pageActivityLogs } from "@/src/features/habits/database/habitSchema";
+import { activityLogs } from "@/src/features/habits/database/habitSchema";
 import { userStats } from "@/src/features/user/database/userSchema";
-import { eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { notificationService } from "@/src/features/notifications/services/notificationService";
+
+const RETENTION_LOCAL_LOG_ID = -1;
 
 interface RetentionPayload {
   pages: number[];
@@ -97,6 +100,7 @@ export function useRetentionLog() {
       queryClient.invalidateQueries({ queryKey: ["habit-progress", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["page-performance-all"] });
       queryClient.invalidateQueries({ queryKey: ["hifz-review-suggestions", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["hifz-review-suggestions-v2", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["hifz", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["reinforcement-status", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["user-stats", user?.id] });
@@ -104,8 +108,57 @@ export function useRetentionLog() {
     },
   });
 
+  const undoMutation = useMutation({
+    mutationFn: async (pages: number[]) => {
+      if (!user?.id || !pages.length) return;
+
+      const todayStr = new Date().toISOString().slice(0, 10);
+
+      await db.transaction(async (tx) => {
+        for (const pageId of pages) {
+          await tx
+            .delete(pageActivityLogs)
+            .where(
+              and(
+                eq(pageActivityLogs.userId, user.id!),
+                eq(pageActivityLogs.pageId, pageId),
+                eq(pageActivityLogs.logDate, todayStr),
+                eq(pageActivityLogs.localLogId, RETENTION_LOCAL_LOG_ID),
+              ),
+            );
+        }
+
+        const retentionLogs = await tx.query.activityLogs.findMany({
+          where: and(
+            eq(activityLogs.userId, user.id!),
+            eq(activityLogs.date, todayStr),
+            eq(activityLogs.localRefId, -100),
+          ),
+        });
+
+        for (const log of retentionLogs) {
+          try {
+            const meta = JSON.parse(log.metadata ?? "{}");
+            const loggedPages: number[] = meta.pages ?? [];
+            const overlaps = pages.some((p) => loggedPages.includes(p));
+            if (overlaps) {
+              await tx.delete(activityLogs).where(eq(activityLogs.id, log.id));
+            }
+          } catch {
+            // skip malformed metadata
+          }
+        }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["hifz-review-suggestions-v2", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["reinforcement-status", user?.id] });
+    },
+  });
+
   return {
     logRetention: mutation.mutateAsync,
-    isLogging: mutation.isPending,
+    undoRetention: undoMutation.mutateAsync,
+    isLogging: mutation.isPending || undoMutation.isPending,
   };
 }

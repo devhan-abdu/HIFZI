@@ -1,74 +1,121 @@
-import { ISurah } from "@/src/types";
 import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { Text } from "@/src/components/common/ui/Text";
 import { View } from "react-native";
 import { getRankForLevel } from "@/src/features/gamification/constants";
 
+const DUAL_COLUMN_MIN_H = 168;
+
 type HifzAnalytics = {
   progress?: number;
   currentSurah?: string;
-  currentPage?: number;
-  endPage?: number;
+  pageInSurah?: number;
+  planRangeLabel?: string;
   targetEndDate?: string;
   todayTarget?: number;
 };
 
-type MurajaPlan = {
-  id: number;
-  week_start_date: string | null;
-  week_end_date: string | null;
-  start_juz?: number;
-  end_juz?: number;
+type MurajaHero = {
+  pageInSurah?: number;
+  currentSurah?: string;
+  planRangeLabel?: string;
+  targetEndDate?: string | null;
   planned_pages_per_day?: number | null;
-  estimated_time_min?: number | null;
-  totalPage?: number;
   totalDays?: number;
-  startSurah?: string;
-  endSurah?: string;
+  overAllProgress?: string | number;
 };
-
 
 type Cardprops = {
   hifzAnalytics?: HifzAnalytics | null;
-  murajaPlan?: MurajaPlan | null;
+  murajaHero?: MurajaHero | null;
   habitProgress: {
     progressByType: {
       HIFZ: { units: number; sessions: number };
       MURAJA: { units: number; sessions: number };
       NORMAL_READING: { units: number; sessions: number };
     };
-    analytics: { longestStreak: number };
+    analytics: { longestStreak: number; currentStreak?: number };
   };
-  surah: ISurah[];
   userStats: { totalXp: number; level: number; hifzCurrentStreak: number } | null;
 };
 
-function safeFormat(date: string | null | undefined) {
-  if (!date) return "";
-  const d = new Date(date);
-  if (isNaN(d.getTime())) return "";
-  return format(d, "MMM dd");
+function cleanSurahName(name?: string) {
+  return name?.replace(/^Surat\s+/i, "").trim() || "—";
+}
+
+function PlanColumn({
+  children,
+  showBorder,
+}: {
+  children: React.ReactNode;
+  showBorder?: boolean;
+}) {
+  return (
+    <View className={`flex-1 ${showBorder ? "pr-5 border-r border-white/10" : "pl-5"}`}>
+      {children}
+    </View>
+  );
+}
+
+function PageOfSurah({
+  pageInSurah,
+  surahName,
+}: {
+  pageInSurah?: number;
+  surahName?: string;
+}) {
+  return (
+    <Text className="text-white text-2xl tracking-tight leading-8" numberOfLines={2}>
+      {pageInSurah ?? "—"} of {cleanSurahName(surahName)}
+    </Text>
+  );
+}
+
+function ColumnFooter({
+  children,
+  dual,
+}: {
+  children: React.ReactNode;
+  dual?: boolean;
+}) {
+  return (
+    <View
+      className={`flex-row justify-between items-end ${dual ? "pt-5" : "pt-6 mt-auto"}`}
+    >
+      {children}
+    </View>
+  );
+}
+
+function FooterStat({ label, value }: { label: string; value: string }) {
+  return (
+    <View className="flex-1">
+      <Text className="text-white/40 text-[8px] uppercase tracking-[1.2px] mb-0.5">
+        {label}
+      </Text>
+      <Text className="text-white text-[11px] leading-4" numberOfLines={1}>
+        {value}
+      </Text>
+    </View>
+  );
 }
 
 export default function Card({
   hifzAnalytics,
   habitProgress,
-  murajaPlan,
+  murajaHero,
   userStats,
 }: Cardprops) {
-  if (!murajaPlan && !hifzAnalytics) return null;
+  if (!murajaHero && !hifzAnalytics) return null;
 
-  const dateRange =
-    (
-      murajaPlan &&
-      (safeFormat(murajaPlan.week_start_date) ||
-        safeFormat(murajaPlan.week_end_date))
-    ) ?
-      `${safeFormat(murajaPlan.week_start_date)} - ${safeFormat(
-        murajaPlan.week_end_date,
-      )}`
-    : "";
+  const hasHifz = !!hifzAnalytics;
+  const hasMuraja = !!murajaHero;
+  const dualPlan = hasHifz && hasMuraja;
+  const singlePlan = hasHifz !== hasMuraja;
+
+  const murajaProgress = murajaHero?.overAllProgress
+    ? Math.round(Number(murajaHero.overAllProgress))
+    : 0;
 
   return (
     <View className="bg-primary rounded-[40px] p-7 shadow-2xl shadow-primary/40 overflow-hidden relative">
@@ -81,139 +128,183 @@ export default function Card({
               {format(new Date(), "EEEE, MMM dd")}
             </Text>
             {userStats && (
-              <View className="flex-row items-center ml-3">
-                <Text className="text-white/80 text-[10px]  tracking-widest">
-                  LVL {userStats.level}
-                </Text>
-              </View>
+              <Text className="text-white/80 text-[10px] tracking-widest ml-3">
+                LVL {userStats.level}
+              </Text>
             )}
           </View>
           <Text className="text-white text-3xl tracking-tighter">
-            Hifz <Text className="text-white/50">&</Text> Muraja
+            {dualPlan ? (
+              <>
+                Hifz <Text className="text-white/50">&</Text> Muraja
+              </>
+            ) : hasHifz ? (
+              "Hifz Journey"
+            ) : (
+              "Muraja Review"
+            )}
           </Text>
-          
+
           {userStats && (() => {
             const currentRank = getRankForLevel(userStats.level);
             return (
-              <View className="mt-2 w-40">
-                <Text className="text-white/80 text-[10px] mb-1  tracking-wide">
+              <View className="mt-2 w-44">
+                <Text className="text-white/80 text-[10px] mb-1 tracking-wide">
                   {currentRank.title} {currentRank.titleAr}
                 </Text>
                 <View className="h-1 bg-white/10 rounded-full overflow-hidden">
-                  <View 
-                    className="h-full bg-white" 
-                    style={{ width: `${(userStats.totalXp % 1000) / 10}%` }} 
+                  <View
+                    className="h-full bg-white"
+                    style={{ width: `${(userStats.totalXp % 1000) / 10}%` }}
                   />
                 </View>
-                <Text className="text-[8px] text-white/40 mt-1 uppercase tracking-widest">
-                  {userStats.totalXp % 1000} / 1000 XP
-                </Text>
               </View>
             );
           })()}
         </View>
-      </View>
 
-      <View className="w-full h-[2px] bg-white/10 rounded-full mb-9 overflow-hidden" />
-
-      <View className="flex-row">
-        {hifzAnalytics && (
-          <View className="flex-1 pr-5 border-r border-white/10">
-            <View className="flex-row items-center mb-4">
-              <Ionicons
-                name="book-outline"
-                size={13}
-                color="rgba(255,255,255,0.7)"
-              />
-              <Text className="text-white/50 text-[9px] uppercase tracking-widest ml-2">
-                Current Hifz
-              </Text>
-            </View>
-
-            <Text
-              className="text-white text-2xl tracking-tight leading-7"
-              numberOfLines={1}
-            >
-              {hifzAnalytics.currentSurah ?? "-"}
+        {singlePlan && hasHifz && (
+          <View className="items-end">
+            <Text className="text-white text-3xl tracking-tight">
+              {hifzAnalytics?.progress ?? 0}%
             </Text>
-
-            <Text className="text-white/80 text-[11px] mt-1">
-              Page {hifzAnalytics.currentPage ?? "-"}
-              <Text className="text-white/40">
-                {" "}
-                of {hifzAnalytics.endPage ?? "-"}
-              </Text>
+            <Text className="text-white/50 text-[9px] uppercase tracking-widest">
+              memorized
             </Text>
-
-            <View className="mt-7 flex-row justify-between items-center">
-              <View>
-                <Text className="text-white/40 text-[8px] uppercase mb-0.5">
-                  Target End
-                </Text>
-                <Text className="text-white text-[11px]">
-                  {hifzAnalytics.targetEndDate ?? "-"}
-                </Text>
-              </View>
-
-              <View className="h-6 w-[1px] bg-white/5" />
-
-              <View>
-                <Text className="text-white/40 text-[8px] uppercase mb-0.5">
-                  Rate
-                </Text>
-                <Text className="text-white text-[11px]">
-                  {hifzAnalytics.todayTarget ?? 0} p/d
-                </Text>
-              </View>
-            </View>
           </View>
         )}
-
-        {murajaPlan && (
-          <View className="flex-1 pl-5">
-            <View className="flex-row items-center mb-4">
-              <Ionicons
-                name="repeat-outline"
-                size={15}
-                color="rgba(255,255,255,0.7)"
-              />
-              <Text className="text-white/50 text-[9px] uppercase tracking-widest ml-2">
-                Weekly Muraja
-              </Text>
-            </View>
-
-            <Text className="text-white text-2xl tracking-tight leading-7">
-              Juz {murajaPlan.start_juz ?? "-"} — {murajaPlan.end_juz ?? "-"}
+        {singlePlan && hasMuraja && (
+          <View className="items-end">
+            <Text className="text-white text-3xl tracking-tight">
+              {murajaProgress}%
             </Text>
-
-            {dateRange ?
-              <Text className="text-white/70 text-[10px] mt-1">
-                {dateRange}
-              </Text>
-            : null}
-
-            <View className="mt-7 flex-row justify-between items-center">
-              <View>
-                <Text className="text-white/40 text-[8px] uppercase mb-0.5">
-                  Daily Goal
-                </Text>
-                <Text className="text-white text-[11px]">
-                  {murajaPlan.planned_pages_per_day ?? 0} pgs
-                </Text>
-              </View>
-
-              <View className="h-6 w-[1px] bg-white/5" />
-
-              <View>
-                <Text className="text-white/40 text-[8px] uppercase mb-0.5">
-                  Est. Time
-                </Text>
-                <Text className="text-white text-[11px]">
-                  {murajaPlan.estimated_time_min ?? 0}m
-                </Text>
-              </View>
-            </View>
+            <Text className="text-white/50 text-[9px] uppercase tracking-widest">
+              of range
+            </Text>
           </View>
+        )}
+      </View>
+
+      <View className="w-full h-[2px] bg-white/10 rounded-full mb-6" />
+
+      <View className={dualPlan ? "flex-row" : ""}>
+        {hasHifz && (
+          <PlanColumn showBorder={dualPlan}>
+            <View
+              style={dualPlan ? { minHeight: DUAL_COLUMN_MIN_H } : undefined}
+              className={dualPlan ? "justify-between flex-1" : "min-h-[120px] justify-between"}
+            >
+              <View>
+                <View className="flex-row items-center mb-3">
+                  <Ionicons name="book-outline" size={13} color="rgba(255,255,255,0.7)" />
+                  <Text className="text-white/50 text-[9px] uppercase tracking-widest ml-2">
+                    {dualPlan ? "Current Hifz" : "Hifz"}
+                  </Text>
+                </View>
+
+                <PageOfSurah
+                  pageInSurah={hifzAnalytics?.pageInSurah}
+                  surahName={hifzAnalytics?.currentSurah}
+                />
+
+                {hifzAnalytics?.planRangeLabel ? (
+                  <Text
+                    className="text-white/55 text-[11px] mt-2 tracking-wide"
+                    numberOfLines={2}
+                  >
+                    {hifzAnalytics.planRangeLabel}
+                  </Text>
+                ) : null}
+              </View>
+
+              <ColumnFooter dual={dualPlan}>
+                <FooterStat
+                  label={dualPlan ? "Target End" : "Est. finish"}
+                  value={hifzAnalytics?.targetEndDate ?? "—"}
+                />
+                <View className="w-4" />
+                <FooterStat
+                  label={dualPlan ? "Rate" : "Daily rate"}
+                  value={`${hifzAnalytics?.todayTarget ?? 0} p/d`}
+                />
+                {singlePlan ? (
+                  <>
+                    <View className="w-4" />
+                    <FooterStat
+                      label="Streak"
+                      value={`${
+                        habitProgress.analytics.currentStreak ??
+                        userStats?.hifzCurrentStreak ??
+                        0
+                      } d`}
+                    />
+                  </>
+                ) : null}
+              </ColumnFooter>
+            </View>
+          </PlanColumn>
+        )}
+
+        {hasMuraja && murajaHero && (
+          <PlanColumn showBorder={false}>
+            <View
+              style={dualPlan ? { minHeight: DUAL_COLUMN_MIN_H } : undefined}
+              className={dualPlan ? "justify-between flex-1" : "min-h-[120px] justify-between"}
+            >
+              <View>
+                <View className="flex-row items-center mb-3">
+                  <Ionicons
+                    name="repeat-outline"
+                    size={15}
+                    color="rgba(255,255,255,0.7)"
+                  />
+                  <Text className="text-white/50 text-[9px] uppercase tracking-widest ml-2">
+                    {dualPlan ? "Current Muraja" : "Muraja"}
+                  </Text>
+                </View>
+
+                <PageOfSurah
+                  pageInSurah={murajaHero.pageInSurah}
+                  surahName={murajaHero.currentSurah}
+                />
+
+                {murajaHero.planRangeLabel ? (
+                  <Text
+                    className="text-white/55 text-[11px] mt-2 tracking-wide"
+                    numberOfLines={2}
+                  >
+                    {murajaHero.planRangeLabel}
+                  </Text>
+                ) : null}
+              </View>
+
+              <ColumnFooter dual={dualPlan}>
+                <FooterStat
+                  label={dualPlan ? "Target End" : "Days/wk"}
+                  value={
+                    dualPlan
+                      ? murajaHero.targetEndDate ?? "—"
+                      : `${murajaHero.totalDays ?? 0}`
+                  }
+                />
+                <View className="w-4" />
+                <FooterStat
+                  label={dualPlan ? "Rate" : "Daily goal"}
+                  value={
+                    dualPlan
+                      ? `${murajaHero.planned_pages_per_day ?? 0} p/d`
+                      : `${murajaHero.planned_pages_per_day ?? 0} pgs`
+                  }
+                />
+                {singlePlan ? (
+                  <>
+                    <View className="w-4" />
+                    <FooterStat label="Progress" value={`${murajaProgress}%`} />
+                  </>
+                ) : null}
+              </ColumnFooter>
+            </View>
+          </PlanColumn>
         )}
       </View>
     </View>

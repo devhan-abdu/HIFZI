@@ -11,14 +11,17 @@ export function usePlanLifecycle() {
     const queryClient = useQueryClient();
     const { duePlanIds, isLoading: loadingEval } = useWeeklyEvaluationTrigger();
 
-    const { data: finishedPlans = [], isLoading: loadingFinished } = useQuery({
+    const { data: finishedPlans = [], isLoading: loadingFinished, refetch: refetchFinished } = useQuery({
         queryKey: ['finished-plans', user?.id],
         queryFn: async () => {
             if (!user?.id) return [];
             return await planLifecycleService.getFinishedPlans(user.id);
         },
         enabled: !!user?.id,
-        refetchInterval: 1000 * 30, 
+        refetchInterval: 1000 * 10, // Check every 10s
+        staleTime: 0,
+        refetchOnWindowFocus: true,
+        refetchOnMount: true,
     });
 
     const markSeenMutation = useMutation({
@@ -51,6 +54,9 @@ export function usePlanLifecycle() {
         finishedPlans,
         isLoading: loadingEval || loadingFinished,
         getPlanState,
+        refetch: async () => {
+            await refetchFinished();
+        },
         markAchievementSeen: markSeenMutation.mutateAsync
     };
 }

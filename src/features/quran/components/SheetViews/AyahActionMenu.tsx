@@ -62,7 +62,7 @@ export const AyahActionMenu = () => {
           >
             <Ionicons name={action.icon as any} size={24} color="white" />
           </View>
-          <Text className="text-[10px] font-medium text-gray-600 text-center">
+          <Text className="text-[10px]  text-gray-600 text-center">
             {action.label}
           </Text>
         </TouchableOpacity>

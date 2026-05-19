@@ -4,6 +4,8 @@ import { eq, sql, and } from "drizzle-orm";
 import { notificationRepository } from "../features/notifications/services/notificationRepository";
 import { differenceInDays } from "date-fns";
 import { BADGE_DICTIONARY } from "../features/gamification/constants";
+import { hifzPlans, hifzLogs } from "@/src/features/hifz/database/hifzSchema";
+import { weeklyMurajaPlans, dailyMurajaLogs } from "@/src/features/muraja/database/murajaSchema";
 
 export type BadgeType = 
   | "STREAK_3" | "STREAK_7" | "STREAK_30" 
@@ -148,5 +150,69 @@ export const GamificationService = {
       levelUp: levelResult.leveledUp ? levelResult.newLevel : null,
       badges: awardedBadges 
     };
+  },
+
+  async checkPlanProgressBadges(db: any, userId: string, planType: 'hifz' | 'muraja', planId: number) {
+    const tx = db || drizzleDb;
+    try {
+      let percentage = 0;
+
+      if (planType === 'hifz') {
+        const plan = await tx.query.hifzPlans.findFirst({
+          where: eq(hifzPlans.id, planId)
+        });
+        if (plan) {
+          const totalPages = plan.totalPages || 1;
+          const logs = await tx.select().from(hifzLogs).where(eq(hifzLogs.hifzPlanId, planId));
+          const completedPages = logs.reduce((sum: number, log: any) => {
+            if (log.status === "completed" || log.status === "partial") {
+              return sum + (log.actualPagesCompleted || 0);
+            }
+            return sum;
+          }, 0);
+          percentage = completedPages / totalPages;
+        }
+      } else if (planType === 'muraja') {
+        const plan = await tx.query.weeklyMurajaPlans.findFirst({
+          where: eq(weeklyMurajaPlans.id, planId)
+        });
+        if (plan) {
+          const startPage = plan.startPage || 1;
+          const endPage = plan.endPage || 604;
+          const totalPages = Math.max(1, endPage - startPage + 1);
+          const murajaLastPage = plan.murajaLastPage || 0;
+          const completedPages = Math.max(0, murajaLastPage - startPage + 1);
+          percentage = completedPages / totalPages;
+        }
+      }
+
+      console.log(`Checking plan progress badges for ${planType} plan ${planId}: percentage = ${percentage * 100}%`);
+
+      const awarded: any[] = [];
+
+      const planMeta = { planId, planType };
+
+      if (percentage > 0) {
+        const badge = await this.awardBadge(tx, userId, "SPARK", planMeta, { silent: true });
+        if (badge) awarded.push(badge);
+      }
+      if (percentage >= 0.25) {
+        const badge = await this.awardBadge(tx, userId, "QUARTER_FINISHER", planMeta, { silent: true });
+        if (badge) awarded.push(badge);
+      }
+      if (percentage >= 0.50) {
+        const badge = await this.awardBadge(tx, userId, "HALF_FINISHER", planMeta, { silent: true });
+        if (badge) awarded.push(badge);
+      }
+      if (percentage >= 1.00) {
+        const badge = await this.awardBadge(tx, userId, "PLAN_COMPLETE", planMeta, { silent: true });
+        if (badge) awarded.push(badge);
+      }
+
+      return awarded;
+    } catch (err) {
+      console.error("Failed to check plan progress badges:", err);
+      return [];
+    }
   }
 };

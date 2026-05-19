@@ -9,6 +9,8 @@ export const getNextTask = (
   surahData: ISurah[],
   isNewPlan: boolean
 ) => {
+  if (dailyRate <= 0) return null;
+
   const isForward = direction === 'forward';
   let pageAllocated = 0;
   let startPage: number | null = null;
@@ -66,7 +68,7 @@ export const getNextTask = (
       ? sSurah?.englishName
       : `${sSurah?.englishName} & ${eSurah?.englishName}`,
     juz: getJuzByPage(endPage),
-    target: dailyRate,
+    target: pageAllocated,
     status: "pending",
   };
 };
@@ -76,6 +78,8 @@ export const getTodayTask = (
   surahData: ISurah[],
   pages: number = hifzPlan.pagesPerDay,
 ) => {
+  if (pages <= 0) return null;
+
   const todayStr = new Date().toISOString().slice(0, 10);
 
   const historicalLogs = (hifzPlan.hifzDailyLogs || [])

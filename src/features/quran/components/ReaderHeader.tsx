@@ -1,5 +1,5 @@
 import React, { useCallback } from "react";
-import { View, TouchableOpacity, Text } from "react-native";
+import { View, TouchableOpacity, Text, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,9 +10,11 @@ import { TranslationSelectorPanel } from "./TranslationSelectorPanel";
 
 interface ReaderHeaderProps {
   pageData?: PageData;
+  isDownloadingAll?: boolean;
+  downloadProgress?: { downloaded: number; total: number } | null;
 }
 
-export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
+export default function ReaderHeader({ pageData, isDownloadingAll, downloadProgress }: ReaderHeaderProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -102,7 +104,16 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
             className="flex-1 items-center justify-center"
           >
             <Text className="text-lg text-gray-800 tracking-tight">{surahName}</Text>
-            <Text className="text-xs text-gray-500 mt-0.5">{pageLabel}</Text>
+            {isDownloadingAll && downloadProgress ? (
+              <View className="flex-row items-center mt-0.5 space-x-1.5">
+                <ActivityIndicator size="small" color="#0d9488" style={{ transform: [{ scale: 0.7 }] }} />
+                <Text className="text-[10px] text-teal-600 ">
+                  Offline Sync ({downloadProgress.downloaded}/{downloadProgress.total})
+                </Text>
+              </View>
+            ) : (
+              <Text className="text-xs text-gray-500 mt-0.5">{pageLabel}</Text>
+            )}
           </TouchableOpacity>
 
           {/* Actions */}
@@ -161,6 +172,16 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Subtle Progress Bar at the bottom of the header */}
+        {isDownloadingAll && downloadProgress && (
+          <View className="w-full h-1 bg-slate-100">
+            <View 
+              style={{ width: `${(downloadProgress.downloaded / downloadProgress.total) * 100}%` }} 
+              className="h-full bg-teal-600" 
+            />
+          </View>
+        )}
       </View>
 
       {/* Translation selector panel — slides down below header */}

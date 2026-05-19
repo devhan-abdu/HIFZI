@@ -16,7 +16,7 @@ export default function UpcomingSessionCard({
       {upcomingSessions.map((upcoming) => (
         <Pressable
           key={upcoming.id}
-          onPress={() => router.push("/(app)/muraja/(tabs)/log")}
+          onPress={() => router.push("/(app)/muraja/log")}
           style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
           className="bg-white rounded-xl p-4 border border-gray-300 bg-white shadow-sm"
         >

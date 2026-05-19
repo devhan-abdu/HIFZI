@@ -1,4 +1,4 @@
-import { eq, and, sql, max, desc, gte, lte } from 'drizzle-orm';
+import { eq, and, sql, max, desc, gte, lte, inArray } from 'drizzle-orm';
 import { db } from '@/src/lib/db/local-client';
 import { weeklyMurajaPlans, dailyMurajaLogs } from '../database/murajaSchema';
 import { activityPlans } from '../../habits/database/habitSchema';
@@ -106,27 +106,30 @@ export const murajaService = {
       orderBy: [dailyMurajaLogs.date],
     });
 
+    const mapLog = (l: any) => ({
+      id: l.id,
+      remote_id: l.remoteId,
+      plan_id: l.planId,
+      date: l.date,
+      completed_pages: l.completedPages,
+      actual_time_min: l.actualTimeMin,
+      status: l.status as any,
+      is_catchup: l.isCatchup,
+      sync_status: l.syncStatus,
+      start_page: l.startPage,
+      mistakes_count: l.mistakesCount,
+      hesitation_count: l.hesitationCount,
+      quality_score: l.qualityScore,
+    });
+
     return {
       ...plan,
       preferred_time: plan.preferredTime ?? undefined,
       is_custom_time: plan.isCustomTime ?? undefined,
       muraja_last_page: stats?.murajaLastPage ?? 0,
       muraja_current_streak: stats?.murajaCurrentStreak ?? 0,
-      daily_logs: logs.map(l => ({
-        id: l.id,
-        remote_id: l.remoteId,
-        plan_id: l.planId,
-        date: l.date,
-        completed_pages: l.completedPages,
-        actual_time_min: l.actualTimeMin,
-        status: l.status as any,
-        is_catchup: l.isCatchup,
-        sync_status: l.syncStatus,
-        start_page: l.startPage,
-        mistakes_count: l.mistakesCount,
-        hesitation_count: l.hesitationCount,
-        quality_score: l.qualityScore,
-      })),
+      daily_logs: logs.map(mapLog),
+      all_logs: logs.map(mapLog),
     };
   },
 
@@ -231,6 +234,13 @@ export const murajaService = {
     if (calculatedStreak > 0) {
       const recentQuality = latestSuccessfulLog?.qualityScore ?? 3;
       rewards = await GamificationService.processSessionCompletion(tx, userId, recentQuality, calculatedStreak);
+
+      // Evaluate and award plan progress milestones
+      const progressBadges = await GamificationService.checkPlanProgressBadges(tx, userId, "muraja", planId);
+      if (progressBadges && progressBadges.length > 0) {
+        if (!rewards.badges) rewards.badges = [];
+        rewards.badges.push(...progressBadges);
+      }
     }
 
     await notificationService.processHabitEvent({
@@ -375,87 +385,9 @@ export const murajaService = {
   },
 
   async syncPending(userId: string) {
-    try {
-      const pendingPlans = await db.query.weeklyMurajaPlans.findMany({
-        where: and(eq(weeklyMurajaPlans.userId, userId), eq(weeklyMurajaPlans.syncStatus, 0)),
-      });
-
-      for (const plan of pendingPlans) {
-        const payload = {
-          user_id: plan.userId,
-          week_start_date: plan.weekStartDate,
-          week_end_date: plan.weekEndDate,
-          planned_pages_per_day: plan.plannedPagesPerDay,
-          planned_pages: plan.plannedPagesPerDay,
-          start_page: plan.startPage,
-          end_page: plan.endPage,
-          is_active: plan.isActive,
-          selected_days: plan.selectedDays,
-          estimated_time_min: plan.estimatedTimeMin,
-          place: plan.place,
-          note: plan.note,
-          preferred_time: plan.preferredTime,
-          is_custom_time: plan.isCustomTime,
-          evaluation_day: plan.evaluationDay,
-        };
-
-        const { data, error } = await supabase
-          .from("weekly_muraja_plan")
-          .upsert({ ...payload, local_id: plan.id }, { onConflict: "user_id,local_id" })
-          .select("id")
-          .single();
-
-        if (error) throw error;
-
-        await db.update(weeklyMurajaPlans)
-          .set({ syncStatus: 1, remoteId: data?.id ? String(data.id) : null })
-          .where(eq(weeklyMurajaPlans.id, plan.id));
-      }
-
-      const pendingLogs = await db.query.dailyMurajaLogs.findMany({
-        where: and(eq(dailyMurajaLogs.syncStatus, 0)),
-      });
-
-      for (const log of pendingLogs) {
-        if (!log.planId) continue;
-
-        const plan = await db.query.weeklyMurajaPlans.findFirst({
-          where: eq(weeklyMurajaPlans.id, log.planId),
-        });
-
-        if (!plan || plan.userId !== userId) continue;
-
-        const remotePlanId = plan.remoteId ? Number(plan.remoteId) : null;
-        if (!remotePlanId) continue; 
-
-        const { data, error } = await supabase
-          .from("daily_muraja_logs")
-          .upsert({
-            plan_id: remotePlanId,
-            date: log.date,
-            completed_pages: log.completedPages,
-            actual_time_min: log.actualTimeMin,
-            status: log.status,
-            is_catchup: log.isCatchup,
-            start_page: log.startPage,
-            mistakes_count: log.mistakesCount,
-            hesitation_count: log.hesitationCount,
-            quality_score: log.qualityScore,
-            local_id: log.id,
-            user_id: userId,
-          }, { onConflict: "user_id,plan_id,date" })
-          .select("id")
-          .single();
-
-        if (error) throw error;
-
-        await db.update(dailyMurajaLogs)
-          .set({ syncStatus: 1, remoteId: data?.id ? String(data.id) : null })
-          .where(eq(dailyMurajaLogs.id, log.id));
-      }
-    } catch (e) {
-      console.warn("Muraja sync failed", e);
-    }
+    const { sync } = await import("@/src/services/sync");
+    await sync.push("muraja_plans");
+    await sync.push("muraja_logs");
   },
 
   async getReviewStats(userId: string, planId?: number) {

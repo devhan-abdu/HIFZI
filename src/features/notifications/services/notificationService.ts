@@ -88,7 +88,7 @@ export const notificationService = {
     date: string;
     rewards?: any;
   }) {
-    const xpGained = payload.status === 'completed' ? 50 : (payload.status === 'partial' ? 20 : 0);
+    const xpGained = payload.rewards?.xpAwarded ?? (payload.status === 'completed' ? 50 : (payload.status === 'partial' ? 20 : 0));
     const todayKey = this.toDateKey();
 
     await notificationRepository.upsertHabitEvent(payload.userId, {
@@ -119,13 +119,12 @@ export const notificationService = {
     const allEvents = await notificationRepository.getHabitEvents(payload.userId);
     const streaks = this.calculateStreaks(allEvents.filter(e => e.habitType === payload.habitType).map(e => e.date), todayKey, selectedDays);
     
-    const totalXpResult = await db.select({ total: sql<number>`sum(xp_gained)` })
-      .from(habitEvents)
-      .where(eq(habitEvents.userId, payload.userId));
-    
-    const totalXp = totalXpResult[0]?.total ?? 0;
-    const level = Math.floor(totalXp / 100);
-    const xpToNextLevel = (level + 1) * 100 - totalXp;
+    const currentStats = await db.query.userStats.findFirst({
+      where: eq(userStats.userId, payload.userId)
+    });
+
+    const totalXp = currentStats?.totalXp ?? xpGained;
+    const level = currentStats?.level ?? Math.floor(totalXp / 1000);
 
     await db.insert(userStats)
       .values({
@@ -194,7 +193,7 @@ export const notificationService = {
       .where(eq(habitEvents.userId, userId));
     
     const totalXp = totalXpResult[0]?.total ?? 0;
-    const level = Math.floor(totalXp / 100);
+    const level = Math.floor(totalXp / 1000); // Align perfectly to 1000 XP per level
 
     await db.update(userStats)
       .set({

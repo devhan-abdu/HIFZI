@@ -1,11 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/src/components/common/ui/Text";
 import { View } from "react-native";
-import { IWeeklyMUrajaStatus } from "../types";
+import { IMurajaDayStatus } from "../types";
 
-export function DayByDay({ progress }: { progress: IWeeklyMUrajaStatus[] | null}) {
+export function DayByDay({ progress }: { progress: IMurajaDayStatus[] | null}) {
 
-  if (!progress) return;
+  if (!progress) return null;
   const todayStr = new Date().toISOString().slice(0, 10);
 
   return (
@@ -16,8 +16,8 @@ export function DayByDay({ progress }: { progress: IWeeklyMUrajaStatus[] | null}
         const isMissed = day.status === "missed";
         const isRest = day.status === "rest";
         const isPending = day.status === "pending";
+        const isFuture = day.status === "future";
 
-        const isFuture = day.date > todayStr && !isRest;
         const isTodayPending = day.isToday && isPending;
 
         return (
@@ -28,8 +28,7 @@ export function DayByDay({ progress }: { progress: IWeeklyMUrajaStatus[] | null}
                 ${isMissed ? "bg-red-50 border border-red-100" : ""}
                 ${isRest ? "bg-gray-50 border border-gray-200 " : ""}
                 ${isTodayPending ? "border-2 border-primary border-dashed bg-white" : ""}
-                 ${isFuture ? "bg-primary/5 border border-gray-200 " : ""}
-
+                ${isFuture ? "bg-primary/5 border border-gray-200 " : ""}
               `}
             >
               {isCompleted ?

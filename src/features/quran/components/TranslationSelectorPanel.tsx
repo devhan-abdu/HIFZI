@@ -6,6 +6,8 @@ import {
   ActivityIndicator,
   Pressable,
   Animated,
+  Platform,
+  ToastAndroid,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/src/components/common/ui/Text";
@@ -148,6 +150,12 @@ export function TranslationSelectorPanel() {
                   <TouchableOpacity
                     onPress={() => {
                       toggleTranslation(t.id);
+                      if (!t.downloaded && !inProgress && !isDownloading(t.id)) {
+                        void handleDownload(t);
+                        if (Platform.OS === "android") {
+                          ToastAndroid.show(`Downloading ${t.name} for offline use...`, ToastAndroid.SHORT);
+                        }
+                      }
                     }}
                     className={`flex-row items-center px-3 py-3 mb-1 rounded-2xl ${
                       isSelected ? "bg-teal-50" : "bg-slate-50/80"
@@ -163,28 +171,44 @@ export function TranslationSelectorPanel() {
                     {/* Name */}
                     <View className="flex-1 mr-3">
                       <Text
-                        className={`text-sm font-medium ${isSelected ? "text-teal-800" : "text-slate-700"}`}
+                        className={`text-sm  ${isSelected ? "text-teal-800" : "text-slate-700"}`}
                         numberOfLines={1}
                       >
                         {t.name}
                       </Text>
-                      {t.language_name ? (
-                        <Text className="text-[10px] text-slate-400 mt-0.5">{t.language_name}</Text>
-                      ) : null}
+                      <View className="flex-row items-center space-x-1.5 mt-0.5">
+                        {t.language_name ? (
+                          <Text className="text-[10px] text-slate-400">{t.language_name}</Text>
+                        ) : null}
+                        {t.downloaded && (
+                          <Text className="text-[10px] text-teal-600">• Downloaded</Text>
+                        )}
+                      </View>
+                      
+                      {/* Active Download Progress Bar */}
+                      {inProgress && (
+                        <View className="w-full h-1 bg-slate-200 rounded-full mt-2 overflow-hidden">
+                          <View 
+                            style={{ width: `${progress * 100}%` }} 
+                            className="h-full bg-teal-600" 
+                          />
+                        </View>
+                      )}
                     </View>
 
                     {/* Right side: Status/Download */}
                     {t.downloaded ? (
-                      <Ionicons name="cloud-done-outline" size={16} color="#94a3b8" />
+                      <Ionicons name="checkmark-circle" size={18} color="#10b981" />
                     ) : inProgress ? (
-                      <ActivityIndicator size="small" color="#0d9488" />
+                      <View className="flex-row items-center space-x-1">
+                        <ActivityIndicator size="small" color="#0d9488" />
+                        <Text className="text-[10px] text-teal-600 ">{Math.round(progress * 100)}%</Text>
+                      </View>
                     ) : (
-                      <TouchableOpacity
-                        onPress={() => handleDownload(t)}
-                        className="bg-slate-100 px-2.5 py-1 rounded-full"
-                      >
-                        <Text className="text-[9px] text-slate-600 ">GET</Text>
-                      </TouchableOpacity>
+                      <View className="flex-row items-center bg-slate-100/80 px-2 py-1 rounded-full space-x-1">
+                        <Ionicons name="cloud-download-outline" size={12} color="#64748b" />
+                        <Text className="text-[9px] text-slate-500 ">Tap to use</Text>
+                      </View>
                     )}
                   </TouchableOpacity>
                 );
@@ -194,7 +218,7 @@ export function TranslationSelectorPanel() {
                   onPress={closeTranslationSelector}
                   className="mt-2 py-3 items-center border-t border-slate-100"
                 >
-                  <Text className="text-teal-600 font-semibold text-sm">More Translations</Text>
+                  <Text className="text-teal-600  text-sm">More Translations</Text>
                 </TouchableOpacity>
               }
             />

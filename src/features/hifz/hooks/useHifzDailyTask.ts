@@ -2,11 +2,13 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { getTargetPage } from "../utils/getTargetPage";
-import { getTodayTask } from "../utils/quran-logic";
+import { getReinforcementRange, getTodayTask } from "../utils/quran-logic";
 import { hifzStatus } from "../utils/plan-status";
 import { useHifzPlan } from "./useHifzPlan";
-import { getReinforcementRange } from "../utils/quran-logic";
-import { useReviewSuggestions } from "./useReviewSuggestions";
+import {
+  isRetentionRangeDoneToday,
+  useReviewSuggestions,
+} from "./useReviewSuggestions";
 
 export function useHifzDailyTask() {
   const { hifz, isLoading, error, refetch } = useHifzPlan();
@@ -19,12 +21,13 @@ export function useHifzDailyTask() {
 
   const todayTask = useMemo(() => {
     if (!hifz || !analytics || !surah.length) return null;
-    
+    if (hifz.pagesPerDay <= 0) return null;
+
     const today = new Date();
     const evaluationDay = hifz.evaluationDay ?? 5;
     const normalizedToday = (today.getDay() + 6) % 7;
     if (normalizedToday === evaluationDay) {
-        return null; // No task on evaluation day
+      return null;
     }
 
     const dayNumber = (today.getDay() + 6) % 7;
@@ -37,8 +40,11 @@ export function useHifzDailyTask() {
     );
 
     const hasPlannedTarget = !!targetInfo && targetInfo.totalTarget > 0;
-    const fallbackTarget = Math.max(1, Math.round(hifz.pagesPerDay));
-    const effectiveTarget = hasPlannedTarget ? targetInfo.totalTarget : fallbackTarget;
+    const fallbackTarget = Math.max(0, Math.round(hifz.pagesPerDay));
+    if (fallbackTarget <= 0) return null;
+    const effectiveTarget = hasPlannedTarget
+      ? targetInfo.totalTarget
+      : fallbackTarget;
     const task = getTodayTask(hifz, surah, effectiveTarget);
     if (!task) return null;
 
@@ -63,11 +69,13 @@ export function useHifzDailyTask() {
     };
   }, [hifz, surah, analytics]);
 
-  const { suggestions: srsSuggestions } = useReviewSuggestions(hifz?.id);
+  const { dailyReviews, suggestions: srsSuggestions } = useReviewSuggestions(
+    hifz?.id,
+  );
 
   const reinforcementTask = useMemo(() => {
     if (!hifz || !surah.length || !hifz.isReinforcementEnabled) return null;
-    
+
     const today = new Date();
     const evaluationDay = hifz.evaluationDay ?? 5;
     const normalizedToday = (today.getDay() + 6) % 7;
@@ -76,71 +84,36 @@ export function useHifzDailyTask() {
     return getReinforcementRange(hifz, surah, 5);
   }, [hifz, surah]);
 
-  const { data: murajaLogs = [] } = useQuery({
-    queryKey: ['today-muraja-logs', hifz?.userId],
+  const { data: isReinforcementDone = false } = useQuery({
+    queryKey: [
+      "reinforcement-status",
+      hifz?.userId,
+      reinforcementTask?.startPage,
+      reinforcementTask?.endPage,
+    ],
     queryFn: async () => {
-      if (!hifz?.userId) return [];
-      const { db } = await import("@/src/lib/db/local-client");
-      const { pageActivityLogs } = await import("@/src/features/habits/database/habitSchema");
-      const { and, gte, eq } = await import("drizzle-orm");
-      
-      const todayStr = new Date().toISOString().slice(0, 10);
-      return await db.query.pageActivityLogs.findMany({
-        where: and(
-          eq(pageActivityLogs.userId, hifz.userId),
-          eq(pageActivityLogs.source, 'muraja'),
-          gte(pageActivityLogs.logDate, todayStr)
-        )
-      });
+      if (!hifz?.userId || !reinforcementTask) return false;
+      return isRetentionRangeDoneToday(
+        hifz.userId,
+        reinforcementTask.startPage,
+        reinforcementTask.endPage,
+        reinforcementTask.actualPages,
+      );
     },
-    enabled: !!hifz?.userId
+    enabled: !!hifz?.userId && !!reinforcementTask,
   });
-
-  const completedReviews = useMemo(() => {
-    if (!murajaLogs.length || !surah.length) return [];
-    
-    // Simple grouping of consecutive pages into ranges
-    const sorted = [...murajaLogs].sort((a, b) => a.pageId - b.pageId);
-    const groups: any[] = [];
-    let current: any = null;
-
-    const { getSurahByPage } = require("@/src/features/muraja/utils/quranMapping");
-
-    for (const log of sorted) {
-      if (!current || log.pageId !== current.endPage + 1) {
-        current = {
-          startPage: log.pageId,
-          endPage: log.pageId,
-          startSurah: getSurahByPage(log.pageId, surah),
-          endSurah: getSurahByPage(log.pageId, surah),
-          isCompleted: true
-        };
-        groups.push(current);
-      } else {
-        current.endPage = log.pageId;
-        current.endSurah = getSurahByPage(log.pageId, surah);
-      }
-    }
-    return groups;
-  }, [murajaLogs, surah]);
-
-  const isReinforcementDone = useMemo(() => {
-    if (!reinforcementTask || !murajaLogs.length) return false;
-    return murajaLogs.some(log => 
-      log.pageId >= reinforcementTask.startPage && 
-      log.pageId <= reinforcementTask.endPage
-    );
-  }, [reinforcementTask, murajaLogs]);
 
   return {
     hifz,
     todayTask,
     reinforcementTask,
-    isReinforcementDone: !!isReinforcementDone,
+    isReinforcementDone,
     srsSuggestions,
-    completedReviews,
+    dailyReviews,
     analytics,
-    isEvaluationDay: hifz ? ((new Date().getDay() + 6) % 7) === (hifz.evaluationDay ?? 5) : false,
+    isEvaluationDay: hifz
+      ? (new Date().getDay() + 6) % 7 === (hifz.evaluationDay ?? 5)
+      : false,
     loading: isLoading || surahLoading,
     error,
     refetch,

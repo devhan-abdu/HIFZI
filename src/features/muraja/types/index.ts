@@ -61,33 +61,59 @@ export type IMurajaDashboardData = IWeeklyMurajaPLan & {
     daily_logs: IDailyMurajaLog[];
 };
 
-export interface IWeeklyPlanDashboardData {
-  weeklyTargetPages: number,
-  totalDays: number,
-  week_start_date: string | null;
-  week_end_date: string | null;
-  estimated_time_min: number | null,
-  planned_pages_per_day: number | null,
-  start_juz: number | null;
-  end_juz: number | null;
-  startSurah: string,
-  endSurah: string,
-  startPage: number | null;
-  endPage: number | null;
+// ─── Range-Based Plan Overview (replaces IWeeklyPlanDashboardData) ───────────
+export interface IPlanOverviewData {
+    id: number;
+    totalRangePages: number;
+    plannedDays: number;           // active days per week (selectedDays.length)
+    startDate: string | null;      // plan start date
+    endDate: string | null;        // dynamically re-estimated completion date
+    estimated_time_min: number | null;
+    planned_pages_per_day: number | null;
+    start_juz: number | null;
+    end_juz: number | null;
+    startSurah: string;
+    endSurah: string;
+    startPage: number | null;
+    endPage: number | null;
 }
 
-export interface IWeeklyMUrajaStatus {
-  date: string,
-  dayName: string,
-  isToday: boolean,
-  isSelected: boolean,
-  status:'pending' | 'completed' | 'rest' | 'missed',
-  completed: number
+// Backward compat alias for components still using IWeeklyPlanDashboardData
+export type IWeeklyPlanDashboardData = IPlanOverviewData & {
+    /** @deprecated use totalRangePages */ weeklyTargetPages?: number;
+    /** @deprecated use plannedDays */ totalDays?: number;
+    /** @deprecated use startDate */ week_start_date?: string | null;
+    /** @deprecated use endDate */ week_end_date?: string | null;
+};
+
+// ─── Range-Aware Day Status (replaces IWeeklyMUrajaStatus) ────────────────────
+export interface IMurajaDayStatus {
+    date: string;        // ISO YYYY-MM-DD
+    dayName: string;     // e.g. "Mon"
+    status: "completed" | "missed" | "rest" | "pending" | "future";
+    isToday: boolean;
+    isSelected: boolean; // whether it's a scheduled (non-rest) day
+    completed: number;   // completed_pages from log (0 if no log)
 }
 
+// Backward compat alias
+export type IWeeklyMUrajaStatus = IMurajaDayStatus;
 
 export const WeeklyMurajaSchema = Yup.object({
- week_start_date: Yup.string().required("Week start date is required"),
+ week_start_date: Yup.string()
+    .required("Start date is required")
+    .test(
+      "not-in-past",
+      "Start date cannot be in the past",
+      (value) => {
+        if (!value) return false;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const selected = new Date(value);
+        selected.setHours(0, 0, 0, 0);
+        return selected >= today;
+      }
+    ),
  planned_pages_per_day: Yup.number()
     .required("Planned pages required")
     .integer("Planned pages must be a whole number") 

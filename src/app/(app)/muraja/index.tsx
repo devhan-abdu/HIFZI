@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Text } from "@/src/components/common/ui/Text";
 import { View } from "react-native";
 
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 
 import Screen from "@/src/components/screen/Screen";
 import {
@@ -13,7 +13,6 @@ import { Button } from "@/src/components/ui/Button";
 import { SectionHeader } from "@/src/components/SectionHeader";
 
 import { useWeeklyMuraja } from "@/src/features/muraja/hooks/useWeeklyMuraja";
-import { useWeeklyReview } from "@/src/features/muraja/hooks/useWeeklyReview";
 import { useMurajaOperation } from "@/src/features/muraja/hooks/useMurajaOperation";
 
 import { WeeklyOverviewCard } from "@/src/features/muraja/components/WeeklyOverviewCard";
@@ -24,11 +23,11 @@ import { DayByDay } from "@/src/features/muraja/components/DayByDay";
 import { ActionTaskCard } from "@/src/components/common/ActionCard";
 import { EvaluationRequiredCard, RestDayCardSingle } from "@/src/components/dashboard/TodayTask";
 import { Ionicons } from "@expo/vector-icons";
-import { usePlanLifecycle } from "@/src/features/habits/hooks/usePlanLifecycle";
 import { PlanEndCard } from "@/src/features/habits/components/PlanEndCard";
 import { QualityModal } from "@/src/components/common/QualityModal";
 import { useAlert } from "@/src/hooks/useAlert";
 import { Alert } from "@/src/components/common/Alert";
+import { useDashboardState } from "@/src/features/habits/hooks/useDashboardState";
 
 
 export default function MurajaIndex() {
@@ -40,15 +39,21 @@ export default function MurajaIndex() {
     loading,
     error,
     refetch,
+    isRestDay,
   } = useWeeklyMuraja();
-  const { getPlanState } = usePlanLifecycle();
-  const planState = getPlanState(weeklyPlan?.id, 'MURAJA');
 
   const {
-    analytics,
-    plan: reviewPlan,
-    isLoading: loadingReview,
-  } = useWeeklyReview();
+    state: dashboardState,
+    refetchAll,
+    isLoading: isStateLoading,
+  } = useDashboardState('MURAJA', weeklyPlan, todayTask, !!isRestDay, loading, refetch);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchAll();
+    }, [refetchAll])
+  );
+
   const { updateLog, isUpdating } = useMurajaOperation();
   const { alertConfig, hideAlert } = useAlert();
   const [qualityModalVisible, setQualityModalVisible] = useState(false);
@@ -79,7 +84,7 @@ export default function MurajaIndex() {
     }
   };
 
-  if (loading || loadingReview)
+  if (isStateLoading)
     return (
       <Screen>
         <WeeklyMurajaSkeleton />
@@ -91,7 +96,7 @@ export default function MurajaIndex() {
       <Screen>
         <View className="flex-1 items-center justify-center p-6">
           <Text className="text-slate-500 mb-4">Failed to load plans</Text>
-          <Button onPress={() => refetch()}>Try Again</Button>
+          <Button onPress={() => refetchAll()}>Try Again</Button>
         </View>
       </Screen>
     );
@@ -103,6 +108,9 @@ export default function MurajaIndex() {
     : `${todayTask?.startSurah} – ${todayTask?.endSurah}`;
 
   if (weeklyPlan) {
+    const isEvalDue = dashboardState.type === 'EVALUATION_DUE';
+    const isCompDue = dashboardState.type === 'PLAN_FINISHED';
+
     return (
       <Screen>
         <ScreenContent>
@@ -111,11 +119,11 @@ export default function MurajaIndex() {
 
             <View className="mt-6 mb-4">
               <SectionHeader title="Next Milestone" />
-              {planState === 'EVALUATION_DUE' ? (
+              {isEvalDue ? (
                 <EvaluationRequiredCard type="muraja" />
-              ) : planState === 'COMPLETION_DUE' ? (
+              ) : isCompDue ? (
                  <PlanEndCard activityType="MURAJA" localRefId={weeklyPlan.id} title="Muraja Plan" />
-              ) : todayTask ? (
+              ) : (dashboardState.type === 'TODAY_TASK' && todayTask) ? (
                 <ActionTaskCard
                   typeLabel="Muraja'a"
                   title={title ?? ''}
@@ -180,13 +188,13 @@ export default function MurajaIndex() {
         <ScreenFooter>
           <View className="flex-row gap-x-3">
             <Button
-              className={`flex-1 shadow-lg ${planState === 'EVALUATION_DUE' ? 'opacity-50' : 'shadow-primary/20'}`}
-              onPress={() => planState !== 'EVALUATION_DUE' && router.push(`/(app)/muraja/log`)}
-              disabled={planState === 'EVALUATION_DUE'}
+              className={`flex-1 shadow-lg ${(isEvalDue || isCompDue) ? 'opacity-50' : 'shadow-primary/20'}`}
+              onPress={() => !(isEvalDue || isCompDue) && router.push(`/(app)/muraja/log`)}
+              disabled={isEvalDue || isCompDue}
             >
               <Ionicons name="add-circle" size={20} color="white" />
               <Text className="text-white">
-                 {planState === 'EVALUATION_DUE' ? 'Test Required' : 'Log Progress'}
+                 {isEvalDue ? 'Test Required' : isCompDue ? 'Plan Completed' : 'Log Progress'}
               </Text>
             </Button>
 

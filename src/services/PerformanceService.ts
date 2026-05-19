@@ -1,7 +1,8 @@
 import { db as drizzleDb } from "@/src/lib/db/local-client";
 import { pagePerformance, userStats } from "@/src/features/user/database/userSchema";
 import { pageActivityLogs } from "@/src/features/habits/database/habitSchema";
-import { eq, and, sql, lte, asc } from "drizzle-orm";
+import { eq, and, sql, lte, asc, gte } from "drizzle-orm";
+import type { HifzPageRange } from "@/src/features/hifz/utils/hifz-page-range";
 
 export type PagePerformance = {
   page_number: number;
@@ -109,6 +110,8 @@ export const PerformanceService = {
     const tx = db || drizzleDb;
     const current = await this.getPagePerformance(tx, pageNumber);
     const next = this.calculateNextState(current, qualityScore, reviewDate);
+    const lastSessionQuality = qualityScore >= 5 ? 'perfect' : qualityScore <= 2 ? 'low' : 'medium';
+    const lastMistakesCount = qualityScore >= 4 ? 0 : (qualityScore === 3 ? 1 : (qualityScore === 2 ? 2 : 4));
 
     await tx.insert(pagePerformance)
       .values({
@@ -120,6 +123,8 @@ export const PerformanceService = {
         stability: next.stability,
         difficulty: next.difficulty,
         consecutivePerfects: next.consecutive_perfects,
+        lastSessionQuality,
+        lastMistakesCount,
       })
       .onConflictDoUpdate({
         target: [pagePerformance.userId, pagePerformance.pageNumber],
@@ -130,6 +135,8 @@ export const PerformanceService = {
           stability: next.stability,
           difficulty: next.difficulty,
           consecutivePerfects: next.consecutive_perfects,
+          lastSessionQuality,
+          lastMistakesCount,
           updatedAt: sql`CURRENT_TIMESTAMP`,
         },
       });
@@ -160,8 +167,9 @@ export const PerformanceService = {
       
       const isMemorized = log.pageId <= currentMemorizedPage;
       const isHifz = log.source === 'hifz';
+      const isMuraja = log.source === 'muraja';
 
-      if (isHifz || isMemorized) {
+      if (isHifz || isMuraja || isMemorized) {
         let nextConsecutive = current.consecutive_perfects;
         if (score >= 5) {
           const lastDate = lastPerfectDateMap.get(log.pageId);
@@ -265,11 +273,27 @@ export const PerformanceService = {
     }
   },
 
-  async getDuePages(db: any, limit = 10): Promise<PagePerformance[]> {
+  async getDuePages(
+    db: any,
+    userId: string,
+    limit = 10,
+    hifzRange?: HifzPageRange | null,
+  ): Promise<PagePerformance[]> {
     const tx = db || drizzleDb;
     const today = new Date().toISOString();
+
+    const conditions = [
+      eq(pagePerformance.userId, userId),
+      lte(pagePerformance.nextReviewAt, today),
+    ];
+
+    if (hifzRange) {
+      conditions.push(gte(pagePerformance.pageNumber, hifzRange.minPage));
+      conditions.push(lte(pagePerformance.pageNumber, hifzRange.maxPage));
+    }
+
     const rows = await tx.query.pagePerformance.findMany({
-      where: lte(pagePerformance.nextReviewAt, today),
+      where: and(...conditions),
       orderBy: [pagePerformance.nextReviewAt, pagePerformance.strength],
       limit,
     });

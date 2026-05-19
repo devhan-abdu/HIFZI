@@ -43,7 +43,20 @@ export interface HifzQuestion {
 }
 
 export const HifzPlanSchema = Yup.object({
-  start_date: Yup.string().required("Start date is required"),
+  start_date: Yup.string()
+    .required("Start date is required")
+    .test(
+      "not-in-past",
+      "Start date cannot be in the past",
+      (value) => {
+        if (!value) return false;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const selected = new Date(value);
+        selected.setHours(0, 0, 0, 0);
+        return selected >= today;
+      }
+    ),
   start_surah: Yup.number().required("Start surah is required").min(1).max(114),
   start_page: Yup.number().required("Start page is required").min(1).max(604),
   total_pages: Yup.number().optional().min(1).max(604),

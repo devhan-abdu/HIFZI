@@ -53,7 +53,7 @@ export default function CreateHifzPlan() {
     resolver: yupResolver(HifzPlanSchema) as any,
     defaultValues: {
       start_date: new Date().toISOString().split("T")[0],
-      selectedDays: [],
+      selectedDays: [(new Date().getDay() + 6) % 7],
       pages_per_day: 2,
       start_surah: 1,
       start_page: 1,
@@ -204,19 +204,33 @@ export default function CreateHifzPlan() {
                 <View>
                   <Pressable
                     onPress={() => setShowDatePicker(true)}
-                    className="flex-row items-center justify-between active:opacity-60"
+                    className={`flex-row items-center justify-between active:opacity-60 ${
+                      errors.start_date ? "border border-red-100 p-2 rounded-xl" : ""
+                    }`}
                   >
                     <View className="flex-row items-center gap-4">
-                      <View className="w-12 h-12 rounded-full bg-primary/10 items-center justify-center">
-                        <Ionicons name="calendar" size={20} color="#276359" />
+                      <View className={`w-12 h-12 rounded-full items-center justify-center ${
+                        errors.start_date ? "bg-red-50" : "bg-primary/10"
+                      }`}>
+                        <Ionicons name="calendar" size={20} color={errors.start_date ? "#ef4444" : "#276359"} />
                       </View>
                       <View>
                         <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-0.5">Start Date</Text>
-                        <Text className="text-base  text-slate-900">{formattedStartDate}</Text>
+                        <Text className={`text-base ${errors.start_date ? "text-red-500" : "text-slate-900"}`}>
+                          {formattedStartDate}
+                        </Text>
                       </View>
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
+                    <Ionicons name="chevron-forward" size={18} color={errors.start_date ? "#ef4444" : "#94a3b8"} />
                   </Pressable>
+                  {errors.start_date && (
+                    <View className="flex-row items-center mt-2 ml-1 gap-x-1">
+                      <Ionicons name="alert-circle-outline" size={12} color="#ef4444" />
+                      <Text className="text-red-500 text-[10px] uppercase tracking-tight">
+                        {errors.start_date.message}
+                      </Text>
+                    </View>
+                  )}
                   {showDatePicker && (
                     <DateTimePicker
                       value={new Date(value)}

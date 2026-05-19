@@ -42,7 +42,7 @@ function getTranslationFile(translationId: number, page: number) {
 
 // ─── In-memory LRU Cache ─────────────────────────────────────────────────────
 
-const MAX_MEMORY_PAGES = 20;
+const MAX_MEMORY_PAGES = 60;
 const memoryArabicCache = new Map<number, { verse_key: string; text_uthmani: string }[]>();
 const memoryTranslationCache = new Map<string, { verse_key?: string; text: string }[]>();
 
@@ -84,7 +84,7 @@ async function fetchArabicPage(page: number): Promise<{ verse_key: string; text_
       params: { 
         words: false, 
         fields: "text_uthmani",
-        mushaf: 2,
+        mushaf: 2, // mushaf: 2 = Hafs (standard). BOOKMARKS_MUSHAF_ID = 4 is separate (reading position tracker).
         per_page: 50 // ensure all verses on page are fetched
       },
       silentErrorLog: true,
@@ -213,10 +213,18 @@ export async function loadTranslationPage(
 }
 
 export function prefetchTranslationPages(page: number, translationIds: number[]) {
-  const pages = [page - 1, page, page + 1].filter((p) => p >= 1 && p <= 604);
+  const pages = [page - 1, page, page + 1, page + 2, page + 3].filter((p) => p >= 1 && p <= 604);
   pages.forEach((p) => {
     loadTranslationPage(p, translationIds).catch(() => null);
   });
+}
+
+export function warmTranslationPage(page: number, translationIds: number[]) {
+  const start = Math.max(1, page - 3);
+  const end = Math.min(604, page + 3);
+  for (let p = start; p <= end; p++) {
+    loadTranslationPage(p, translationIds).catch(() => null);
+  }
 }
 
 // ─── Translation Manager: List & Download ────────────────────────────────────
@@ -250,27 +258,49 @@ export async function downloadTranslation(
   console.log(`[TranslationService] Starting download for ${name} (${id})...`);
 
   try {
+    // 1. Count how many pages are already downloaded
+    let completedCount = 0;
+    for (let p = 1; p <= 604; p++) {
+      if (getTranslationFile(id, p).exists) {
+        completedCount++;
+      }
+    }
+    const initialProgress = completedCount / 604;
+
     await db.insert(translationResources)
       .values({
         translationId: id,
         name,
         totalPages: 604,
-        downloadProgress: 0,
+        downloadProgress: initialProgress,
       })
       .onConflictDoUpdate({
         target: translationResources.translationId,
         set: { updatedAt: new Date().toISOString() }
       });
 
+    onProgress(initialProgress);
+
     const chunkSize = 5; // Production level: smaller chunks to avoid rate limits and network congestion
     for (let i = 1; i <= 604; i += chunkSize) {
       const end = Math.min(i + chunkSize - 1, 604);
-      const pages = Array.from({ length: end - i + 1 }, (_, idx) => i + idx);
+      const pagesToDownload: number[] = [];
 
-      // Fetch pages in parallel within the chunk
-      await Promise.all(pages.map((p) => fetchTranslationPage(id, p)));
+      for (let p = i; p <= end; p++) {
+        if (getTranslationFile(id, p).exists) {
+          // already counted / exists, skip
+        } else {
+          pagesToDownload.push(p);
+        }
+      }
 
-      const progress = end / 604;
+      if (pagesToDownload.length > 0) {
+        // Fetch pages in parallel within the chunk
+        await Promise.all(pagesToDownload.map((p) => fetchTranslationPage(id, p)));
+        completedCount += pagesToDownload.length;
+      }
+
+      const progress = completedCount / 604;
       await db.update(translationResources)
         .set({ downloadProgress: progress })
         .where(eq(translationResources.translationId, id));

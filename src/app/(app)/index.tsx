@@ -22,12 +22,20 @@ import { useUserBadges } from "@/src/hooks/useUserBadges";
 import { AchievementSection } from "@/src/components/dashboard/AchievementSection";
 
 
+import { useHifzDailyTask } from "@/src/features/hifz/hooks/useHifzDailyTask";
+
 export default function Dashboard() {
   const { items: surah, loading } = useLoadSurahData();
   const { hifz: hifzPlan, isLoading: loadingHifz } = useHifzPlan();
   const habitProgress = useHabitProgress();
   const { analytics } = habitProgress;
-  const { weeklyPlan: murajaPlan, loading: loadingMuraja } = useWeeklyMuraja();
+  const {
+    weeklyPlan: murajaPlan,
+    stats: murajaStats,
+    loading: loadingMuraja,
+    todayTask: murajaTodayTask,
+  } = useWeeklyMuraja();
+  const { todayTask: hifzTodayTask } = useHifzDailyTask();
   const { data: badges = [] } = useUserBadges();
 
   const { data: userStats } = useUserStats();
@@ -38,8 +46,55 @@ export default function Dashboard() {
 
   const hifzAnalytics = useMemo(() => {
     if (!hifzPlan || !surah.length) return null;
-    return hifzStatus(hifzPlan, surah);
+    const status = hifzStatus(hifzPlan, surah);
+    if (!status) return null;
+    const stripSurah = (name?: string) =>
+      name?.replace(/^Surat\s+/i, "").trim() ?? "";
+
+    return {
+      ...status,
+      daysPerWeek: hifzPlan.selectedDays?.length ?? 0,
+      planRangeLabel: [stripSurah(status.startSurah), stripSurah(status.endSurah)]
+        .filter(Boolean)
+        .join(" – "),
+    };
   }, [hifzPlan, surah]);
+
+  const murajaHero = useMemo(() => {
+    if (!murajaPlan) return null;
+
+    const stripSurah = (name?: string) =>
+      name?.replace(/^Surat\s+/i, "").trim() ?? "";
+
+    return {
+      id: murajaPlan.id,
+      planned_pages_per_day: murajaPlan.planned_pages_per_day,
+      targetEndDate: murajaPlan.week_end_date,
+      totalDays: murajaPlan.totalDays ?? murajaPlan.plannedDays,
+      currentSurah: murajaStats?.currentSurah,
+      pageInSurah: murajaStats?.pageInSurah,
+      planRangeLabel: [stripSurah(murajaPlan.startSurah), stripSurah(murajaPlan.endSurah)]
+        .filter(Boolean)
+        .join(" – "),
+      overAllProgress: murajaStats?.overAllProgress,
+    };
+  }, [murajaPlan, murajaStats]);
+
+  const dynamicGoalPages = useMemo(() => {
+    let goal = 0;
+    
+    if (murajaPlan && murajaTodayTask && !murajaTodayTask.isVirtualTask) {
+      const start = murajaTodayTask.startPage;
+      const end = murajaTodayTask.quotaEnd ?? murajaTodayTask.endPage;
+      goal += Math.max(0, end - start + 1);
+    }
+    
+    if (hifzPlan && hifzTodayTask && !hifzTodayTask.isVirtualTask) {
+      goal += hifzTodayTask.totalTarget ?? 0;
+    }
+    
+    return goal > 0 ? goal : (habitProgress.todayStats.goalPages || 4);
+  }, [murajaPlan, murajaTodayTask, hifzPlan, hifzTodayTask, habitProgress.todayStats.goalPages]);
 
  
 
@@ -47,7 +102,7 @@ export default function Dashboard() {
   if (loadingHifz || loadingMuraja || loading) return <DashboardSkeleton />;
 
   if (!hifzPlan && !murajaPlan) {
-    return <Redirect href="/(app)/onboarding" />;
+    return <Redirect href="/onboarding" />;
   }
 
  
@@ -60,8 +115,7 @@ export default function Dashboard() {
             <Card
               hifzAnalytics={hifzAnalytics ?? null}
               habitProgress={habitProgress}
-              murajaPlan={murajaPlan}
-              surah={surah}
+              murajaHero={murajaHero}
               userStats={userStats ?? null}
             />
           </View>
@@ -90,7 +144,7 @@ export default function Dashboard() {
             <View className="bg-slate-50 border border-slate-100 rounded-3xl p-5 mb-4 items-center">
               <HabitProgressRing
                 completedPages={habitProgress.todayStats.completedPages}
-                goalPages={habitProgress.todayStats.goalPages}
+                goalPages={dynamicGoalPages}
                 streak={analytics.currentStreak}
               />
             </View>

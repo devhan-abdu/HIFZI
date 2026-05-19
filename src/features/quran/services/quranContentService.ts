@@ -42,32 +42,52 @@ function extractTextPayload(response: any, key: "tafsirs" | "translations"): any
   };
 }
 
+let _translationsCache: Translation[] | null = null;
+let _translationsFetch: Promise<Translation[]> | null = null;
+
 export async function getTranslationsCached(): Promise<Translation[]> {
-  try {
-    const cached = await AsyncStorage.getItem("translations_v2");
-    if (cached) return JSON.parse(cached);
+  if (_translationsCache) return _translationsCache;
+  if (_translationsFetch) return _translationsFetch;
 
-    const response = await callQF(`/${QF_ENV}/content/api/v4/resources/translations`, { params: { language: "en" } });
-    const raw: any[] = response?.translations ?? [];
-    const translations: Translation[] = raw
-      .map((item: any) => ({
-        id: Number(item?.id),
-        name:
-          item?.translated_name?.name ??
-          item?.name ??
-          item?.author_name ??
-          `Translation ${item?.id}`,
-        language_name: item?.language_name ?? item?.language?.name ?? "",
-      }))
-      .filter((t) => t.id > 0 && t.name);
+  _translationsFetch = (async () => {
+    try {
+      const cached = await AsyncStorage.getItem("translations_v2");
+      if (cached) {
+        _translationsCache = JSON.parse(cached);
+        return _translationsCache!;
+      }
 
-    if (translations.length > 0) {
-      await AsyncStorage.setItem("translations_v2", JSON.stringify(translations));
+      const response = await callQF(`/${QF_ENV}/content/api/v4/resources/translations`, { params: { language: "en" } });
+      const raw: any[] = response?.translations ?? [];
+      const translations: Translation[] = raw
+        .map((item: any) => ({
+          id: Number(item?.id),
+          name:
+            item?.translated_name?.name ??
+            item?.name ??
+            item?.author_name ??
+            `Translation ${item?.id}`,
+          language_name: item?.language_name ?? item?.language?.name ?? "",
+        }))
+        .filter((t) => t.id > 0 && t.name);
+
+      if (translations.length > 0) {
+        await AsyncStorage.setItem("translations_v2", JSON.stringify(translations));
+        _translationsCache = translations;
+      }
+      return translations;
+    } catch (error) {
+      return [];
+    } finally {
+      _translationsFetch = null;
     }
-    return translations;
-  } catch (error) {
-    return [];
-  }
+  })();
+
+  return _translationsFetch;
+}
+
+export function warmTranslationsCache() {
+  void getTranslationsCached();
 }
 
 export async function getAyahTafsirCached(tafsirId: number, sura: number, ayah: number): Promise<TafsirPayload> {

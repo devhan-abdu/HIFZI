@@ -5,6 +5,8 @@ export const getTargetPage = (
   dailyRate: number,
   dayNumber: number
 ) => {
+  if (dailyRate <= 0) return 0;
+
   const isPlannedDay = selectedDays.includes(dayNumber);
   const backlog = Math.max(0, plannedTotal - completedTotal);
   const hasBacklog = backlog > 0;

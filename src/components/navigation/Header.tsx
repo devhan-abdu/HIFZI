@@ -2,26 +2,31 @@ import { useSession } from "@/src/hooks/useSession";
 import { useNotifications } from "@/src/hooks/useNotifications";
 import { supabase } from "@/src/lib/supabase";
 import { useState } from "react";
-import { View, Pressable } from "react-native";
+import { View, Pressable, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Alert } from "../common/Alert";
 import { Text } from "@/src/components/common/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
-export const Header = ({ title, userStats }: { title: string; userStats?: { level: number; totalXp: number } | null }) => {
+export const Header = ({
+  title,
+  userStats,
+}: {
+  title: string;
+  userStats?: { level: number; totalXp: number } | null;
+}) => {
   const insets = useSafeAreaInsets();
   const { user } = useSession();
   const { unreadCount } = useNotifications();
   const router = useRouter();
 
+  const [menuOpen, setMenuOpen] = useState(false);
   const [signOut, setSignOut] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const username = user?.user_metadata?.user_name || user?.email;
-
-  const xpProgress = userStats ? (userStats.totalXp % 1000) / 10 : 0;
 
   const handleSignOut = async () => {
     try {
@@ -30,7 +35,7 @@ export const Header = ({ title, userStats }: { title: string; userStats?: { leve
         setErrorMessage(error.message);
         setErrorVisible(true);
       }
-    } catch (e) {
+    } catch {
       setErrorMessage("An unexpected error occurred. Please try again.");
       setErrorVisible(true);
     }
@@ -48,11 +53,6 @@ export const Header = ({ title, userStats }: { title: string; userStats?: { leve
               HIFZI
             </Text>
           </View>
-          {/* {title !== "Home" && (
-            <Text className="text-2xl  text-slate-900 tracking-tight mt-1">
-              {title}
-            </Text>
-          )} */}
         </View>
 
         <View className="flex-row items-center gap-x-3">
@@ -69,11 +69,42 @@ export const Header = ({ title, userStats }: { title: string; userStats?: { leve
               </View>
             )}
           </Pressable>
-          <Pressable onPress={() => setSignOut(true)}>
+          <Pressable onPress={() => setMenuOpen(true)}>
             <UserAvatar name={username} />
           </Pressable>
         </View>
       </View>
+
+      <Modal transparent visible={menuOpen} animationType="fade">
+        <View className="flex-1">
+          <Pressable className="absolute inset-0" onPress={() => setMenuOpen(false)} />
+          <View
+            className="absolute right-6 bg-white rounded-2xl border border-slate-100 shadow-lg overflow-hidden min-w-[160px]"
+            style={{ top: insets.top + 56 }}
+          >
+            <Pressable
+              onPress={() => {
+                setMenuOpen(false);
+                router.push("/(app)/journey" as never);
+              }}
+              className="flex-row items-center px-4 py-3.5 border-b border-slate-100 active:bg-slate-50"
+            >
+              <Ionicons name="map-outline" size={18} color="#276359" />
+              <Text className="text-slate-900 text-sm ml-3">Journey</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                setMenuOpen(false);
+                setSignOut(true);
+              }}
+              className="flex-row items-center px-4 py-3.5 active:bg-slate-50"
+            >
+              <Ionicons name="log-out-outline" size={18} color="#dc2626" />
+              <Text className="text-red-600 text-sm ml-3">Logout</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
 
       <Alert
         visible={signOut}

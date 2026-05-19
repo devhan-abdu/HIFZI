@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect, useState } from "react";
-import { View, FlatList, useWindowDimensions } from "react-native";
+import { View, FlatList, useWindowDimensions, TouchableOpacity, Text } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   useFocusEffect,
@@ -7,6 +7,7 @@ import {
   useNavigation,
 } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { MushafPage } from "@/src/features/mushaf/components/MushafPage";
 import { TranslationPage } from "@/src/features/quran/components/TranslationPage";
@@ -28,6 +29,8 @@ import { PageData } from "@/src/features/quran/type";
 import { useSession } from "@/src/hooks/useSession";
 import { useSQLiteContext } from "expo-sqlite";
 
+import { prefetchPages, countDownloadedPages, downloadAllPages } from "@/src/features/quran/services/quranImageService";
+import { warmTranslationPage } from "@/src/features/quran/services/translationPageService";
 
 const ALL_PAGES = Array.from({ length: 604 }, (_, i) => i + 1);
 
@@ -62,13 +65,68 @@ export default function QuranReaderScreen() {
     setSelectedAyah,
     tallyMode,
     playingAyah,
+    selectedTranslations,
   } = useReaderStore();
 
   const [tallyCounts, setTallyCounts] = useState({ mistakes: 0, hesitations: 0 });
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState<{ downloaded: number; total: number } | null>(null);
 
   const habitUserId = user?.id ?? "local-user";
 
   useFullscreenSystemUI(!uiVisible);
+
+  // Check and show onboarding prompt for downloading all pages
+  useEffect(() => {
+    const checkPrompt = async () => {
+      try {
+        const shown = await AsyncStorage.getItem("quran_images_prompt_shown");
+        if (shown !== "true") {
+          const downloaded = await countDownloadedPages();
+          if (downloaded < 604) {
+            setShowPrompt(true);
+          } else {
+            await AsyncStorage.setItem("quran_images_prompt_shown", "true");
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    void checkPrompt();
+  }, []);
+
+  const handleConfirmPrompt = async () => {
+    setShowPrompt(false);
+    await AsyncStorage.setItem("quran_images_prompt_shown", "true");
+    setIsDownloadingAll(true);
+    try {
+      await downloadAllPages((downloaded, total) => {
+        setDownloadProgress({ downloaded, total });
+        if (downloaded >= total) {
+          setIsDownloadingAll(false);
+        }
+      });
+    } catch (e) {
+      console.error(e);
+      setIsDownloadingAll(false);
+    }
+  };
+
+  const handleCancelPrompt = async () => {
+    setShowPrompt(false);
+    await AsyncStorage.setItem("quran_images_prompt_shown", "true");
+  };
+
+  // Prefetch/Warmup adjacent pages on page or viewMode change
+  useEffect(() => {
+    if (viewMode === "mushaf") {
+      void prefetchPages(currentPage);
+    } else {
+      void warmTranslationPage(currentPage, selectedTranslations);
+    }
+  }, [currentPage, viewMode, selectedTranslations]);
 
   useEffect(() => {
     const syncPageToRecitation = async () => {
@@ -212,7 +270,11 @@ export default function QuranReaderScreen() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#fff" }}>
       <StatusBar style="dark" hidden={!uiVisible} animated />
 
-      <ReaderHeader pageData={pageMeta[currentPage]} />
+      <ReaderHeader 
+        pageData={pageMeta[currentPage]} 
+        isDownloadingAll={isDownloadingAll}
+        downloadProgress={downloadProgress}
+      />
 
       <FlatList
         ref={listRef}
@@ -244,6 +306,50 @@ export default function QuranReaderScreen() {
         visible={tallyMode}
         onCountsChange={setTallyCounts}
       />
+
+      {/* Onboarding On-Demand Full Page Download Bottom Sheet Prompt */}
+      {showPrompt && (
+        <View 
+          style={{ 
+            position: "absolute", 
+            bottom: 0, 
+            left: 0, 
+            right: 0, 
+            backgroundColor: "#fff", 
+            borderTopLeftRadius: 24, 
+            borderTopRightRadius: 24, 
+            padding: 24, 
+            shadowColor: "#000", 
+            shadowOffset: { width: 0, height: -4 }, 
+            shadowOpacity: 0.1, 
+            shadowRadius: 12, 
+            elevation: 20, 
+            zIndex: 1000 
+          }}
+        >
+          <Text className="text-lg  text-slate-800 mb-2">
+            Download Quran Pages?
+          </Text>
+          <Text className="text-sm text-slate-500 leading-relaxed mb-6">
+            Would you like to download all 604 Quran pages for offline reading? This downloads about 50 MB once so you can read seamlessly without internet.
+          </Text>
+          <View className="flex-row space-x-3">
+            <TouchableOpacity
+              className="flex-1 bg-slate-100 py-3.5 rounded-2xl items-center"
+              onPress={handleCancelPrompt}
+            >
+              <Text className="text-slate-600 ">Not Now</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{ backgroundColor: "#0d9488" }}
+              className="flex-1 py-3.5 rounded-2xl items-center"
+              onPress={handleConfirmPrompt}
+            >
+              <Text className="text-white ">Download Now</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </GestureHandlerRootView>
   );
 }

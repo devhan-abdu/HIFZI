@@ -1,13 +1,11 @@
 import { useSession } from "@/src/hooks/useSession";
 import { useQuery } from "@tanstack/react-query";
 import { habitSummaryService } from "../services/habitSummaryService";
-import { useRouter } from "expo-router";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { format, subDays } from "date-fns";
 
 export function useWeeklyEvaluationTrigger() {
   const { user } = useSession();
-  const router = useRouter();
 
   const { data: duePlans = [], isLoading } = useQuery({
     queryKey: ['weekly-evaluation-due', user?.id],
@@ -16,7 +14,10 @@ export function useWeeklyEvaluationTrigger() {
       return await habitSummaryService.getDueEvaluationPlans(user.id);
     },
     enabled: !!user?.id,
-    refetchInterval: 1000 * 60 * 60, 
+    refetchInterval: 1000 * 60 * 5, // Check every 5 minutes instead of 1 hour
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const duePlanIds = useMemo(() => 
@@ -27,11 +28,6 @@ export function useWeeklyEvaluationTrigger() {
   );
 
   const isDue = duePlanIds.length > 0;
-
-  useEffect(() => {
-    if (isDue && !isLoading) {
-    }
-  }, [isDue, isLoading]);
 
   const weekStartDate = useMemo(() => {
     return format(subDays(new Date(), 7), "yyyy-MM-dd");

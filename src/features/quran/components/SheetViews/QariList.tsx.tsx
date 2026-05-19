@@ -122,7 +122,7 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
               />
             </View>
             {isDownloading && (
-              <Text className="mt-2 text-right text-[10px] font-medium text-slate-400">
+              <Text className="mt-2 text-right text-[10px]  text-slate-400">
                 Downloading: {Math.round(downloadProgress * 100)}%
               </Text>
             )}
@@ -175,7 +175,7 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
                       </Text>
                     </View>
                     <Text
-                      className={`ml-4 flex-1 font-semibold ${isSelected ? "text-teal-900" : "text-slate-700"}`}
+                      className={`ml-4 flex-1  ${isSelected ? "text-teal-900" : "text-slate-700"}`}
                       numberOfLines={1}
                     >
                       {item.name}

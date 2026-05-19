@@ -29,7 +29,10 @@ export function WeeklyReviewView({
       return plan.weekly_plan_days.map((day: any) => ({
         date: day.date,
         dayName: day.day_of_week.slice(0, 3),
-        isToday: day.date === new Date().toISOString().slice(0, 10),
+        isToday: day.date === (() => {
+          const d = new Date();
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        })(),
         isSelected: true,
         status: day.daily_muraja_logs?.[0]?.status || 'pending',
         completed: day.daily_muraja_logs?.[0]?.completed_pages || 0

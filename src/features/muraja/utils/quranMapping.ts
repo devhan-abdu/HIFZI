@@ -19,17 +19,37 @@ export const DAY_NUMBER_MAP: Record<string, number> = {
   "Friday": 5, "Saturday": 6, "Sunday": 0
 };
   
+/** First page of each juz (1–30). Page 604 belongs to juz 30. */
 const juzStartPages = [
   1, 22, 42, 62, 82, 102, 122, 142, 162, 182,
   202, 222, 242, 262, 282, 302, 322, 342, 362, 382,
-  402, 422, 442, 462, 482, 502, 522, 542, 562, 582, 604
+  402, 422, 442, 462, 482, 502, 522, 542, 562, 582,
 ];
 
-
-export function getJuzByPage(page: number) {
+export function getJuzByPage(page: number): number {
+  const p = Math.min(Math.max(1, Math.round(page)), 604);
   for (let i = juzStartPages.length - 1; i >= 0; i--) {
-    if (page >= juzStartPages[i]) return i + 1;
+    if (p >= juzStartPages[i]) return i + 1;
   }
+  return 1;
+}
+
+export function formatJuzRange(startJuz: number, endJuz: number): string {
+  const low = Math.min(startJuz, endJuz);
+  const high = Math.max(startJuz, endJuz);
+  if (low === high) return `Juz ${low}`;
+  return `Juz ${low}–${high}`;
+}
+
+export function getPagePositionLabel(page: number, surah: ISurah[]) {
+  const found = getSurah(page, surah);
+  if (!found) {
+    return { pageInSurah: page, surahName: "—" };
+  }
+  return {
+    pageInSurah: page - found.startingPage + 1,
+    surahName: found.englishName,
+  };
 }
 
 export function getSurahByPage(page: number, surah: ISurah[]) {

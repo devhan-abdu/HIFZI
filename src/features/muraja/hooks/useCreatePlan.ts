@@ -13,6 +13,10 @@ export function useCreatePlan() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["muraja-dashboard", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["muraja-review", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["habit-progress", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["user-stats", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["activity-plans", user?.id] });
         }
     });
 

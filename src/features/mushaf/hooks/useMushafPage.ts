@@ -18,7 +18,10 @@ export function useMushafPage(
 
  
 
-  const naturalWidth = 1300
+  const [retryCount, setRetryCount] = useState(0);
+  const retry = () => setRetryCount((prev) => prev + 1);
+
+  const naturalWidth = 1300;
   const naturalHeight = 2103;
 
   useEffect(() => {
@@ -29,7 +32,7 @@ export function useMushafPage(
       try {
         const [uri, fetchedBboxes] = await Promise.all([
           getPageImage(page),
-          getAyahBBoxesByPage(page , db)
+          getAyahBBoxesByPage(page, db)
         ]);
 
         if (!isCancelled) {
@@ -50,7 +53,7 @@ export function useMushafPage(
     return () => {
       isCancelled = true;
     };
-  }, [page, db]);
+  }, [page, db, retryCount]);
 
   // Calculate scaled bboxes whenever bboxes or container dimensions change
   const scaledBboxes = useMemo(() => {
@@ -75,6 +78,7 @@ export function useMushafPage(
     scaledBboxes,
     loading,
     naturalWidth,
-    naturalHeight
+    naturalHeight,
+    retry
   };
 }

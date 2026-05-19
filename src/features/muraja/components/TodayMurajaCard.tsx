@@ -42,7 +42,7 @@ export const TodayMurajaCard = ({
               Status
             </Text>
             <Pressable
-              onPress={() => router.push(`/(app)/muraja/(tabs)/log`)}
+              onPress={() => router.push(`/(app)/muraja/log`)}
               className="flex-row items-center bg-primary/20 px-3 py-1.5 rounded-full active:bg-slate-100"
             >
               <Text className="text-primary   text-[11px] mr-1.5">Add Log</Text>

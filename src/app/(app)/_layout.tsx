@@ -163,6 +163,14 @@ export default function AppLayout() {
             headerShown: false,
           }}
         />
+
+        <Tabs.Screen
+          name="journey"
+          options={{
+            href: null,
+            headerShown: false,
+          }}
+        />
       </Tabs>
 
       <Pressable

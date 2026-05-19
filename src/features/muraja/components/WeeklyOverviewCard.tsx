@@ -1,4 +1,3 @@
-import { IWeeklyMuraja } from "@/src/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/src/components/common/ui/Text";
 import { View } from "react-native";
@@ -10,6 +9,15 @@ export const WeeklyOverviewCard = ({
 }: {
   weeklyPlan: IWeeklyPlanDashboardData;
 }) => {
+
+  const parseDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return "N/A";
+    try {
+      return format(new Date(dateStr), "MMM dd, yyyy");
+    } catch {
+      return dateStr;
+    }
+  };
 
   return (
     <View className="bg-primary rounded-[40px] p-7 mb-8 shadow-2xl shadow-primary/40 overflow-hidden relative border border-white/5">
@@ -32,14 +40,14 @@ export const WeeklyOverviewCard = ({
             Est. Completion
           </Text>
           <Text className="text-white text-xl tracking-tighter">
-            {weeklyPlan.week_end_date ? format(new Date(weeklyPlan.week_end_date), "MMM dd, yyyy") : "N/A"}
+            {parseDate(weeklyPlan.week_end_date)}
           </Text>
         </View>
       </View>
 
       <View className="mb-6">
         <Text className="text-white/40 uppercase tracking-widest text-[9px] mb-1">
-          Current Cycle Target
+          Plan Target Volume
         </Text>
         <Text className="text-white text-4xl tracking-tighter">
           {weeklyPlan.weeklyTargetPages} <Text className="text-white/40 text-xl">Pages</Text>
@@ -59,7 +67,7 @@ export const WeeklyOverviewCard = ({
             <Text className="text-white text-sm ">{weeklyPlan.totalDays}</Text>
           </View>
           <Text className="text-white/40 text-[8px] uppercase tracking-[1.5px]">
-            Days
+            Days/Wk
           </Text>
         </View>
 
