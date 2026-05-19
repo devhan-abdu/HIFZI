@@ -1,23 +1,31 @@
-import { useState, useEffect, useMemo } from 'react';
-import { getAyahBBoxesByPage, getPageImage } from '../../quran/services';
-import { calculateScale, transformBbox, ScaleMode } from '../utils/coordinates';
-import { AyahBbox } from '../../quran/type';
-import { useSQLiteContext } from 'expo-sqlite';
+import { useState, useEffect, useMemo } from "react";
+import { useSQLiteContext } from "expo-sqlite";
+import {
+  getAyahBBoxesByPage,
+  getPageImage,
+  getLocalPageUri,
+} from "../../quran/services";
+import {
+  getCachedBboxes,
+  setCachedBboxes,
+} from "../../quran/services/mushafResourceCache";
+import { calculateScale, ScaleMode } from "../utils/coordinates";
+import { groupBboxesByAyah } from "../utils/bboxGrouping";
+import { AyahBbox } from "../../quran/type";
 
 export function useMushafPage(
-  page: number, 
-  containerWidth: number, 
+  page: number,
+  containerWidth: number,
   containerHeight: number,
-  
-  mode: ScaleMode = 'cover'
+  mode: ScaleMode = "cover",
 ) {
-  const [imageUri, setImageUri] = useState<string | null>(null);
-  const [bboxes, setBboxes] = useState<AyahBbox[]>([]);
-  const [loading, setLoading] = useState(true);
   const db = useSQLiteContext();
+  const initialUri = getLocalPageUri(page);
+  const initialBboxes = getCachedBboxes(page);
 
- 
-
+  const [imageUri, setImageUri] = useState<string | null>(initialUri);
+  const [bboxes, setBboxes] = useState<AyahBbox[]>(initialBboxes ?? []);
+  const [loading, setLoading] = useState(!initialUri);
   const [retryCount, setRetryCount] = useState(0);
   const retry = () => setRetryCount((prev) => prev + 1);
 
@@ -25,38 +33,51 @@ export function useMushafPage(
   const naturalHeight = 2103;
 
   useEffect(() => {
-    let isCancelled = false;
+    let cancelled = false;
 
     const loadData = async () => {
-      setLoading(true);
+      const hasLocalImage = !!getLocalPageUri(page);
+      const hasBboxes = (getCachedBboxes(page)?.length ?? 0) > 0;
+
+      if (!hasLocalImage || !hasBboxes) {
+        setLoading(true);
+      }
+
       try {
+        const bboxPromise = hasBboxes
+          ? Promise.resolve(getCachedBboxes(page)!)
+          : getAyahBBoxesByPage(page, db).then((fetched) => {
+              if (fetched.length > 0) setCachedBboxes(page, fetched);
+              return fetched;
+            });
+
+        const imagePromise = hasLocalImage
+          ? Promise.resolve(getLocalPageUri(page))
+          : getPageImage(page);
+
         const [uri, fetchedBboxes] = await Promise.all([
-          getPageImage(page),
-          getAyahBBoxesByPage(page, db)
+          imagePromise,
+          bboxPromise,
         ]);
 
-        if (!isCancelled) {
-          setImageUri(uri);
-          setBboxes(fetchedBboxes);
+        if (!cancelled) {
+          if (uri) setImageUri(uri);
+          if (fetchedBboxes.length > 0) setBboxes(fetchedBboxes);
         }
       } catch (error) {
-        console.error('Error loading mushaf page:', error);
+        console.error("Error loading mushaf page:", error);
       } finally {
-        if (!isCancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     };
 
-    loadData();
-
+    void loadData();
     return () => {
-      isCancelled = true;
+      cancelled = true;
     };
   }, [page, db, retryCount]);
 
-  // Calculate scaled bboxes whenever bboxes or container dimensions change
-  const scaledBboxes = useMemo(() => {
+  const ayahRegions = useMemo(() => {
     if (!containerWidth || !containerHeight || bboxes.length === 0) return [];
 
     const { scale, offsetX, offsetY } = calculateScale(
@@ -64,21 +85,19 @@ export function useMushafPage(
       containerHeight,
       naturalWidth,
       naturalHeight,
-      mode
+      mode,
     );
 
-    return bboxes.map((bbox) => ({
-      ...bbox,
-      scaledRect: transformBbox(bbox, scale, offsetX, offsetY)
-    }));
+    return groupBboxesByAyah(bboxes, scale, offsetX, offsetY);
   }, [bboxes, containerWidth, containerHeight, naturalWidth, naturalHeight, mode]);
 
   return {
     imageUri,
-    scaledBboxes,
-    loading,
+    ayahRegions,
+    bboxes,
+    loading: loading && !imageUri,
     naturalWidth,
     naturalHeight,
-    retry
+    retry,
   };
 }

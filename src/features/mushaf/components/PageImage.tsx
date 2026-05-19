@@ -17,7 +17,8 @@ export const PageImage: React.FC<PageImageProps> = ({ uri, onLayout }) => {
           source={{ uri }}
           style={styles.image}
           contentFit="contain"
-          transition={200}
+          cachePolicy="memory-disk"
+          transition={0}
         />
       )}
     </View>
