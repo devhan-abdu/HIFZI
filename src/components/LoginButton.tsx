@@ -52,13 +52,12 @@ export default function LoginButton() {
       if (response.type === "success") {
         setIsLoading(true);
         try {
-          // Send the authorization code and codeVerifier to your server backend
           const res = await fetch(`${BACKEND}/qf-login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               code: response.params.code,
-              codeVerifier: request?.codeVerifier, // Re-included for strict PKCE security check
+              codeVerifier: request?.codeVerifier, 
               redirectUri: REDIRECT_URI,
             }),
           });
@@ -106,10 +105,6 @@ export default function LoginButton() {
         onPress={handleLogin}
         className="bg-white p-5 rounded-2xl my-8 flex-row items-center justify-center shadow-lg active:opacity-90"
       >
-        <View className="absolute -top-10 bg-black/50 p-1 rounded">
-          <Text className="text-white text-xs">Debug ID: {CLIENT_ID || "UNDEFINED"}</Text>
-          <Text className="text-white text-xs">Debug Scheme: {scheme || "UNDEFINED"}</Text>
-        </View>
         {isLoading ?
           <ActivityIndicator color="#0E1B1B" />
         : <View className="flex-row items-center">
