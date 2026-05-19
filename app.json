@@ -8,6 +8,11 @@
     "scheme": "hifzi",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "androidNavigationBar": {
+      "barStyle": "dark-content",
+      "backgroundColor": "#FFFFFF",
+      "enforceContrast": false
+    },
     "splash": {
       "image": "./assets/images/hifzilogowhite.png",
       "resizeMode": "contain",

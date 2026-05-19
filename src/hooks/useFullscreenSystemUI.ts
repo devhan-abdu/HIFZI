@@ -24,8 +24,7 @@ export function useFullscreenSystemUI(enabled: boolean) {
       const exitFullscreen = async () => {
         try {
           await NavigationBar.setVisibilityAsync("visible");
-          await NavigationBar.setBehaviorAsync("inset-swipe");
-          await NavigationBar.setBackgroundColorAsync("#ffffff");
+          NavigationBar.setStyle("light");
         } catch (e) {
           console.warn("Failed to exit fullscreen:", e);
         }

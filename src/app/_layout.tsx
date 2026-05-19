@@ -15,6 +15,7 @@ import { QURAN_CORE_DB_NAME } from "@/src/lib/db/constants";
 import { CelebrationOverlay } from "@/src/components/common/CelebrationOverlay";
 import { SyncBootstrap } from "@/src/components/common/SyncBootstrap";
 import { warmTranslationsCache } from "@/src/features/quran/services";
+import * as NavigationBar from "expo-navigation-bar";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -36,15 +37,15 @@ export default function RootLayout() {
     }
   }, [fontsLoaded]);
 
-   useEffect(() => {
-     if (Platform.OS !== "android") {
-       return;
-     }
+  useEffect(() => {
+    if (Platform.OS !== "android") {
+      return;
+    }
 
-    //  NavigationBar.setBehaviorAsync("overlay-swipe");
-    //  NavigationBar.setBackgroundColorAsync("#ffffff00"); // Transparent
-    //  NavigationBar.setButtonStyleAsync("dark");
-   }, []);
+    // On modern Android edge-to-edge, background/behavior setters are deprecated.
+    // Keep only the supported icon style update here.
+    NavigationBar.setStyle("light");
+  }, []);
 
   if (!fontsLoaded) return null;
 
