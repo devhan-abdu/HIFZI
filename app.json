@@ -71,10 +71,10 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "b30fb5cd-a8e2-4463-bbea-5df0ca4348bb"
+        "projectId": "d00968f2-eb77-46b1-802b-8ef6df222d47"
       }
     },
-    "owner": "devhanunina",
+    "owner": "devhan-abdu",
     "updates": {},
     "runtimeVersion": {
       "policy": "appVersion"

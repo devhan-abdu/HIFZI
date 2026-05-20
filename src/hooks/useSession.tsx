@@ -7,11 +7,12 @@ import {
   useMemo,
   useState,
 } from "react";
-import { supabase } from "../lib/supabase";
+import { supabase, supabaseConfigError } from "../lib/supabase";
 
 type AuthContextType = {
   session: Session | null;
   loading: boolean;
+  configError: string | null;
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(
@@ -23,6 +24,11 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    if (supabaseConfigError) {
+      setLoading(false);
+      return;
+    }
+
     supabase.auth
       .getSession()
       .then(({ data: { session } }) => {
@@ -40,7 +46,10 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const value = useMemo(() => ({ session, loading }), [session, loading]);
+  const value = useMemo(
+    () => ({ session, loading, configError: supabaseConfigError }),
+    [session, loading]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
@@ -54,5 +63,6 @@ export const useSession = () => {
     session: context.session,
     user: context?.session?.user,
     loading: context.loading,
+    configError: context.configError,
   };
 };

@@ -12,7 +12,9 @@
     "**/*.ts",
     "**/*.tsx",
     "nativewind-env.d.ts",
-    "babel.config.js"
+    "babel.config.js",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
   ],
   "exclude": [
     "supabase/**/*",

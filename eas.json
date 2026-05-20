@@ -7,8 +7,12 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "environment": "development",
       "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://uungvwtrbfqatqtqbqef.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bmd2d3RyYmZxYXRxdHFicWVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0ODcyNTUsImV4cCI6MjA3OTA2MzI1NX0.mUGwA3wBskLuquKGPp5tfiiDZKf3W5HOt5mihJQPnO0",
         "EXPO_PUBLIC_QF_CLIENT_ID": "0ee08fe9-105a-4d45-8fba-fc5ec649903a",
+        "EXPO_PUBLIC_BACKEND_URL": "https://uungvwtrbfqatqtqbqef.supabase.co/functions/v1",
         "EXPO_PUBLIC_QF_ENV": "prelive",
         "EXPO_PUBLIC_QF_URL": "https://prelive-oauth2.quran.foundation",
         "EXPO_PUBLIC_REDIRECT_URI": "hifzi://login"
@@ -20,8 +24,12 @@
     "preview": {
       "distribution": "internal",
       "autoIncrement": true,
+      "environment": "preview",
       "env": {
-        "EXPO_PUBLIC_QF_CLIENT_ID": "0ee08fe9-105a-4d45-8fba-fc5ec649903a",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://uungvwtrbfqatqtqbqef.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bmd2d3RyYmZxYXRxdHFicWVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0ODcyNTUsImV4cCI6MjA3OTA2MzI1NX0.mUGwA3wBskLuquKGPp5tfiiDZKf3W5HOt5mihJQPnO0",
+        "EXPO_PUBLIC_QF_CLIENT_ID": "a5390e89-4ad4-4cde-bbd4-b12442712d3e",
+        "EXPO_PUBLIC_BACKEND_URL": "https://uungvwtrbfqatqtqbqef.supabase.co/functions/v1",
         "EXPO_PUBLIC_QF_ENV": "prelive",
         "EXPO_PUBLIC_QF_URL": "https://prelive-oauth2.quran.foundation",
         "EXPO_PUBLIC_REDIRECT_URI": "hifzi://login"
@@ -32,6 +40,7 @@
     },
     "production": {
       "autoIncrement": true,
+      "environment": "production",
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://uungvwtrbfqatqtqbqef.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bmd2d3RyYmZxYXRxdHFicWVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0ODcyNTUsImV4cCI6MjA3OTA2MzI1NX0.mUGwA3wBskLuquKGPp5tfiiDZKf3W5HOt5mihJQPnO0",
