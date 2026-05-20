@@ -1,18 +1,12 @@
 import React, { useCallback, useMemo } from "react";
-import {
-  View,
-  FlatList,
-  Text,
-  ActivityIndicator,
-  TouchableOpacity,
-  Pressable,
-} from "react-native";
+import { View, FlatList, Text, TouchableOpacity, Pressable } from "react-native";
 import { useReaderStore } from "../hooks/useReaderStore";
 import { useTranslationPage } from "../hooks/useTranslationPage";
 import { VerseTranslationEntry } from "../services/translationPageService";
 import { Ionicons } from "@expo/vector-icons";
 import { useCatalogStore } from "../store/catalogStore";
 import { getTranslationsCached } from "../services";
+import { TranslationPageSkeleton } from "./QuranPageSkeletons";
 
 interface TranslationPageProps {
   pageNumber: number;
@@ -212,11 +206,7 @@ export const TranslationPage = React.memo(function TranslationPage({
   const keyExtractor = useCallback((item: ListItem) => item.key, []);
 
   if (loading && verses.length === 0) {
-    return (
-      <View style={{ flex: 1, backgroundColor: "#fff", justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="small" color="#0d9488" />
-      </View>
-    );
+    return <TranslationPageSkeleton />;
   }
 
   if (error) {

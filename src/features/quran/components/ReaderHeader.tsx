@@ -1,26 +1,20 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { View, TouchableOpacity, Text, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useReaderStore } from "../hooks/useReaderStore";
 import { useBookmarks } from "../hooks/useBookmarks";
 import { PageData } from "../type";
 import { TranslationSelectorPanel } from "./TranslationSelectorPanel";
+import { countDownloadedPages } from "../services/quranImageService";
+import { useMushafBulkDownloadStore } from "../store/mushafBulkDownloadStore";
 
 interface ReaderHeaderProps {
   pageData?: PageData;
-  isDownloadingAll?: boolean;
-  downloadProgress?: { downloaded: number; total: number } | null;
-  onOpenDownload?: () => void;
 }
 
-export default function ReaderHeader({
-  pageData,
-  isDownloadingAll,
-  downloadProgress,
-  onOpenDownload,
-}: ReaderHeaderProps) {
+export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -37,6 +31,15 @@ export default function ReaderHeader({
     toggleTranslationSelector,
     closeTranslationSelector,
   } = useReaderStore();
+
+  const bulk = useMushafBulkDownloadStore();
+  const [diskPages, setDiskPages] = useState<number | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      void countDownloadedPages().then(setDiskPages);
+    }, []),
+  );
 
   const {
     isPageBookmarked,
@@ -77,6 +80,10 @@ export default function ReaderHeader({
     }
   };
 
+  const openOfflineSettings = useCallback(() => {
+    router.push("/(app)/quran/offline");
+  }, [router]);
+
   if (!uiVisible) return null;
 
   const surahName = pageData?.name ?? "Loading...";
@@ -86,6 +93,14 @@ export default function ReaderHeader({
     selectedAyah ? isBookmarked(`${selectedAyah.sura}:${selectedAyah.ayah}`)
     : pageData ? isPageBookmarked(pageData.page)
     : false;
+
+  const isDownloadingAll = bulk.status === "running";
+  const downloadProgress = {
+    downloaded: isDownloadingAll ? bulk.downloaded : diskPages ?? 0,
+    total: bulk.total,
+  };
+  const mushafFullyCached =
+    (diskPages !== null && diskPages >= 604) || bulk.status === "completed";
 
   return (
     <>
@@ -110,11 +125,11 @@ export default function ReaderHeader({
             className="flex-1 items-center justify-center"
           >
             <Text className="text-lg text-gray-800 tracking-tight">{surahName}</Text>
-            {isDownloadingAll && downloadProgress ? (
+            {isDownloadingAll ? (
               <View className="flex-row items-center mt-0.5 space-x-1.5">
                 <ActivityIndicator size="small" color="#0d9488" style={{ transform: [{ scale: 0.7 }] }} />
                 <Text className="text-[10px] text-teal-600 ">
-                  Offline Sync ({downloadProgress.downloaded}/{downloadProgress.total})
+                  Offline download ({downloadProgress.downloaded}/{downloadProgress.total})
                 </Text>
               </View>
             ) : (
@@ -168,19 +183,10 @@ export default function ReaderHeader({
               />
             </TouchableOpacity>
 
-            {/* Offline download */}
-            <TouchableOpacity
-              className="p-2"
-              onPress={onOpenDownload}
-              disabled={!onOpenDownload}
-            >
+            {/* Offline download settings */}
+            <TouchableOpacity className="p-2" onPress={openOfflineSettings}>
               <Ionicons
-                name={
-                  downloadProgress &&
-                  downloadProgress.downloaded >= downloadProgress.total
-                    ? "cloud-done-outline"
-                    : "cloud-download-outline"
-                }
+                name={mushafFullyCached ? "cloud-done-outline" : "cloud-download-outline"}
                 size={22}
                 color="#0d9488"
               />
@@ -198,11 +204,13 @@ export default function ReaderHeader({
         </View>
 
         {/* Subtle Progress Bar at the bottom of the header */}
-        {isDownloadingAll && downloadProgress && (
+        {isDownloadingAll && (
           <View className="w-full h-1 bg-slate-100">
-            <View 
-              style={{ width: `${(downloadProgress.downloaded / downloadProgress.total) * 100}%` }} 
-              className="h-full bg-teal-600" 
+            <View
+              style={{
+                width: `${Math.min(100, (downloadProgress.downloaded / downloadProgress.total) * 100)}%`,
+              }}
+              className="h-full bg-teal-600"
             />
           </View>
         )}

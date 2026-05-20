@@ -7,13 +7,15 @@ import {
   useNavigation,
 } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { MushafPage } from "@/src/features/mushaf/components/MushafPage";
 import { TranslationPage } from "@/src/features/quran/components/TranslationPage";
 import { ReaderBottomSheet } from "@/src/features/quran/components/ReaderBottomSheet";
 import ReaderHeader from "@/src/features/quran/components/ReaderHeader";
-import { QuranDownloadModal } from "@/src/features/quran/components/QuranDownloadModal";
+import {
+  MushafPageSkeleton,
+  TranslationPageSkeleton,
+} from "@/src/features/quran/components/QuranPageSkeletons";
 import { useReaderStore } from "@/src/features/quran/hooks/useReaderStore";
 import { useFullscreenSystemUI } from "@/src/hooks/useFullscreenSystemUI";
 import { TallyCounter } from "@/src/features/quran/components/TallyCounter";
@@ -33,34 +35,23 @@ import {
 } from "@/src/features/quran/services/mushafResourceCache";
 
 import { PageData } from "@/src/features/quran/type";
-import { useSession } from "@/src/hooks/useSession";
 import { useSQLiteContext } from "expo-sqlite";
 
-import {
-  prefetchPages,
-  countDownloadedPages,
-  downloadAllPages,
-  type DownloadProgress,
-} from "@/src/features/quran/services/quranImageService";
+import { prefetchPages } from "@/src/features/quran/services/quranImageService";
 import { warmTranslationPage } from "@/src/features/quran/services/translationPageService";
+import {
+  getLastReadPage,
+  setLastReadPage,
+} from "@/src/features/quran/services/quranLastReadStorage";
 
 const ALL_PAGES = Array.from({ length: 604 }, (_, i) => i + 1);
-
-const IDLE_PROGRESS: DownloadProgress = {
-  downloaded: 0,
-  total: 604,
-  remaining: 604,
-  percent: 0,
-  currentPages: [],
-  status: "idle",
-};
 
 export default function QuranReaderScreen() {
   const db = useSQLiteContext();
   const { width, height } = useWindowDimensions();
   const listRef = useRef<FlatList>(null);
   const navigation = useNavigation();
-  const downloadAbortRef = useRef<AbortController | null>(null);
+  const initialScrollApplied = useRef(false);
 
   const { page: initialPage, ayah: initialAyah } = useLocalSearchParams<{
     page?: string;
@@ -71,11 +62,20 @@ export default function QuranReaderScreen() {
     end?: string;
   }>();
 
-  const [currentPage, setCurrentPage] = useState(Number(initialPage) || 1);
+  const hasAyahParam = Boolean(initialAyah && String(initialAyah).length > 0);
+  const hasPageParam = Boolean(initialPage && String(initialPage).length > 0);
+  const hasInitialPageOnly = hasPageParam && !hasAyahParam;
+
+  const [bootstrapDone, setBootstrapDone] = useState(hasInitialPageOnly);
+  const [currentPage, setCurrentPage] = useState(() => {
+    if (hasInitialPageOnly) {
+      return Math.min(604, Math.max(1, Number(initialPage) || 1));
+    }
+    return 1;
+  });
+
   const [pageMeta, setPageMeta] = useState<Record<number, PageData>>({});
   const [pageChapters, setPageChapters] = useState<Record<number, number[]>>({});
-
-  const { user } = useSession();
 
   const {
     selectedAyah,
@@ -90,94 +90,64 @@ export default function QuranReaderScreen() {
     selectedTranslations,
   } = useReaderStore();
 
-  const [tallyCounts, setTallyCounts] = useState({ mistakes: 0, hesitations: 0 });
-  const [downloadModalVisible, setDownloadModalVisible] = useState(false);
-  const [downloadPromptMode, setDownloadPromptMode] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
-
-  const habitUserId = user?.id ?? "local-user";
+  const [, setTallyCounts] = useState({ mistakes: 0, hesitations: 0 });
 
   useFullscreenSystemUI(!uiVisible);
 
   useEffect(() => {
-    const checkPrompt = async () => {
-      try {
-        const shown = await AsyncStorage.getItem("quran_images_prompt_shown");
-        if (shown !== "true") {
-          const downloaded = await countDownloadedPages();
-          if (downloaded < 604) {
-            setDownloadPromptMode(true);
-            setDownloadModalVisible(true);
-          } else {
-            await AsyncStorage.setItem("quran_images_prompt_shown", "true");
-          }
+    if (hasInitialPageOnly) return;
+
+    let cancelled = false;
+
+    const run = async () => {
+      if (hasAyahParam && initialAyah) {
+        const parsed = parseVerseKey(initialAyah);
+        if (!parsed) {
+          if (!cancelled) setBootstrapDone(true);
+          return;
         }
-      } catch (e) {
-        console.error(e);
+        const targetPage = await getAyahPage(parsed.sura, parsed.ayah, db);
+        if (cancelled) return;
+        if (targetPage) {
+          setCurrentPage(targetPage);
+          setSelectedAyah({ sura: parsed.sura, ayah: parsed.ayah });
+        }
+        setBootstrapDone(true);
+        return;
       }
+
+      const last = await getLastReadPage();
+      if (cancelled) return;
+      setCurrentPage(last ?? 1);
+      setBootstrapDone(true);
     };
-    void checkPrompt();
-  }, []);
 
-  const runDownload = useCallback(async () => {
-    downloadAbortRef.current?.abort();
-    const controller = new AbortController();
-    downloadAbortRef.current = controller;
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [db, hasAyahParam, hasInitialPageOnly, initialAyah, setSelectedAyah]);
 
-    try {
-      await downloadAllPages((progress) => {
-        setDownloadProgress(progress);
-        if (progress.status === "completed") {
-          void AsyncStorage.setItem("quran_images_prompt_shown", "true");
-        }
-      }, controller.signal);
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
-
-  const handleStartDownload = async () => {
-    setDownloadPromptMode(false);
-    await AsyncStorage.setItem("quran_images_prompt_shown", "true");
-    setDownloadProgress({
-      ...IDLE_PROGRESS,
-      status: "running",
+  useEffect(() => {
+    if (!bootstrapDone || initialScrollApplied.current) return;
+    initialScrollApplied.current = true;
+    const id = requestAnimationFrame(() => {
+      try {
+        listRef.current?.scrollToIndex({
+          index: currentPage - 1,
+          animated: false,
+        });
+      } catch {
+        /* FlatList may not be ready on some platforms */
+      }
     });
-    void runDownload();
-  };
+    return () => cancelAnimationFrame(id);
+  }, [bootstrapDone, currentPage]);
 
-  const handleCancelDownloadPrompt = async () => {
-    setDownloadModalVisible(false);
-    setDownloadPromptMode(false);
-    await AsyncStorage.setItem("quran_images_prompt_shown", "true");
-  };
-
-  const handleDismissDownloadModal = () => {
-    setDownloadModalVisible(false);
-    setDownloadPromptMode(false);
-  };
-
-  const handleBackgroundDownload = () => {
-    setDownloadModalVisible(false);
-    setDownloadPromptMode(false);
-  };
-
-  const openDownloadModal = useCallback(async () => {
-    const downloaded = await countDownloadedPages();
-    setDownloadPromptMode(false);
-    setDownloadProgress({
-      downloaded,
-      total: 604,
-      remaining: 604 - downloaded,
-      percent: downloaded / 604,
-      currentPages: [],
-      status: downloaded >= 604 ? "completed" : "idle",
-    });
-    setDownloadModalVisible(true);
-    if (downloaded < 604) {
-      void runDownload();
-    }
-  }, [runDownload]);
+  useEffect(() => {
+    if (!bootstrapDone) return;
+    void setLastReadPage(currentPage);
+  }, [bootstrapDone, currentPage]);
 
   useEffect(() => {
     if (viewMode === "mushaf") {
@@ -224,7 +194,7 @@ export default function QuranReaderScreen() {
         hideUI();
         parent?.setOptions({ tabBarStyle: undefined });
       };
-    }, [hideUI, navigation, resetSelection, setReaderActive, habitUserId]),
+    }, [hideUI, navigation, resetSelection, setReaderActive]),
   );
 
   const RANGE = 3;
@@ -237,20 +207,18 @@ export default function QuranReaderScreen() {
       const chaptersUpdates: Record<number, number[]> = {};
 
       await Promise.all(
-        Array.from({ length: end - start + 1 }, (_, i) => start + i).map(
-          async (p) => {
-            const needsMeta = !pageMeta[p];
-            const needsChapters = !pageChapters[p];
-            if (needsMeta || needsChapters) {
-              const [data, chapters] = await Promise.all([
-                needsMeta ? getPageData(p, db) : Promise.resolve(null),
-                needsChapters ? getChaptersForPage(p, db) : Promise.resolve(null),
-              ]);
-              if (data) metaUpdates[p] = data;
-              if (chapters) chaptersUpdates[p] = chapters;
-            }
-          },
-        ),
+        Array.from({ length: end - start + 1 }, (_, i) => start + i).map(async (p) => {
+          const needsMeta = !pageMeta[p];
+          const needsChapters = !pageChapters[p];
+          if (needsMeta || needsChapters) {
+            const [data, chapters] = await Promise.all([
+              needsMeta ? getPageData(p, db) : Promise.resolve(null),
+              needsChapters ? getChaptersForPage(p, db) : Promise.resolve(null),
+            ]);
+            if (data) metaUpdates[p] = data;
+            if (chapters) chaptersUpdates[p] = chapters;
+          }
+        }),
       );
 
       if (isMounted) {
@@ -268,30 +236,6 @@ export default function QuranReaderScreen() {
       isMounted = false;
     };
   }, [currentPage, db]);
-
-  useEffect(() => {
-    const syncToDeepLink = async () => {
-      if (initialAyah) {
-        const parsed = parseVerseKey(initialAyah);
-        if (parsed) {
-          const targetPage = await getAyahPage(parsed.sura, parsed.ayah, db);
-          if (targetPage) {
-            setCurrentPage(targetPage);
-            setSelectedAyah({ sura: parsed.sura, ayah: parsed.ayah });
-            listRef.current?.scrollToIndex({
-              index: targetPage - 1,
-              animated: false,
-            });
-          }
-        }
-      } else if (initialPage) {
-        const p = Number(initialPage);
-        setCurrentPage(p);
-        listRef.current?.scrollToIndex({ index: p - 1, animated: false });
-      }
-    };
-    void syncToDeepLink();
-  }, []);
 
   const shouldClearSelectionOnPageChange = useCallback(
     async (newPage: number) => {
@@ -354,25 +298,20 @@ export default function QuranReaderScreen() {
     pageChapters[currentPage] ??
     (pageMeta[currentPage]?.number ? [pageMeta[currentPage]!.number] : [1]);
 
-  const isDownloading = downloadProgress?.status === "running";
+  if (!bootstrapDone) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#fff" }}>
+        <StatusBar style="dark" />
+        {viewMode === "translation" ? <TranslationPageSkeleton /> : <MushafPageSkeleton />}
+      </GestureHandlerRootView>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#fff" }}>
       <StatusBar style="dark" hidden={!uiVisible} animated />
 
-      <ReaderHeader
-        pageData={pageMeta[currentPage]}
-        isDownloadingAll={isDownloading}
-        downloadProgress={
-          downloadProgress
-            ? {
-                downloaded: downloadProgress.downloaded,
-                total: downloadProgress.total,
-              }
-            : null
-        }
-        onOpenDownload={openDownloadModal}
-      />
+      <ReaderHeader pageData={pageMeta[currentPage]} />
 
       <FlatList
         ref={listRef}
@@ -401,17 +340,6 @@ export default function QuranReaderScreen() {
       <ReaderBottomSheet chapterIds={currentChapterIds} />
 
       <TallyCounter visible={tallyMode} onCountsChange={setTallyCounts} />
-
-      <QuranDownloadModal
-        visible={downloadModalVisible}
-        progress={downloadProgress}
-        promptMode={downloadPromptMode}
-        onStart={handleStartDownload}
-        onCancel={
-          downloadPromptMode ? handleCancelDownloadPrompt : handleBackgroundDownload
-        }
-        onDismiss={handleDismissDownloadModal}
-      />
     </GestureHandlerRootView>
   );
 }

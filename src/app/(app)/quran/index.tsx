@@ -1,19 +1,19 @@
-import React, { useMemo, useState, useRef } from "react";
+import React, { useMemo, useState, useRef, useCallback } from "react";
 import {
   View,
-  ActivityIndicator,
   SectionList,
   FlatList,
   Pressable,
 } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useGetSurahByJuz } from "@/src/hooks/useGetSurahByJuz";
 import { JuzHeader } from "@/src/features/quran/components/JuzHeader";
 import { SurahRow } from "@/src/features/quran/components/SurahRow";
 import { Surah } from "@/src/features/quran/type";
 import { useBookmarks } from "@/src/features/quran/hooks/useBookmarks";
+import { getLastReadPage } from "@/src/features/quran/services/quranLastReadStorage";
 import { useCatalogStore } from "@/src/features/quran/store/catalogStore";
 
 export default function SurahIndex() {
@@ -23,6 +23,14 @@ export default function SurahIndex() {
   const surahs = useCatalogStore((store) => store.surahs);
   const [activeTab, setActiveTab] = useState<"surahs" | "bookmarks">("surahs");
   const isNavigating = useRef(false);
+
+  const [resumePage, setResumePage] = useState<number | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      void getLastReadPage().then(setResumePage);
+    }, []),
+  );
 
   const handlePress = (item: Surah) => {
     if (isNavigating.current) return;
@@ -47,9 +55,17 @@ export default function SurahIndex() {
 
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center bg-white">
-        <ActivityIndicator size="large" color="#276359" />
-        <Text className="mt-4 text-slate-400 ">Loading Quran...</Text>
+      <View className="flex-1 bg-white px-4 pt-3">
+        <View className="flex-row rounded-2xl bg-slate-100 p-1 mb-4">
+          <View className="flex-1 rounded-2xl bg-white h-12 mx-0.5" />
+          <View className="flex-1 h-12 mx-0.5" />
+        </View>
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <View key={i} className="mb-4 px-2">
+            <View className="h-3 w-16 bg-slate-200 rounded-md mb-3 opacity-60" />
+            <View className="h-14 bg-slate-100 rounded-2xl" />
+          </View>
+        ))}
       </View>
     );
   }
@@ -67,6 +83,27 @@ export default function SurahIndex() {
   return (
     <View className="flex-1 bg-white ">
       <View className="px-4 pb-2 pt-3">
+        <View className="flex-row gap-2 mb-3">
+          {resumePage != null && (
+            <Pressable
+              onPress={() => router.push(`/quran/reader?page=${resumePage}`)}
+              className="flex-1 flex-row items-center justify-center rounded-2xl bg-teal-50 border border-teal-100 py-3 px-3"
+            >
+              <Ionicons name="book-outline" size={18} color="#0f766e" />
+              <Text className="ml-2 text-sm text-teal-900">
+                Continue · Page {resumePage}
+              </Text>
+            </Pressable>
+          )}
+          <Pressable
+            onPress={() => router.push("/(app)/quran/offline")}
+            className="flex-1 flex-row items-center justify-center rounded-2xl bg-slate-100 py-3 px-3"
+          >
+            <Ionicons name="cloud-download-outline" size={18} color="#475569" />
+            <Text className="ml-2 text-sm text-slate-700">Offline</Text>
+          </Pressable>
+        </View>
+
         <View className="flex-row rounded-2xl bg-slate-100 p-1">
           {[
             { key: "surahs" as const, label: "Surahs" },

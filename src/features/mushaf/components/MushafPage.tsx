@@ -3,7 +3,6 @@ import {
   View,
   TouchableWithoutFeedback,
   LayoutChangeEvent,
-  ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,6 +12,7 @@ import { PageImage } from "./PageImage";
 import { AyahHighlight } from "./AyahHighlight";
 import { findAyahAtPoint } from "../utils/bboxGrouping";
 import { useReaderStore } from "../../quran/hooks/useReaderStore";
+import { MushafPageSkeleton } from "../../quran/components/QuranPageSkeletons";
 
 interface MushafPageProps {
   pageNumber: number;
@@ -54,17 +54,14 @@ export const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNumber })
   return (
     <View className="flex-1 bg-white" onLayout={handleLayout}>
       {showBlockingSpinner ? (
-        <View className="flex-1 items-center justify-center bg-slate-50">
-          <ActivityIndicator color="#0d9488" size="small" />
-        </View>
+        <MushafPageSkeleton />
       ) : !imageUri ? (
         <View className="flex-1 items-center justify-center p-6 bg-slate-50">
           <Ionicons name="cloud-offline-outline" size={48} color="#94a3b8" />
-          <Text className="text-slate-800 text-base mt-4">
-            Page {pageNumber} not downloaded
-          </Text>
+          <Text className="text-slate-800 text-base mt-4">Could not load page {pageNumber}</Text>
           <Text className="text-slate-400 text-xs text-center mt-1 mb-6 px-6">
-            You need an internet connection to download this page, or you can pre-download all pages.
+            Connect to the internet to fetch this page, or download all mushaf pages from Quran →
+            Offline reading (optional).
           </Text>
           <TouchableOpacity
             onPress={retry}
@@ -88,15 +85,6 @@ export const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNumber })
         >
           <View className="flex-1 relative">
             <PageImage uri={imageUri} onLayout={() => {}} />
-
-            {loading && (
-              <View
-                pointerEvents="none"
-                className="absolute top-3 right-3 bg-white/80 rounded-full px-2 py-1"
-              >
-                <ActivityIndicator color="#0d9488" size="small" />
-              </View>
-            )}
 
             {ayahRegions.map((region) => {
               const isPlaying = playingAyah === region.verseKey;

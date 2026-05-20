@@ -21,6 +21,14 @@ export default function QuranLayout() {
           presentation: "card",
         }}
       />
+
+      <Stack.Screen
+        name="offline"
+        options={{
+          title: "Offline reading",
+          headerBackTitle: "Quran",
+        }}
+      />
     </Stack>
   );
 }
