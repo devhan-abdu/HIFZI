@@ -194,6 +194,7 @@ class SyncEngine {
           await syncMeta.setLastPullAt(now);
           useSyncStore.getState().setPatch({
             lastPullAt: now,
+            hasSyncedOnce: true,
             hasRemoteChanges: remoteChanged || useSyncStore.getState().hasRemoteChanges,
           });
         };

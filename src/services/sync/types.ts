@@ -24,6 +24,8 @@ export interface SyncStatusState {
   hasRemoteChanges: boolean;
   syncError: string | null;
   recentErrors: SyncErrorDetail[];
+  /** True after the first pull cycle on login has completed */
+  hasSyncedOnce: boolean;
 }
 
 export interface RemoteSyncRow {

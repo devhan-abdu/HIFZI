@@ -10,6 +10,7 @@ const initialState: SyncStatusState = {
   hasRemoteChanges: false,
   syncError: null,
   recentErrors: [],
+  hasSyncedOnce: false,
 };
 
 export const useSyncStore = create<
