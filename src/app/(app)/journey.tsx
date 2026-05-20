@@ -1,7 +1,7 @@
 import { View, Pressable, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Header } from "@/src/components/navigation/Header";
 import Screen from "@/src/components/screen/Screen";
 import { ScreenContent } from "@/src/components/screen/ScreenContent";
 import { Text } from "@/src/components/common/ui/Text";
@@ -22,7 +22,6 @@ function SectionTitle({ children }: { children: string }) {
 
 export default function JourneyScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const {
     data,
     loading,
@@ -35,11 +34,12 @@ export default function JourneyScreen() {
   } = useJourney();
 
   return (
-    <Screen className="px-0">
+    <>
+      <Header title="Journey" />
+      <Screen className="px-0">
       <ScreenContent>
         <View
           className="flex-row items-center mb-6 px-4"
-          style={{ marginTop: insets.top + 12 }}
         >
           <Pressable
             onPress={() => router.back()}
@@ -133,6 +133,7 @@ export default function JourneyScreen() {
 
         <View className="h-16" />
       </ScreenContent>
-    </Screen>
+      </Screen>
+    </>
   );
 }

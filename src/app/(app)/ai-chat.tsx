@@ -107,7 +107,8 @@ export default function AIChatScreen() {
 
   const footerLift =
     Platform.OS === "android" && keyboardHeight > 0 ? keyboardHeight : 0;
-  const footerPadding = keyboardHeight > 0 ? 12 : Math.max(insets.bottom, 12);
+  const tabBarOffset = 70 + Math.max(insets.bottom, 10) + 12;
+  const footerPadding = keyboardHeight > 0 ? 12 : tabBarOffset;
 
   return (
     <View className="flex-1 bg-white">
@@ -125,7 +126,7 @@ export default function AIChatScreen() {
             contentContainerStyle={{
               paddingHorizontal: 16,
               paddingTop: 16,
-              paddingBottom: 16,
+              paddingBottom: keyboardHeight > 0 ? 16 : 24,
               flexGrow: 1,
             }}
             showsVerticalScrollIndicator={false}

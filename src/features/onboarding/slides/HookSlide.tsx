@@ -12,10 +12,13 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 const { width, height } = Dimensions.get("window");
 const AYAH = "وَلَقَدۡ يَسَّرۡنَا ٱلۡقُرۡءَانَ لِلذِّكۡرِ فَهَلۡ مِن مُّدَّكِرٖ";
 
 export function HookSlide() {
+  const insets = useSafeAreaInsets();
   const ayahScale = useSharedValue(0.96);
   const ayahOpacity = useSharedValue(1);
   const ayahY = useSharedValue(0);
@@ -52,7 +55,6 @@ export function HookSlide() {
     <View style={{ width, height, overflow: "hidden" }} className="bg-primary">
       <StatusBar barStyle="light-content" />
 
-      {/* Decorative 3/4 circle — top right, 1/4 off screen */}
       <View
         style={{
           position: "absolute",
@@ -109,8 +111,8 @@ export function HookSlide() {
           <NormalText
             style={{
               fontFamily: "Uthman",
-              fontSize: 64,
-              lineHeight: 100,
+              fontSize: 32,
+              lineHeight: 50,
               color: "#FFFFFF",
               textAlign: "center",
               writingDirection: "rtl",
@@ -120,9 +122,9 @@ export function HookSlide() {
           </NormalText>
         </Animated.View>
 
-        <Animated.View style={[transStyle, { marginTop: 28 }]} className="items-center px-6">
+        <Animated.View style={[transStyle, { marginTop: 20 }]} className="items-center px-6">
           <View className="w-10 h-[1px] bg-white/25 mb-4" />
-          <Text className="text-white/65 text-sm text-center leading-6 italic">
+          <Text className="text-white/65  text-center leading-6">
             "And We have certainly made the Quran easy to remember"
           </Text>
           <Text className="text-white/35 text-xs text-center mt-2 tracking-widest uppercase">
@@ -131,12 +133,11 @@ export function HookSlide() {
         </Animated.View>
       </View>
 
-      {/* Bottom — logo + swipe hint */}
       <Animated.View
-        style={[logoStyle, { position: "absolute", bottom: 56, left: 0, right: 0 }]}
+        style={[logoStyle, { position: "absolute", bottom: 68 + Math.max(insets.bottom, 12), left: 0, right: 0 }]}
         className="items-center"
       >
-        <Text style={{ color: "#FFFFFF", fontSize: 38, letterSpacing: -1, fontFamily: "Rosemary" }}>
+        <Text className="text-white text-xl">
           Hifzi
         </Text>
         <Text className="text-white/40 text-xs tracking-[3px] uppercase mt-1">
@@ -145,7 +146,7 @@ export function HookSlide() {
       </Animated.View>
 
       <Animated.View
-        style={[hintStyle, { position: "absolute", bottom: 24, left: 0, right: 0 }]}
+        style={[hintStyle, { position: "absolute", bottom: 52 + Math.max(insets.bottom, 12), left: 0, right: 0 }]}
         className="items-center"
       >
         <Text className="text-white/30 text-xs tracking-widest">swipe to begin →</Text>

@@ -15,9 +15,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const { height } = Dimensions.get("window");
 
 const PRIMARY = "#276359";
-const PRIMARY_SOFT = "rgba(39,99,89,0.06)";
 const SLATE_DISABLED = "#F1F5F9"; // Lighter than before for a cleaner disabled state
 const SLATE_TEXT = "#94A3B8";
+const CARD_BORDER = "#E2E8F0";
+const ICON_BADGE_BG = "#F7FAF8";
 
 type JourneyOption = "hifz" | "muraja";
 
@@ -31,7 +32,7 @@ const OPTIONS: {
 }[] = [
   {
     type: "hifz",
-    iconName: "leaf",
+    iconName: "book-outline",
     title: "I'm memorizing new pages",
     subtitle: "Start your Hifz plan",
     description: "Build a structured, page-by-page memorization plan tailored to your pace.",
@@ -39,7 +40,7 @@ const OPTIONS: {
   },
   {
     type: "muraja",
-    iconName: "sync",
+    iconName: "refresh-outline",
     title: "I have Hifz to maintain",
     subtitle: "Set up Muraja schedule",
     description: "Keep what you've memorized strong with an automated revision system.",
@@ -59,7 +60,6 @@ function OptionCard({
   const scale = useSharedValue(1);
   const selectionProgress = useSharedValue(selected ? 1 : 0);
 
-  // Keep selection progress in sync
   selectionProgress.value = withTiming(selected ? 1 : 0, { duration: 250 });
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -67,30 +67,14 @@ function OptionCard({
     borderColor: interpolateColor(
       selectionProgress.value,
       [0, 1],
-      ["#F1F5F9", PRIMARY]
+      [CARD_BORDER, PRIMARY]
     ),
-    backgroundColor: interpolateColor(
-      selectionProgress.value,
-      [0, 1],
-      ["#FFFFFF", PRIMARY_SOFT]
-    ),
-    shadowColor: interpolateColor(
-      selectionProgress.value,
-      [0, 1],
-      ["#000000", PRIMARY]
-    ),
-    shadowOpacity: interpolateColor(
-      selectionProgress.value,
-      [0, 1],
-      [0.05, 0.15]
-    ),
-    shadowRadius: interpolateColor(
-      selectionProgress.value,
-      [0, 1],
-      [4, 12]
-    ),
-    shadowOffset: { width: 0, height: selected ? 4 : 2 },
-    elevation: selected ? 4 : 1,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   }));
 
   const checkStyle = useAnimatedStyle(() => ({
@@ -104,11 +88,12 @@ function OptionCard({
   }));
 
   const badgeStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(
+    borderColor: interpolateColor(
       selectionProgress.value,
       [0, 1],
-      ["#F8FAFC", PRIMARY]
+      [CARD_BORDER, "rgba(39,99,89,0.22)"]
     ),
+    backgroundColor: ICON_BADGE_BG,
   }));
 
   const handlePressIn = useCallback(() => {
@@ -130,14 +115,14 @@ function OptionCard({
           {/* Icon */}
           <Animated.View
             style={[badgeStyle]}
-            className="w-12 h-12 rounded-xl items-center justify-center mr-3.5"
+            className="mr-3.5 h-12 w-12 items-center justify-center rounded-full border"
           >
-            <Ionicons name={option.iconName} size={24} color={selected ? "#FFFFFF" : PRIMARY} />
+            <Ionicons name={option.iconName} size={22} color={PRIMARY} />
           </Animated.View>
 
           {/* Text */}
           <View className="flex-1 justify-center">
-            <Text className="text-base font-semibold text-slate-800 mb-0.5">
+            <Text className="text-base  text-slate-800 mb-0.5">
               {option.title}
             </Text>
             <Text className="text-xs text-slate-500">
@@ -162,7 +147,7 @@ function OptionCard({
 
         {/* Description — only when selected */}
         {selected && (
-          <Text className="text-[13px] leading-5 text-primary/70 mt-3 pt-3 border-t border-primary/10">
+          <Text className="mt-3 border-t border-slate-100 pt-3 text-[13px] leading-5 text-slate-500">
             {option.description}
           </Text>
         )}
@@ -222,11 +207,11 @@ export default function OnboardingBridge() {
           <Text className="text-white/70 text-xs uppercase tracking-[3px] mb-3 font-medium">
             Your Quran Journey
           </Text>
-          <Text className="text-white text-[40px] font-bold leading-[44px] tracking-tight">
+          <Text className="text-white text-[40px]  leading-[44px] tracking-tight">
             Where are{"\n"}you today?
           </Text>
           <Text className="text-white/70 text-sm mt-3 leading-6">
-            Let's build the right plan for you
+            Let&apos;s build the right plan for you
           </Text>
         </View>
       </View>
@@ -277,8 +262,8 @@ export default function OnboardingBridge() {
                 className="w-full h-14 rounded-2xl items-center justify-center flex-row shadow-sm"
               >
                 <Animated.Text
-                  style={[buttonTextStyle]}
-                  className="text-base font-semibold tracking-wide"
+                  style={[buttonTextStyle, { fontFamily: "Rosemary" }]}
+                  className="text-base  tracking-wide"
                 >
                   Continue
                 </Animated.Text>

@@ -67,10 +67,11 @@ export default function Dashboard() {
     return {
       id: murajaPlan.id,
       planned_pages_per_day: murajaPlan.planned_pages_per_day,
-      targetEndDate: murajaPlan.week_end_date,
+      targetEndDate: murajaPlan.week_end_date ?? murajaPlan.endDate ?? null,
       totalDays: murajaPlan.totalDays ?? murajaPlan.plannedDays,
       currentSurah: murajaStats?.currentSurah,
       pageInSurah: murajaStats?.pageInSurah,
+      startSurah: murajaPlan.startSurah,
       planRangeLabel: [stripSurah(murajaPlan.startSurah), stripSurah(murajaPlan.endSurah)]
         .filter(Boolean)
         .join(" – "),
