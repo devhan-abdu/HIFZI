@@ -87,12 +87,19 @@ export const hifzService = {
   async getPlan(userId: string, planId?: number): Promise<IHifzPlan | null> {
     if (!userId) return null;
 
-    const localPlan = await db.query.hifzPlans.findFirst({
+    let localPlan = await db.query.hifzPlans.findFirst({
       where: planId 
         ? eq(hifzPlans.id, planId)
         : and(eq(hifzPlans.userId, userId), eq(hifzPlans.status, 'active')),
       orderBy: [desc(hifzPlans.id)],
     });
+
+    if (!localPlan && !planId) {
+      localPlan = await db.query.hifzPlans.findFirst({
+        where: eq(hifzPlans.userId, userId),
+        orderBy: [desc(hifzPlans.id)],
+      });
+    }
 
     if (!localPlan) return null;
 
@@ -100,8 +107,6 @@ export const hifzService = {
       where: and(eq(hifzLogs.userId, userId), eq(hifzLogs.hifzPlanId, localPlan.id)),
       orderBy: [hifzLogs.date],
     });
-
-    void this.syncPending(userId);
 
     return {
       id: localPlan.id,

@@ -58,8 +58,8 @@ export const useWeeklyMuraja = () => {
 
         const activeDays =
             typeof selected_days === "string"
-                ? (JSON.parse(selected_days) as number[])
-                : (selected_days as unknown as number[]);
+                ? (JSON.parse(selected_days || "[]") as number[])
+                : (selected_days as unknown as number[]) ?? [];
 
         // ── Plan metadata ────────────────────────────────────────────────────
         const totalRangePages = (end_page ?? 1) - (start_page ?? 1) + 1;

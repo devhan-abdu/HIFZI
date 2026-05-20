@@ -90,12 +90,19 @@ export const murajaService = {
   },
 
   async getDashboardState(userId: string) {
-    const plan = await db.query.weeklyMurajaPlans.findFirst({
+    let plan = await db.query.weeklyMurajaPlans.findFirst({
       where: and(eq(weeklyMurajaPlans.userId, userId), eq(weeklyMurajaPlans.isActive, true)),
       orderBy: [desc(weeklyMurajaPlans.id)],
     });
 
-    if (!plan) return;
+    if (!plan) {
+      plan = await db.query.weeklyMurajaPlans.findFirst({
+        where: eq(weeklyMurajaPlans.userId, userId),
+        orderBy: [desc(weeklyMurajaPlans.id)],
+      });
+    }
+
+    if (!plan) return null;
 
     const stats = await db.query.userStats.findFirst({
       where: eq(userStats.userId, userId),
