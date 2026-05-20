@@ -44,11 +44,17 @@ export const bookmarkService = {
     const rows = await drizzleAsset
       .select({ soraid: aya.soraid, ayaid: aya.ayaid })
       .from(aya)
-      .where(eq(aya.page, pageNumber))
+      .where(and(eq(aya.page, pageNumber), sql`${aya.ayaid} > 0`))
       .orderBy(asc(aya.soraid), asc(aya.ayaid))
       .limit(1);
 
-    const row = rows[0];
+    const row = rows[0] ?? (await drizzleAsset
+      .select({ soraid: aya.soraid, ayaid: aya.ayaid })
+      .from(aya)
+      .where(eq(aya.page, pageNumber))
+      .orderBy(asc(aya.soraid), asc(aya.ayaid))
+      .limit(1))[0];
+
     return row ? `${row.soraid}:${row.ayaid}` : null;
   },
 

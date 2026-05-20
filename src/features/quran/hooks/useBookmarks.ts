@@ -15,12 +15,6 @@ export const useBookmarks = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const syncInFlightRef = useRef(false);
 
-  useEffect(() => {
-    if (user?.id) {
-      void syncBookmarks();
-    }
-  }, [user?.id]);
-
   const publishVisibleBookmarks = useCallback(async (userId: string) => {
     const rows = await bookmarkService.getVisibleBookmarks(userId);
     setBookmarks(rows as any);
@@ -46,6 +40,12 @@ export const useBookmarks = () => {
   const queueSyncBookmarks = useCallback(() => {
     setTimeout(() => void syncBookmarks(), 0);
   }, [syncBookmarks]);
+
+  useEffect(() => {
+    if (user?.id) {
+      void syncBookmarks();
+    }
+  }, [syncBookmarks, user?.id]);
 
 
   const addBookmarkByVerseKey = useCallback(async (verseKey: string, pageNumber?: number) => {
@@ -81,9 +81,20 @@ export const useBookmarks = () => {
 
   const removeBookmark = useCallback(async (pageNumber: number) => {
     if (!user?.id) return;
+    const pageMatches = bookmarks.filter((item) => item.pageNumber === pageNumber);
+
+    if (pageMatches.length > 0) {
+      await Promise.all(
+        pageMatches.map((item) => bookmarkService.markAsDeleted(user.id, item.verseKey))
+      );
+      await publishVisibleBookmarks(user.id);
+      queueSyncBookmarks();
+      return;
+    }
+
     const verseKey = await bookmarkService.getFirstVerseKeyFromPage(pageNumber, assetDb);
     if (verseKey) await removeBookmarkByVerseKey(verseKey);
-  }, [removeBookmarkByVerseKey, assetDb, user?.id]);
+  }, [assetDb, bookmarks, publishVisibleBookmarks, queueSyncBookmarks, removeBookmarkByVerseKey, user?.id]);
 
   return {
     bookmarks,
