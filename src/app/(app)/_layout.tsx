@@ -14,8 +14,6 @@ export default function AppLayout() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const bottomPadding = Math.max(insets.bottom, 10);
-
   if (loading) {
     return <AppLoadingScreen />;
   }
@@ -33,21 +31,24 @@ export default function AppLayout() {
           tabBarActiveTintColor: ACTIVE_COLOR,
           tabBarInactiveTintColor: INACTIVE_COLOR,
           tabBarStyle: {
-            backgroundColor: "#fff",
-            borderTopWidth: 1,
-            borderTopColor: "#f1f5f9",
-
-            height: 70 + bottomPadding,
-            paddingBottom: bottomPadding,
-            paddingTop: 10,
-
-            elevation: 0,
-            shadowOpacity: 0,
+            backgroundColor: "#ffffff",
+            borderRadius: 32,
+            marginHorizontal: 16,
+            height: 64,
+            paddingBottom: 8,
+            paddingTop: 8,
+            position: "absolute",
+            borderTopWidth: 0,
+            elevation: 12,
+            shadowColor: "#276359",
+            shadowOpacity: 0.12,
+            shadowRadius: 16,
+            shadowOffset: { width: 0, height: 4 },
+            bottom: Math.max(insets.bottom, 10) + 6,
           },
           tabBarLabelStyle: {
-            fontSize: 11,
+            fontSize: 10,
             fontFamily: "Rosemary",
-            color: "#000",
             textTransform: "uppercase",
             letterSpacing: 0.5,
           },
@@ -177,7 +178,7 @@ export default function AppLayout() {
         onPress={() => router.push("/(app)/ai-chat" as never)}
         className="absolute right-5 bg-primary rounded-full w-14 h-14 items-center justify-center shadow-lg"
         style={{
-          bottom: 88 + bottomPadding,
+          bottom: 64 + Math.max(insets.bottom, 10) + 16,
         }}
       >
         <Ionicons name="chatbubbles" size={24} color="#fff" />

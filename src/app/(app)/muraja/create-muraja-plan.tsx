@@ -126,7 +126,6 @@ export default function CreateWeeklyPlan() {
     }
   }, [selectedEvalDay]);
 
-  // Pre-fill form from existing plan when available
   useEffect(() => {
     if (existingPlan) {
       const parsedDays = typeof existingPlan.selectedDays === "string"
@@ -186,7 +185,7 @@ export default function CreateWeeklyPlan() {
         existingPlan ? "Plan Updated!" : "Plan Launched!",
         existingPlan
           ? "Your Muraja plan has been updated successfully."
-          : "Your weekly Muraja journey has been created successfully.",
+          : "Your Muraja journey has been created successfully.",
         () => router.back(),
       );
     } catch (error: any) {
