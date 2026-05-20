@@ -1,60 +1,127 @@
-import { View, StatusBar } from "react-native";
-import { Text } from "@/src/components/common/ui/Text";
-import LoginButton from "@/src/components/LoginButton";
+import {
+  View,
+  FlatList,
+  Dimensions,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+  StatusBar,
+} from "react-native";
 import { useSession } from "@/src/hooks/useSession";
 import { router } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { HookSlide } from "@/src/features/onboarding/slides/HookSlide";
+import { ProblemSlide } from "@/src/features/onboarding/slides/ProblemSlide";
+import { HifzSlide } from "@/src/features/onboarding/slides/HifzSlide";
+import { HeatmapSlide } from "@/src/features/onboarding/slides/HeatmapSlide";
+import { TrustSlide } from "@/src/features/onboarding/slides/TrustSlide";
+import { DotIndicator } from "@/src/features/onboarding/DotIndicator";
+
+const { width } = Dimensions.get("window");
+const HAS_SEEN_KEY = "@hifzi/hasSeenIntro";
+const SLIDE_COUNT = 5;
+
+const SLIDES = [
+  { key: "hook", component: HookSlide, dark: true },
+  { key: "problem", component: ProblemSlide, dark: true },
+  { key: "hifz", component: HifzSlide, dark: true },
+  { key: "heatmap", component: HeatmapSlide, dark: true },
+  { key: "trust", component: TrustSlide, dark: true },
+];
 
 export default function IntroScreen() {
-  const session = useSession();
+  const { session, loading } = useSession();
+  const flatListRef = useRef<FlatList>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [initialised, setInitialised] = useState(false);
+  const insets = useSafeAreaInsets();
+
+  // Redirect logged-in users
   useEffect(() => {
-    if (session?.user) {
+    if (!loading && session) {
       router.replace("/(app)");
     }
-  }, [session?.user]);
+  }, [session, loading]);
+
+  // Check if user has already seen the intro
+  useEffect(() => {
+    AsyncStorage.getItem(HAS_SEEN_KEY).then((value) => {
+      if (value === "true") {
+        // Jump to last slide (login)
+        setActiveIndex(SLIDE_COUNT - 1);
+        setInitialised(true);
+        // Scroll after layout
+        setTimeout(() => {
+          flatListRef.current?.scrollToIndex({
+            index: SLIDE_COUNT - 1,
+            animated: false,
+          });
+        }, 50);
+      } else {
+        setInitialised(true);
+      }
+    });
+  }, []);
+
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const idx = Math.round(e.nativeEvent.contentOffset.x / width);
+      setActiveIndex(idx);
+
+      // Mark as seen when user reaches the last slide
+      if (idx === SLIDE_COUNT - 1) {
+        AsyncStorage.setItem(HAS_SEEN_KEY, "true");
+      }
+    },
+    []
+  );
+
+  if (!initialised) return null;
 
   return (
-    <View className="flex-1 bg-primary px-8 pt-24 pb-16 justify-between">
-      <StatusBar barStyle="light-content" />
+    <View style={{ flex: 1, backgroundColor: "#276359" }}>
+      <StatusBar barStyle="light-content" backgroundColor="#276359" />
 
-      <View>
-        <View className="flex-row items-center mb-2">
-          <View className="h-[1px] w-6 bg-white/30 mr-3" />
-          <Text className="text-white/50 uppercase tracking-[3px] text-xs">
-            Powered by Quran.com
-          </Text>
-        </View>
-        <Text className="text-white text-6xl leading-[60px] tracking-tighter">
-          Master Your{"\n"}Hifz &{"\n"}Muraj'a
-        </Text>
-      </View>
+      <FlatList
+        ref={flatListRef}
+        data={SLIDES}
+        keyExtractor={(item) => item.key}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        getItemLayout={(_, index) => ({
+          length: width,
+          offset: width * index,
+          index,
+        })}
+        renderItem={({ item }) => {
+          const SlideComponent = item.component;
+          return <SlideComponent />;
+        }}
+      />
 
-      <View className="gap-y-8">
-        <View className="flex-row items-start">
-          <View className="w-1 bg-white/30 h-full mr-4 rounded-full" />
-          <View className="flex-1">
-            <Text className="text-white text-xl mb-1">Guided Hifz</Text>
-            <Text className="text-white/60 leading-5">
-              A structured, page-by-page tracker to help you memorize with
-              consistency.
-            </Text>
-          </View>
-        </View>
-
-        <View className="flex-row items-start">
-          <View className="w-1 bg-white/30 h-full mr-4 rounded-full" />
-          <View className="flex-1">
-            <Text className="text-white text-xl mb-1">Smart Muraja</Text>
-            <Text className="text-white/60 leading-5">
-              Never forget a single Ayah with our automated revision scheduling
-              system.
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      <View className="items-center">
-        <LoginButton />
+      {/* Dot indicators — positioned absolutely over slides */}
+      <View
+        style={{
+          position: "absolute",
+          bottom: insets.bottom + 24, // Reduced from 64 to perfectly balance the slide without stacking on navigation
+          left: 0,
+          right: 0,
+          alignItems: "center",
+          // Only show dots on slides 0-3, not on the login slide
+          opacity: activeIndex < SLIDE_COUNT - 1 ? 1 : 0,
+        }}
+        pointerEvents="none"
+      >
+        <DotIndicator
+          count={SLIDE_COUNT - 1}
+          activeIndex={activeIndex}
+          dark={true}
+        />
       </View>
     </View>
   );

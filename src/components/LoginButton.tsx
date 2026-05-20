@@ -105,7 +105,7 @@ export default function LoginButton() {
         onPress={handleLogin}
         className="bg-white p-5 rounded-2xl my-8 flex-row items-center justify-center shadow-lg active:opacity-90"
       >
-        {isLoading ?
+        {(!request || isLoading) ?
           <ActivityIndicator color="#0E1B1B" />
         : <View className="flex-row items-center">
             <Text className="text-primary text-lg uppercase tracking-widest">
