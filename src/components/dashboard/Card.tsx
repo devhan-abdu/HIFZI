@@ -4,8 +4,6 @@ import { Text } from "@/src/components/common/ui/Text";
 import { View } from "react-native";
 import { getRankForLevel } from "@/src/features/gamification/constants";
 
-const DUAL_COLUMN_MIN_H = 168;
-
 type HifzAnalytics = {
   progress?: number;
   currentSurah?: string;
@@ -23,6 +21,7 @@ type MurajaHero = {
   planned_pages_per_day?: number | null;
   totalDays?: number;
   overAllProgress?: string | number;
+  startSurah?: string;
 };
 
 type Cardprops = {
@@ -43,47 +42,27 @@ function cleanSurahName(name?: string) {
   return name?.replace(/^Surat\s+/i, "").trim() || "—";
 }
 
-function PlanColumn({
-  children,
-  showBorder,
-}: {
-  children: React.ReactNode;
-  showBorder?: boolean;
-}) {
-  return (
-    <View className={`flex-1 ${showBorder ? "pr-5 border-r border-white/10" : "pl-5"}`}>
-      {children}
-    </View>
-  );
-}
-
 function PageOfSurah({
   pageInSurah,
   surahName,
+  fallbackLabel,
 }: {
   pageInSurah?: number;
   surahName?: string;
+  fallbackLabel?: string;
 }) {
+  if (pageInSurah == null && !surahName && fallbackLabel) {
+    return (
+      <Text className="text-white text-2xl tracking-tight leading-8" numberOfLines={2}>
+        {fallbackLabel}
+      </Text>
+    );
+  }
+
   return (
     <Text className="text-white text-2xl tracking-tight leading-8" numberOfLines={2}>
       {pageInSurah ?? "—"} of {cleanSurahName(surahName)}
     </Text>
-  );
-}
-
-function ColumnFooter({
-  children,
-  dual,
-}: {
-  children: React.ReactNode;
-  dual?: boolean;
-}) {
-  return (
-    <View
-      className={`flex-row justify-between items-end ${dual ? "pt-5" : "pt-6 mt-auto"}`}
-    >
-      {children}
-    </View>
   );
 }
 
@@ -96,6 +75,65 @@ function FooterStat({ label, value }: { label: string; value: string }) {
       <Text className="text-white text-[11px] leading-4" numberOfLines={1}>
         {value}
       </Text>
+    </View>
+  );
+}
+
+function PlanSection({
+  icon,
+  label,
+  pageInSurah,
+  surahName,
+  planRangeLabel,
+  fallbackLabel,
+  primaryStat,
+  secondaryStat,
+  tertiaryStat,
+  showBorder,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  pageInSurah?: number;
+  surahName?: string;
+  planRangeLabel?: string;
+  fallbackLabel?: string;
+  primaryStat: { label: string; value: string };
+  secondaryStat: { label: string; value: string };
+  tertiaryStat?: { label: string; value: string };
+  showBorder?: boolean;
+}) {
+  return (
+    <View className={`flex-1 ${showBorder ? "border-r border-white/10 pr-4 mr-4" : ""}`}>
+      <View className="flex-row items-center mb-3">
+        <Ionicons name={icon} size={14} color="rgba(255,255,255,0.7)" />
+        <Text className="text-white/50 text-[9px] uppercase tracking-widest ml-2">
+          {label}
+        </Text>
+      </View>
+
+      <PageOfSurah
+        pageInSurah={pageInSurah}
+        surahName={surahName}
+        fallbackLabel={fallbackLabel}
+      />
+
+      {planRangeLabel ? (
+        <Text className="text-white/55 text-[11px] mt-2 tracking-wide" numberOfLines={2}>
+          {planRangeLabel}
+        </Text>
+      ) : null}
+
+      <View className="flex-row justify-between items-end pt-5">
+        <FooterStat label={primaryStat.label} value={primaryStat.value} />
+        <View className="w-4" />
+        <FooterStat label={secondaryStat.label} value={secondaryStat.value} />
+        {tertiaryStat ? (
+          <>
+            <View className="w-4" />
+            <FooterStat label={tertiaryStat.label} value={tertiaryStat.value} />
+          </>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -189,122 +227,62 @@ export default function Card({
 
       <View className={dualPlan ? "flex-row" : ""}>
         {hasHifz && (
-          <PlanColumn showBorder={dualPlan}>
-            <View
-              style={dualPlan ? { minHeight: DUAL_COLUMN_MIN_H } : undefined}
-              className={dualPlan ? "justify-between flex-1" : "min-h-[120px] justify-between"}
-            >
-              <View>
-                <View className="flex-row items-center mb-3">
-                  <Ionicons name="book-outline" size={13} color="rgba(255,255,255,0.7)" />
-                  <Text className="text-white/50 text-[9px] uppercase tracking-widest ml-2">
-                    {dualPlan ? "Current Hifz" : "Hifz"}
-                  </Text>
-                </View>
-
-                <PageOfSurah
-                  pageInSurah={hifzAnalytics?.pageInSurah}
-                  surahName={hifzAnalytics?.currentSurah}
-                />
-
-                {hifzAnalytics?.planRangeLabel ? (
-                  <Text
-                    className="text-white/55 text-[11px] mt-2 tracking-wide"
-                    numberOfLines={2}
-                  >
-                    {hifzAnalytics.planRangeLabel}
-                  </Text>
-                ) : null}
-              </View>
-
-              <ColumnFooter dual={dualPlan}>
-                <FooterStat
-                  label={dualPlan ? "Target End" : "Est. finish"}
-                  value={hifzAnalytics?.targetEndDate ?? "—"}
-                />
-                <View className="w-4" />
-                <FooterStat
-                  label={dualPlan ? "Rate" : "Daily rate"}
-                  value={`${hifzAnalytics?.todayTarget ?? 0} p/d`}
-                />
-                {singlePlan ? (
-                  <>
-                    <View className="w-4" />
-                    <FooterStat
-                      label="Streak"
-                      value={`${
-                        habitProgress.analytics.currentStreak ??
-                        userStats?.hifzCurrentStreak ??
-                        0
-                      } d`}
-                    />
-                  </>
-                ) : null}
-              </ColumnFooter>
-            </View>
-          </PlanColumn>
+          <PlanSection
+            icon="book-outline"
+            label={dualPlan ? "Current Hifz" : "Hifz"}
+            pageInSurah={hifzAnalytics?.pageInSurah}
+            surahName={hifzAnalytics?.currentSurah}
+            planRangeLabel={hifzAnalytics?.planRangeLabel}
+            primaryStat={{
+              label: dualPlan ? "Target End" : "Est. finish",
+              value: hifzAnalytics?.targetEndDate ?? "—",
+            }}
+            secondaryStat={{
+              label: dualPlan ? "Rate" : "Daily rate",
+              value: `${hifzAnalytics?.todayTarget ?? 0} p/d`,
+            }}
+            tertiaryStat={
+              singlePlan
+                ? {
+                    label: "Streak",
+                    value: `${
+                      habitProgress.analytics.currentStreak ??
+                      userStats?.hifzCurrentStreak ??
+                      0
+                    } d`,
+                  }
+                : undefined
+            }
+            showBorder={dualPlan}
+          />
         )}
 
         {hasMuraja && murajaHero && (
-          <PlanColumn showBorder={false}>
-            <View
-              style={dualPlan ? { minHeight: DUAL_COLUMN_MIN_H } : undefined}
-              className={dualPlan ? "justify-between flex-1" : "min-h-[120px] justify-between"}
-            >
-              <View>
-                <View className="flex-row items-center mb-3">
-                  <Ionicons
-                    name="repeat-outline"
-                    size={15}
-                    color="rgba(255,255,255,0.7)"
-                  />
-                  <Text className="text-white/50 text-[9px] uppercase tracking-widest ml-2">
-                    {dualPlan ? "Current Muraja" : "Muraja"}
-                  </Text>
-                </View>
-
-                <PageOfSurah
-                  pageInSurah={murajaHero.pageInSurah}
-                  surahName={murajaHero.currentSurah}
-                />
-
-                {murajaHero.planRangeLabel ? (
-                  <Text
-                    className="text-white/55 text-[11px] mt-2 tracking-wide"
-                    numberOfLines={2}
-                  >
-                    {murajaHero.planRangeLabel}
-                  </Text>
-                ) : null}
-              </View>
-
-              <ColumnFooter dual={dualPlan}>
-                <FooterStat
-                  label={dualPlan ? "Target End" : "Days/wk"}
-                  value={
-                    dualPlan
-                      ? murajaHero.targetEndDate ?? "—"
-                      : `${murajaHero.totalDays ?? 0}`
-                  }
-                />
-                <View className="w-4" />
-                <FooterStat
-                  label={dualPlan ? "Rate" : "Daily goal"}
-                  value={
-                    dualPlan
-                      ? `${murajaHero.planned_pages_per_day ?? 0} p/d`
-                      : `${murajaHero.planned_pages_per_day ?? 0} pgs`
-                  }
-                />
-                {singlePlan ? (
-                  <>
-                    <View className="w-4" />
-                    <FooterStat label="Progress" value={`${murajaProgress}%`} />
-                  </>
-                ) : null}
-              </ColumnFooter>
-            </View>
-          </PlanColumn>
+          <PlanSection
+            icon="repeat-outline"
+            label={dualPlan ? "Current Muraja" : "Muraja"}
+            pageInSurah={murajaHero.pageInSurah}
+            surahName={murajaHero.currentSurah}
+            planRangeLabel={murajaHero.planRangeLabel}
+            fallbackLabel={cleanSurahName(murajaHero.startSurah)}
+            primaryStat={{
+              label: dualPlan ? "Target End" : "Days/wk",
+              value: dualPlan
+                ? murajaHero.targetEndDate ?? "—"
+                : `${murajaHero.totalDays ?? 0}`,
+            }}
+            secondaryStat={{
+              label: dualPlan ? "Rate" : "Daily goal",
+              value: dualPlan
+                ? `${murajaHero.planned_pages_per_day ?? 0} p/d`
+                : `${murajaHero.planned_pages_per_day ?? 0} pgs`,
+            }}
+            tertiaryStat={
+              singlePlan
+                ? { label: "Progress", value: `${murajaProgress}%` }
+                : undefined
+            }
+          />
         )}
       </View>
     </View>

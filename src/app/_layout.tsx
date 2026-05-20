@@ -1,21 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import { SQLiteProvider } from "expo-sqlite";
-import { Suspense } from "react";
+import { Platform, View } from "react-native";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import * as NavigationBar from "expo-navigation-bar";
+
 import { RootLayoutNav } from "../components/navigation/RootLayoutNav";
 import { AuthContextProvider } from "../hooks/useSession";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import "../global.css";
-import { Platform } from 'react-native';
 import { AppLoadingScreen } from "@/src/components/common/AppLoadingScreen";
 import { QuranBootstrap } from "@/src/features/quran/bootstrap/QuranBootstrap";
 import { NotificationBootstrap } from "@/src/components/common/NotificationBootstrap";
-import { QURAN_CORE_DB_NAME } from "@/src/lib/db/constants";
 import { CelebrationOverlay } from "@/src/components/common/CelebrationOverlay";
 import { SyncBootstrap } from "@/src/components/common/SyncBootstrap";
+
 import { warmTranslationsCache } from "@/src/features/quran/services";
-import * as NavigationBar from "expo-navigation-bar";
+import { QURAN_CORE_DB_NAME } from "@/src/lib/db/constants";
+
+import "../global.css";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -24,7 +27,7 @@ export default function RootLayout() {
     Rosemary: require("../../assets/fonts/rosemary.ttf"),
     Uthman: require("../../assets/fonts/uthman.ttf"),
   });
-  
+
   const [queryClient] = useState(() => new QueryClient());
 
   useEffect(() => {
@@ -38,34 +41,41 @@ export default function RootLayout() {
   }, [fontsLoaded]);
 
   useEffect(() => {
-    if (Platform.OS !== "android") {
-      return;
+    if (Platform.OS === "android") {
+      NavigationBar.setBackgroundColorAsync("#000000");
+      NavigationBar.setButtonStyleAsync("light");
     }
-
-    // On modern Android edge-to-edge, background/behavior setters are deprecated.
-    // Keep only the supported icon style update here.
-    NavigationBar.setStyle("light");
   }, []);
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded) {
+    return null;
+  }
 
   return (
-    <AuthContextProvider>
-      <QueryClientProvider client={queryClient}>
-        <Suspense fallback={<AppLoadingScreen />}>
-          <SQLiteProvider
-            databaseName={QURAN_CORE_DB_NAME}
-            assetSource={{ assetId: require("../../assets/db/quran.sqlite") }}
-          >
-            <QuranBootstrap>
-              <NotificationBootstrap />
-              <SyncBootstrap />
-              <RootLayoutNav />
-              <CelebrationOverlay />
-            </QuranBootstrap>
-          </SQLiteProvider>
-        </Suspense>
-      </QueryClientProvider>
-    </AuthContextProvider>
+    <>
+      <StatusBar style="light" backgroundColor="#000000" />
+
+      <View style={{ flex: 1, backgroundColor: "#000000" }}>
+        <AuthContextProvider>
+          <QueryClientProvider client={queryClient}>
+            <Suspense fallback={<AppLoadingScreen />}>
+              <SQLiteProvider
+                databaseName={QURAN_CORE_DB_NAME}
+                assetSource={{
+                  assetId: require("../../assets/db/quran.sqlite"),
+                }}
+              >
+                <QuranBootstrap>
+                  <NotificationBootstrap />
+                  <SyncBootstrap />
+                  <RootLayoutNav />
+                  <CelebrationOverlay />
+                </QuranBootstrap>
+              </SQLiteProvider>
+            </Suspense>
+          </QueryClientProvider>
+        </AuthContextProvider>
+      </View>
+    </>
   );
 }

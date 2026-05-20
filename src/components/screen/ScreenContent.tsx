@@ -7,10 +7,21 @@ import {
   NativeSyntheticEvent,
   View,
 } from "react-native";
+import { usePathname } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function ScreenContent({ children }: { children: ReactNode }) {
   const scrollRef = useRef<ScrollView>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const insets = useSafeAreaInsets();
+  const pathname = usePathname();
+
+  const hideTabs =
+    pathname.includes("/quran/reader") ||
+    pathname.includes("/onboarding") ||
+    pathname.includes("/evaluation") ||
+    pathname.includes("/plan-completion") ||
+    pathname.includes("/journey");
 
   const handleScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -39,7 +50,9 @@ export function ScreenContent({ children }: { children: ReactNode }) {
       style={{ flex: 1 }}
       contentContainerStyle={{
         paddingVertical: 16,
-        paddingBottom: 40,
+        paddingBottom: hideTabs
+          ? Math.max(insets.bottom, 16) + 16
+          : 70 + Math.max(insets.bottom, 10) + 24, // Account for floating tab bar if visible
         flexGrow: 1,
       }}
       showsVerticalScrollIndicator={false}
@@ -61,7 +74,32 @@ export function ScreenContent({ children }: { children: ReactNode }) {
 }
 
 export function ScreenFooter({ children }: { children: ReactNode }) {
+  const insets = useSafeAreaInsets();
+  const pathname = usePathname();
+
+  const hideTabs =
+    pathname.includes("/quran/reader") ||
+    pathname.includes("/onboarding") ||
+    pathname.includes("/evaluation") ||
+    pathname.includes("/plan-completion") ||
+    pathname.includes("/journey");
+
+  const bottomPadding = hideTabs
+    ? Math.max(insets.bottom, 16)
+    : 70 + Math.max(insets.bottom, 10) + 12; // Push above the floating tab bar if visible
+
   return (
-    <View className="p-4 border-t border-gray-200 bg-white">{children}</View>
+    <View
+      style={{
+        paddingTop: 16,
+        paddingHorizontal: 16,
+        paddingBottom: bottomPadding,
+        borderTopWidth: 1,
+        borderTopColor: "#F1F5F9",
+        backgroundColor: "#ffffff",
+      }}
+    >
+      {children}
+    </View>
   );
 }

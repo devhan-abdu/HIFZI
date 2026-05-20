@@ -1,4 +1,5 @@
-import { Image, View, Text, ActivityIndicator } from "react-native";
+import { Image, View, ActivityIndicator } from "react-native";
+import { Text } from "./ui/Text";
 
 export function AppLoadingScreen() {
   return (
