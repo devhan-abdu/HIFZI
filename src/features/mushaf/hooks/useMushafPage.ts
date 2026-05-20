@@ -18,6 +18,7 @@ export function useMushafPage(
   containerWidth: number,
   containerHeight: number,
   mode: ScaleMode = "cover",
+  isActive: boolean = false,
 ) {
   const db = useSQLiteContext();
   const initialUri = getLocalPageUri(page);
@@ -38,6 +39,13 @@ export function useMushafPage(
     const loadData = async () => {
       const hasLocalImage = !!getLocalPageUri(page);
       const hasBboxes = (getCachedBboxes(page)?.length ?? 0) > 0;
+
+      // Skip downloading if the page is not active and not already cached locally.
+      // This prevents the FlatList's virtualization from firing off parallel neighbor downloads
+      // that clog the network and bypass the sequential prefetch queue.
+      if (!isActive && !hasLocalImage) {
+        return;
+      }
 
       if (!hasLocalImage || !hasBboxes) {
         setLoading(true);
@@ -75,7 +83,7 @@ export function useMushafPage(
     return () => {
       cancelled = true;
     };
-  }, [page, db, retryCount]);
+  }, [page, db, retryCount, isActive]);
 
   const ayahRegions = useMemo(() => {
     if (!containerWidth || !containerHeight || bboxes.length === 0) return [];

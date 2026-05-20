@@ -12,13 +12,13 @@ import { PageImage } from "./PageImage";
 import { AyahHighlight } from "./AyahHighlight";
 import { findAyahAtPoint } from "../utils/bboxGrouping";
 import { useReaderStore } from "../../quran/hooks/useReaderStore";
-import { MushafPageSkeleton } from "../../quran/components/QuranPageSkeletons";
 
 interface MushafPageProps {
   pageNumber: number;
+  isActive: boolean;
 }
 
-export const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNumber }) => {
+export const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNumber, isActive }) => {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   const { selectedAyah, setSelectedAyah, playingAyah, toggleUI } = useReaderStore();
@@ -28,6 +28,7 @@ export const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNumber })
     dimensions.width,
     dimensions.height,
     "contain",
+    isActive,
   );
 
   const handleLayout = useCallback((event: LayoutChangeEvent) => {
@@ -54,7 +55,7 @@ export const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNumber })
   return (
     <View className="flex-1 bg-white" onLayout={handleLayout}>
       {showBlockingSpinner ? (
-        <MushafPageSkeleton />
+        <View className="flex-1" />
       ) : !imageUri ? (
         <View className="flex-1 items-center justify-center p-6 bg-slate-50">
           <Ionicons name="cloud-offline-outline" size={48} color="#94a3b8" />

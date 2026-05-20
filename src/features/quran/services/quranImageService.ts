@@ -9,7 +9,6 @@ const BASE_URL =
 const TOTAL_PAGES = 604;
 const activeDownloads = new Map<number, Promise<string | null>>();
 
-/** Tracks which pages exist on disk — refreshed once per bulk download session */
 let downloadedSet: Set<number> | null = null;
 
 function pageFile(page: number): File {
@@ -75,19 +74,37 @@ export async function getPageImage(page: number): Promise<string | null> {
   return downloadPromise;
 }
 
-const PREFETCH_RADIUS = 5;
+let activePrefetchPage = 0;
 
-export function prefetchPages(currentPage: number): void {
+export async function prefetchPages(currentPage: number): Promise<void> {
+  activePrefetchPage = currentPage;
+
+  // 1. Download current page first and await it
+  await getPageImage(currentPage);
+
+  // If the user already scrolled to a different page, cancel the rest of the prefetch
+  if (activePrefetchPage !== currentPage) return;
+
+  // 2. Define optimized neighbors list (prioritizing closest forward pages first)
   const pages: number[] = [];
-  for (let delta = -PREFETCH_RADIUS; delta <= PREFETCH_RADIUS; delta++) {
-    if (delta === 0) continue;
-    const p = currentPage + delta;
-    if (p >= 1 && p <= TOTAL_PAGES) pages.push(p);
+  const FORWARD_LIMIT = 8;
+  const BACKWARD_LIMIT = 3;
+  const maxLimit = Math.max(FORWARD_LIMIT, BACKWARD_LIMIT);
+
+  for (let d = 1; d <= maxLimit; d++) {
+    if (d <= FORWARD_LIMIT) {
+      const p = currentPage + d;
+      if (p >= 1 && p <= TOTAL_PAGES) pages.push(p);
+    }
+    if (d <= BACKWARD_LIMIT) {
+      const p = currentPage - d;
+      if (p >= 1 && p <= TOTAL_PAGES) pages.push(p);
+    }
   }
-  // Current page first for immediate display, then neighbors
-  void getPageImage(currentPage);
+
   for (const p of pages) {
-    void getPageImage(p);
+    if (activePrefetchPage !== currentPage) return;
+    await getPageImage(p);
   }
 }
 

@@ -4,7 +4,6 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   useFocusEffect,
   useLocalSearchParams,
-  useNavigation,
 } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
@@ -50,7 +49,6 @@ export default function QuranReaderScreen() {
   const db = useSQLiteContext();
   const { width, height } = useWindowDimensions();
   const listRef = useRef<FlatList>(null);
-  const navigation = useNavigation();
   const initialScrollApplied = useRef(false);
 
   const { page: initialPage, ayah: initialAyah } = useLocalSearchParams<{
@@ -184,17 +182,14 @@ export default function QuranReaderScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      const parent = navigation.getParent();
       setReaderActive(true);
-      parent?.setOptions({ tabBarStyle: { display: "none" } });
 
       return () => {
         setReaderActive(false);
         resetSelection();
         hideUI();
-        parent?.setOptions({ tabBarStyle: undefined });
       };
-    }, [hideUI, navigation, resetSelection, setReaderActive]),
+    }, [hideUI, resetSelection, setReaderActive]),
   );
 
   const RANGE = 3;
@@ -287,11 +282,11 @@ export default function QuranReaderScreen() {
       }
       return (
         <View style={{ width, height }}>
-          <MushafPage pageNumber={item} />
+          <MushafPage pageNumber={item} isActive={item === currentPage} />
         </View>
       );
     },
-    [height, width, viewMode, pageChapters, pageMeta],
+    [height, width, viewMode, pageChapters, pageMeta, currentPage],
   );
 
   const currentChapterIds: number[] =
@@ -302,7 +297,7 @@ export default function QuranReaderScreen() {
     return (
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#fff" }}>
         <StatusBar style="dark" />
-        {viewMode === "translation" ? <TranslationPageSkeleton /> : <MushafPageSkeleton />}
+        {viewMode === "translation" ? <TranslationPageSkeleton /> : <View style={{ flex: 1 }} />}
       </GestureHandlerRootView>
     );
   }
