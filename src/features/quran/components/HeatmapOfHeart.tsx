@@ -60,20 +60,16 @@ export const HeatmapOfHeart = () => {
     const retrievability = calculateRetrievability(data.stability ?? 1, data.lastReviewedAt);
     const percentage = Math.round(retrievability * 100);
 
-    if (data.consecutivePerfects >= 3) {
-      return { label: "Mastered", color: "#0d9488", hex: "#18ccb1", border: "#0f766e", percentage: 100 };
-    }
-
     if (data.lastSessionQuality === 'low' || (data.lastMistakesCount ?? 0) >= 4 || retrievability < 0.7) {
       return { label: "Weak", color: "#ef4444", hex: "#fee2e2", border: "#ef4444", percentage };
     }
 
-    const now = new Date();
-    const lastReview = new Date(data.lastReviewedAt);
-    const daysSince = (now.getTime() - lastReview.getTime()) / (1000 * 60 * 60 * 24);
-
-    if (data.lastSessionQuality === 'medium' || daysSince > 14 || retrievability < 0.85) {
+    if (data.lastSessionQuality === 'medium' || retrievability < 0.85) {
       return { label: "Partial", color: "#d97706", hex: "#fef3c7", border: "#f59e0b", percentage };
+    }
+
+    if (data.consecutivePerfects >= 3) {
+      return { label: "Mastered", color: "#0d9488", hex: "#18ccb1", border: "#0f766e", percentage: 100 };
     }
 
     return { label: "Strong", color: "#0f766e", hex: "rgba(24, 204, 177, 0.3)", border: "rgba(24, 204, 177, 0.6)", percentage };

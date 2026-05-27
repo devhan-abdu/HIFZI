@@ -82,18 +82,27 @@ export default function Dashboard() {
   const dynamicGoalPages = useMemo(() => {
     let goal = 0;
 
-    if (murajaPlan && murajaTodayTask && !murajaTodayTask.isVirtualTask) {
+    // Muraja: count this plan's pages only if a task is actually due today (scheduled or catch-up)
+    if (murajaPlan && murajaTodayTask) {
       const start = murajaTodayTask.startPage;
       const end = murajaTodayTask.quotaEnd ?? murajaTodayTask.endPage;
       goal += Math.max(0, end - start + 1);
     }
 
-    if (hifzPlan && hifzTodayTask && !hifzTodayTask.isVirtualTask) {
+    // Hifz: count this plan's pages only if a task is actually due today
+    if (hifzPlan && hifzTodayTask) {
       goal += hifzTodayTask.totalTarget ?? 0;
     }
 
-    return goal > 0 ? goal : (habitProgress.todayStats.goalPages || 4);
-  }, [murajaPlan, murajaTodayTask, hifzPlan, hifzTodayTask, habitProgress.todayStats.goalPages]);
+    // True global rest day — show ring as "full" relative to whatever was done
+    // so it doesn't demand 24 pages when nothing was planned
+    if (goal === 0) {
+      const completed = habitProgress.todayStats.completedPages;
+      return Math.max(1, completed);
+    }
+
+    return goal;
+  }, [murajaPlan, murajaTodayTask, hifzPlan, hifzTodayTask, habitProgress.todayStats.completedPages]);
 
   // Only block on plans — surah data loads independently and each section handles its own state
   const isLoading = loadingHifz || loadingMuraja;

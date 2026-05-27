@@ -15,6 +15,7 @@ import { Surah } from "@/src/features/quran/type";
 import { useBookmarks } from "@/src/features/quran/hooks/useBookmarks";
 import { getLastReadPage } from "@/src/features/quran/services/quranLastReadStorage";
 import { useCatalogStore } from "@/src/features/quran/store/catalogStore";
+import { StatusBar } from "expo-status-bar";
 
 export default function SurahIndex() {
   const router = useRouter();
@@ -82,6 +83,7 @@ export default function SurahIndex() {
 
   return (
     <View className="flex-1 bg-white ">
+      <StatusBar style="dark" />
       <View className="px-4 pb-2 pt-3">
         <View className="flex-row gap-2 mb-3">
           {resumePage != null && (
@@ -140,6 +142,7 @@ export default function SurahIndex() {
           maxToRenderPerBatch={30}
           windowSize={15}
           removeClippedSubviews={false}
+          contentContainerStyle={{ paddingBottom: 100 }}
           renderSectionHeader={({ section }) => (
             <JuzHeader
               juzNumber={section.juzNumber}

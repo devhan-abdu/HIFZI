@@ -4,6 +4,7 @@ import { useSession } from "@/src/hooks/useSession";
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Tabs, useRouter, usePathname } from "expo-router";
 import { Pressable, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const ACTIVE_COLOR = "#276359";
@@ -33,6 +34,7 @@ export default function AppLayout() {
 
   return (
     <View className="flex-1">
+      <StatusBar style="dark" />
       <NotificationBootstrap />
 
       <Tabs

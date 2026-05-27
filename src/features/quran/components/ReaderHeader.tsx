@@ -25,8 +25,6 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
     setViewMode,
     toggleUI,
     uiVisible,
-    tallyMode,
-    toggleTallyMode,
     translationSelectorOpen,
     toggleTranslationSelector,
     closeTranslationSelector,
@@ -170,18 +168,6 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
                 />
               </TouchableOpacity>
             )}
-
-            {/* Tally counter */}
-            <TouchableOpacity
-              onPress={toggleTallyMode}
-              className={`p-2 rounded-full ${tallyMode ? "bg-teal-500" : "bg-slate-50"}`}
-            >
-              <Ionicons
-                name="analytics"
-                size={20}
-                color={tallyMode ? "#fff" : "#0d9488"}
-              />
-            </TouchableOpacity>
 
             {/* Offline download settings */}
             <TouchableOpacity className="p-2" onPress={openOfflineSettings}>

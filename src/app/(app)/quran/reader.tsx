@@ -17,7 +17,6 @@ import {
 } from "@/src/features/quran/components/QuranPageSkeletons";
 import { useReaderStore } from "@/src/features/quran/hooks/useReaderStore";
 import { useFullscreenSystemUI } from "@/src/hooks/useFullscreenSystemUI";
-import { TallyCounter } from "@/src/features/quran/components/TallyCounter";
 import { PageMetaOverlay } from "@/src/features/quran/components/PageMetaOverlay";
 
 import {
@@ -83,7 +82,6 @@ export default function QuranReaderScreen() {
     viewMode,
     setReaderActive,
     setSelectedAyah,
-    tallyMode,
     playingAyah,
     selectedTranslations,
   } = useReaderStore();
@@ -333,8 +331,6 @@ export default function QuranReaderScreen() {
       <PageMetaOverlay pageData={pageMeta[currentPage]} />
 
       <ReaderBottomSheet chapterIds={currentChapterIds} />
-
-      <TallyCounter visible={tallyMode} onCountsChange={setTallyCounts} />
     </GestureHandlerRootView>
   );
 }
