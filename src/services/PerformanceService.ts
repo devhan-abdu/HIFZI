@@ -48,9 +48,7 @@ export const PerformanceService = {
       nextStability = 1;
     } else {
       if (current.stability === 0) {
-        nextStability = 1;
-      } else if (current.stability === 1) {
-        nextStability = 6;
+        nextStability = 5;
       } else {
         nextStability = Math.round(current.stability * nextDifficulty);
       }

@@ -69,9 +69,8 @@ export const habitAnalyticsService = {
     const rangeEntries = finalizedList.filter(e => e.sourceDate >= startDate && e.sourceDate <= endDate);
 
     const heatmap = this.calculateHeatmap(rangeEntries);
-    const analytics = this.calculateAnalytics(finalizedList, rangeEntries, userId);
-
-    const goalPages = await this.calculateDailyGoal(userId);
+    const { goalPages, plannedDays } = await this.calculateDailyGoalAndDays(userId);
+    const analytics = this.calculateAnalytics(finalizedList, rangeEntries, userId, plannedDays);
 
     return {
       userHistory: this.calculateUserHistory(rangeEntries),
@@ -117,29 +116,49 @@ export const habitAnalyticsService = {
   },
 
   async calculateDailyGoal(userId: string): Promise<number> {
+    const { goalPages } = await this.calculateDailyGoalAndDays(userId);
+    return goalPages;
+  },
+
+  async calculateDailyGoalAndDays(userId: string): Promise<{ goalPages: number; plannedDays: number[] }> {
     try {
       const { weeklyMurajaPlans, hifzPlans } = await import("@/src/lib/db/schema");
 
-      const murajaPlan = await db.select({ goal: weeklyMurajaPlans.plannedPagesPerDay })
+      const murajaPlan = await db.select({
+        goal: weeklyMurajaPlans.plannedPagesPerDay,
+        selectedDays: weeklyMurajaPlans.selectedDays,
+      })
         .from(weeklyMurajaPlans)
         .where(and(eq(weeklyMurajaPlans.userId, userId), eq(weeklyMurajaPlans.isActive, true)))
         .limit(1);
       const murajaGoal = murajaPlan[0]?.goal || 0;
+      const murajaDays: number[] = murajaPlan[0]?.selectedDays
+        ? JSON.parse(murajaPlan[0].selectedDays as string)
+        : [];
 
-      const hifzPlan = await db.select({ goal: hifzPlans.pagesPerDay })
+      const hifzPlan = await db.select({
+        goal: hifzPlans.pagesPerDay,
+        selectedDays: hifzPlans.selectedDays,
+      })
         .from(hifzPlans)
         .where(and(eq(hifzPlans.userId, userId), eq(hifzPlans.status, 'active')))
         .limit(1);
       const hifzGoal = hifzPlan[0]?.goal || 0;
+      const hifzDays: number[] = hifzPlan[0]?.selectedDays
+        ? JSON.parse(hifzPlan[0].selectedDays as string)
+        : [];
 
-      return Math.round(murajaGoal + hifzGoal);
+      // Union of all planned days (0=Mon … 6=Sun)
+      const plannedDays = Array.from(new Set([...murajaDays, ...hifzDays]));
+
+      return { goalPages: Math.round(murajaGoal + hifzGoal), plannedDays };
     } catch (e) {
       console.warn("Failed to calculate daily goal", e);
-      return 0;
+      return { goalPages: 0, plannedDays: [] };
     }
   },
 
-  calculateAnalytics(allEntries: any[], rangeEntries: any[], userId: string) {
+  calculateAnalytics(allEntries: any[], rangeEntries: any[], userId: string, plannedDays: number[] = []) {
     const completedRange = rangeEntries.filter(e => e.eventType.includes("_COMPLETED"));
     const missedRange = rangeEntries.filter(e => e.eventType === "TASK_MISSED");
     
@@ -154,8 +173,8 @@ export const habitAnalyticsService = {
         .map(e => e.sourceDate)
     )).sort();
 
-    const currentStreak = this.computeCurrentStreak(completionDates);
-    const longestStreak = this.computeLongestStreak(completionDates);
+    const currentStreak = this.computeCurrentStreak(completionDates, plannedDays);
+    const longestStreak = this.computeLongestStreak(completionDates, plannedDays);
 
     return {
       completionRate: Math.round((completedRange.length / Math.max(1, completedRange.length + missedRange.length)) * 100),
@@ -200,37 +219,64 @@ export const habitAnalyticsService = {
     return Array.from(map.entries()).map(([date, val]) => ({ date, ...val }));
   },
 
-  computeCurrentStreak(dates: string[]) {
+  computeCurrentStreak(dates: string[], plannedDays: number[] = []) {
     if (dates.length === 0) return 0;
-    
+
     const set = new Set(dates);
     const today = new Date().toISOString().split('T')[0];
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    
+
+    // Start from today if logged, else yesterday if logged, else no streak
     let cursorStr = set.has(today) ? today : (set.has(yesterday) ? yesterday : null);
     if (!cursorStr) return 0;
 
     let streak = 0;
-    let cursor = new Date(cursorStr);
-    
-    while (set.has(cursor.toISOString().split('T')[0])) {
-      streak++;
+    let cursor = new Date(cursorStr + 'T00:00:00');
+
+    while (true) {
+      const dateStr = cursor.toISOString().split('T')[0];
+      if (set.has(dateStr)) {
+        streak++;
+      } else {
+        // If this day was a planned day that was missed → break streak
+        // (plannedDays uses Mon=0 … Sun=6 convention)
+        const dayOfWeek = (cursor.getDay() + 6) % 7;
+        const isPlanned = plannedDays.length === 0 || plannedDays.includes(dayOfWeek);
+        if (isPlanned) break; // missed a required day — streak over
+        // Otherwise it's a rest day — skip and keep counting
+      }
       cursor.setDate(cursor.getDate() - 1);
+      // Safety: don't walk more than 2 years back
+      if (streak > 730) break;
     }
     return streak;
   },
 
-  computeLongestStreak(dates: string[]) {
+  computeLongestStreak(dates: string[], plannedDays: number[] = []) {
     if (dates.length === 0) return 0;
-    
-    let longest = 0, current = 0, prev = null;
+
+    let longest = 0, current = 0;
+    let prev: Date | null = null;
+
     for (const d of dates) {
-      const date = new Date(d);
+      const date = new Date(d + 'T00:00:00');
       if (!prev) {
         current = 1;
       } else {
-        const diff = Math.round((date.getTime() - prev.getTime()) / 86400000);
-        current = diff === 1 ? current + 1 : 1;
+        const diffDays = Math.round((date.getTime() - prev.getTime()) / 86400000);
+        if (diffDays === 1) {
+          current += 1;
+        } else if (diffDays > 1) {
+          // Check if any of the skipped days were planned — if all were rest days, streak continues
+          let brokeStreak = false;
+          for (let i = 1; i < diffDays; i++) {
+            const skipped = new Date(prev.getTime() + i * 86400000);
+            const dayOfWeek = (skipped.getDay() + 6) % 7;
+            const isPlanned = plannedDays.length === 0 || plannedDays.includes(dayOfWeek);
+            if (isPlanned) { brokeStreak = true; break; }
+          }
+          current = brokeStreak ? 1 : current + 1;
+        }
       }
       longest = Math.max(longest, current);
       prev = date;

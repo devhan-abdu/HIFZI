@@ -1,6 +1,6 @@
 import { db } from "@/src/lib/db/local-client";
 import { userStats } from "@/src/features/user/database/userSchema";
-import { habitEvents, notifications } from "../database/notificationSchema";
+import { habitEvents, notifications, scheduledNotifications } from "../database/notificationSchema";
 import { activityPlans } from "@/src/features/habits/database/habitSchema";
 import { notificationRepository } from "./notificationRepository";
 import { notificationManager } from "./notificationManager";
@@ -10,6 +10,8 @@ import { COMEBACK_TEMPLATES, STREAK_WARNING_TEMPLATES } from "../../gamification
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const STREAK_RISK_HOUR = 18;
+
+const schedulingLocks = new Set<string>();
 
 export const notificationService = {
 
@@ -148,13 +150,48 @@ export const notificationService = {
         }
       });
 
+    // Check if user is returning from a 3+ planned day miss
+    let isComeback = false;
+    if (payload.status !== 'missed') {
+      const successfulEvents = allEvents
+        .filter(e => e.habitType === payload.habitType && e.date < payload.date && e.status !== 'missed')
+        .sort((a, b) => b.date.localeCompare(a.date));
+      
+      if (successfulEvents.length > 0) {
+        const lastSuccessDateStr = successfulEvents[0].date;
+        const lastSuccess = new Date(lastSuccessDateStr + 'T00:00:00');
+        const today = new Date(payload.date + 'T00:00:00');
+        
+        let missedPlannedCount = 0;
+        let cursor = new Date(lastSuccess);
+        cursor.setDate(cursor.getDate() + 1);
+        
+        while (cursor < today) {
+          const cursorStr = cursor.toISOString().split('T')[0];
+          const dayOfWeek = (cursor.getDay() + 6) % 7;
+          if (selectedDays.includes(dayOfWeek)) {
+            const logOnDay = allEvents.find(e => e.habitType === payload.habitType && e.date === cursorStr);
+            if (!logOnDay || logOnDay.status === 'missed') {
+              missedPlannedCount++;
+            }
+          }
+          cursor.setDate(cursor.getDate() + 1);
+        }
+        
+        if (missedPlannedCount >= 3) {
+          isComeback = true;
+        }
+      }
+    }
+
     if (payload.status !== 'missed') {
       await this.sendConsolidatedNotification(payload.userId, {
         displayName: payload.displayName ?? "Hafiz",
         streak: streaks.current,
         levelUp: payload.rewards?.levelUp,
         badges: payload.rewards?.badges,
-        habitType: payload.habitType
+        habitType: payload.habitType,
+        isComeback
       });
     }
 
@@ -214,14 +251,26 @@ export const notificationService = {
     levelUp?: number | null;
     badges?: any[];
     habitType: string;
+    isComeback?: boolean;
   }) {
     let title = "Great Work!";
     let message = `You've completed your ${data.habitType} session. Keep it up!`;
     let type: 'milestone' | 'warning' | 'xp' = 'milestone';
     let eventKey = `consolidated:${data.habitType}:${this.toDateKey()}`;
 
-    // Priority 1: Badges
-    if (data.badges && data.badges.length > 0) {
+    // Priority 1: Comeback Celebration!
+    if (data.isComeback) {
+      title = "Welcome Back!";
+      const templates = [
+        `Mashallah, ${data.displayName}! You're back! Let's build a beautiful habit again.`,
+        `Mubarak on restarting your Quran journey! We are so happy to see you again.`,
+        `Every step back to the Quran is a victory. Welcome back, ${data.displayName}!`
+      ];
+      message = templates[Math.floor(Math.random() * templates.length)];
+      eventKey = `comeback_celebration:${data.habitType}:${this.toDateKey()}`;
+    }
+    // Priority 2: Badges
+    else if (data.badges && data.badges.length > 0) {
       const badge = data.badges[0];
       title = "New Badge Earned!";
       message = `Mubarak! You've earned the ${badge.badgeName} badge.`;
@@ -229,7 +278,7 @@ export const notificationService = {
       else if (data.streak > 0 && data.streak % 5 === 0) message += ` on your ${data.streak}-day streak!`;
       eventKey = `badge:${badge.badgeType}:${this.toDateKey()}`;
     } 
-    // Priority 2: Level Up
+    // Priority 3: Level Up
     else if (data.levelUp) {
       title = "Level Up!";
       const templates = [
@@ -238,14 +287,14 @@ export const notificationService = {
         `Level Up! ${data.levelUp} looks great on you. Keep going!`
       ];
       message = templates[Math.floor(Math.random() * templates.length)];
-      if (data.streak > 0 && data.streak % 5 === 0) message += ` 🔥 ${data.streak}-day streak!`;
+      if (data.streak > 0 && data.streak % 5 === 0) message += ` - ${data.streak}-day streak!`;
       eventKey = `levelup:${data.levelUp}:${this.toDateKey()}`;
     }
-    // Priority 3: Streak Milestone
+    // Priority 4: Streak Milestone
     else if (data.streak > 0 && data.streak % 5 === 0) {
       title = "Streak Milestone";
       const templates = [
-        `🔥 ${data.displayName}! You're on a ${data.streak}-day streak! Keep going!`,
+        `${data.displayName}! You're on a ${data.streak}-day streak! Keep going!`,
         `Consistency is key! ${data.streak} days and counting. Mubarak!`,
         `Mashallah! A ${data.streak}-day streak. You're becoming a Muraja master.`
       ];
@@ -267,7 +316,7 @@ export const notificationService = {
       await notificationManager.sendLocal({ 
         title: result.title, 
         body: result.body,
-        data: { type, eventKey }
+        data: { userId, type, eventKey, title: result.title, message: result.body }
       });
     }
   },
@@ -276,14 +325,23 @@ export const notificationService = {
     const now = new Date();
     const todayKey = this.toDateKey(now);
     
-    const expired = await notificationRepository.getExpiredSchedules(userId, todayKey);
-    for (const row of expired) {
-      if (row.notificationIdentifier) await notificationManager.cancel(row.notificationIdentifier);
-      await notificationRepository.deleteScheduledNotification(userId, row.eventKey);
-    }
+    // Concurrency Lock to prevent duplicate background runs at the exact same millisecond
+    const lockKey = `${userId}:${todayKey}`;
+    if (schedulingLocks.has(lockKey)) return;
+    schedulingLocks.add(lockKey);
 
-    for (const habit of ['hifz', 'muraja'] as const) {
-      await this.scheduleSmartReminders(userId, habit, now);
+    try {
+      const expired = await notificationRepository.getExpiredSchedules(userId, todayKey);
+      for (const row of expired) {
+        if (row.notificationIdentifier) await notificationManager.cancel(row.notificationIdentifier);
+        await notificationRepository.deleteScheduledNotification(userId, row.eventKey);
+      }
+
+      for (const habit of ['hifz', 'muraja'] as const) {
+        await this.scheduleSmartReminders(userId, habit, now);
+      }
+    } finally {
+      schedulingLocks.delete(lockKey);
     }
   },
 
@@ -292,44 +350,53 @@ export const notificationService = {
     const scheduleKey = `schedule:risk:${habit}:${todayKey}`;
 
     const allEvents = await notificationRepository.getHabitEvents(userId);
-    const hasToday = allEvents.some(e => e.habitType === habit && e.date === todayKey && e.status !== 'missed');
     
-    if (hasToday) {
+    // 1. Cancel and delete all scheduled streak-risk warnings if user has logged *either* plan successfully today.
+    const hasLoggedAnyToday = allEvents.some(e => e.date === todayKey && e.status !== 'missed');
+    if (hasLoggedAnyToday) {
       const existing = await notificationRepository.getScheduledNotification(userId, scheduleKey);
       if (existing?.notificationIdentifier) await notificationManager.cancel(existing.notificationIdentifier);
       await notificationRepository.deleteScheduledNotification(userId, scheduleKey);
-      
-      const day3 = new Date(now.getTime() + 3 * DAY_MS);
-      day3.setHours(STREAK_RISK_HOUR, 0, 0, 0);
-      const comebackKey = `schedule:comeback:${habit}:${this.toDateKey(day3)}`;
-      
-      const existingComeback = await notificationRepository.getScheduledNotification(userId, comebackKey);
-      if (!existingComeback) {
-        const body = COMEBACK_TEMPLATES[Math.floor(Math.random() * COMEBACK_TEMPLATES.length)];
-        const identifier = await notificationManager.schedule({
-          title: "Waiting For You",
-          body,
-          data: { type: 'comeback', habit, eventKey: comebackKey },
-          trigger: day3
-        });
-        
-        if (identifier) {
-          await notificationRepository.upsertScheduledNotification(userId, {
-            kind: 'streak_risk',
-            habitType: habit,
-            eventKey: comebackKey,
-            scheduledFor: day3.toISOString(),
-            notificationIdentifier: identifier
-          });
-        }
-      }
       return;
     }
 
-    const yesterdayKey = this.getYesterdayKey(now);
-    const hasYesterday = allEvents.some(e => e.habitType === habit && e.date === yesterdayKey && e.status !== 'missed');
+    // 2. Fetch the plan for this habit to verify if today is a planned study day.
+    const activePlan = await db.query.activityPlans.findFirst({
+      where: and(
+        eq(activityPlans.userId, userId),
+        eq(activityPlans.activityType, habit.toUpperCase() as any),
+        eq(activityPlans.status, 'active')
+      )
+    });
     
-    if (!hasYesterday) return;
+    let isPlannedToday = false;
+    if (activePlan?.metadata) {
+      try {
+        const meta = JSON.parse(activePlan.metadata);
+        const selectedDays = meta.selectedDays || [0,1,2,3,4,5,6];
+        const dayOfWeek = (now.getDay() + 6) % 7; // Mon=0 ... Sun=6
+        isPlannedToday = selectedDays.includes(dayOfWeek);
+      } catch (e) {}
+    } else {
+      isPlannedToday = true;
+    }
+
+    // If today is NOT planned for this habit, we do not schedule streak risk!
+    if (!isPlannedToday) {
+      const existing = await notificationRepository.getScheduledNotification(userId, scheduleKey);
+      if (existing?.notificationIdentifier) await notificationManager.cancel(existing.notificationIdentifier);
+      await notificationRepository.deleteScheduledNotification(userId, scheduleKey);
+      return;
+    }
+
+    // 3. Streak risk warning is only meaningful if there is actually a streak > 0 to protect!
+    const currentStats = await db.query.userStats.findFirst({
+      where: eq(userStats.userId, userId)
+    });
+    const currentStreak = currentStats?.[habit === 'hifz' ? 'hifzCurrentStreak' : 'murajaCurrentStreak'] ?? 0;
+    if (currentStreak === 0) {
+      return;
+    }
 
     const triggerDate = new Date(now);
     triggerDate.setHours(STREAK_RISK_HOUR, 0, 0, 0);
@@ -341,7 +408,14 @@ export const notificationService = {
         const identifier = await notificationManager.schedule({
           title: "Streak Risk",
           body,
-          data: { type: 'warning', habit, eventKey: scheduleKey },
+          data: { 
+            userId, 
+            type: 'warning', 
+            habit, 
+            eventKey: scheduleKey,
+            title: "Streak Risk",
+            message: body
+          },
           trigger: triggerDate
         });
         

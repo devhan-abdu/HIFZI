@@ -39,7 +39,7 @@ export const GamificationService = {
         type: 'milestone',
         title: 'Level Up!',
         message: `Mubarak! You've reached Level ${newLevel}! Keep up the great work.`,
-        eventKey: `levelup_${newLevel}_${Date.now()}`
+        eventKey: `levelup_${newLevel}`
       });
     }
 
@@ -52,10 +52,43 @@ export const GamificationService = {
 
   async awardBadge(db: any, userId: string, type: BadgeType, metadata?: any, options?: { silent?: boolean }) {
     const tx = db || drizzleDb;
-    const existing = await tx.query.userBadges.findFirst({
-      where: and(eq(userBadges.userId, userId), eq(userBadges.badgeType, type))
-    });
-    if (existing && !type.startsWith("STREAK")) return null; 
+    
+    // Check if the badge is already awarded
+    let isAlreadyAwarded = false;
+    
+    if (type.startsWith("STREAK")) {
+      // 7-day cooldown on the exact same streak badge type to prevent duplicate triggers
+      const oneWeekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+      const recentStreakBadge = await tx.query.userBadges.findFirst({
+        where: and(
+          eq(userBadges.userId, userId),
+          eq(userBadges.badgeType, type),
+          sql`${userBadges.achievedAt} >= ${oneWeekAgo}`
+        )
+      });
+      isAlreadyAwarded = !!recentStreakBadge;
+    } else if (metadata?.planId && metadata?.planType) {
+      // Plan-specific progress badges: check if already awarded for this specific planId
+      const allBadges = await tx.query.userBadges.findMany({
+        where: and(eq(userBadges.userId, userId), eq(userBadges.badgeType, type))
+      });
+      isAlreadyAwarded = allBadges.some((b: any) => {
+        try {
+          const meta = JSON.parse(b.metadata ?? "{}");
+          return meta.planId === metadata.planId && meta.planType === metadata.planType;
+        } catch {
+          return false;
+        }
+      });
+    } else {
+      // Global badges: check globally
+      const existing = await tx.query.userBadges.findFirst({
+        where: and(eq(userBadges.userId, userId), eq(userBadges.badgeType, type))
+      });
+      isAlreadyAwarded = !!existing;
+    }
+
+    if (isAlreadyAwarded) return null;
 
     const badgeId = `${userId}_${type}_${Date.now()}`;
     await tx.insert(userBadges).values({
@@ -74,7 +107,7 @@ export const GamificationService = {
         type: 'milestone',
         title: 'New Badge Earned!',
         message: `Mubarak! You've earned the ${badgeName} badge.`,
-        eventKey: `badge_${type}_${Date.now()}`
+        eventKey: `badge_${type}_${metadata?.planId ?? 'global'}`
       });
     }
 
@@ -192,7 +225,7 @@ export const GamificationService = {
 
       const planMeta = { planId, planType };
 
-      if (percentage > 0) {
+      if (percentage >= 0.01) {
         const badge = await this.awardBadge(tx, userId, "SPARK", planMeta, { silent: true });
         if (badge) awarded.push(badge);
       }

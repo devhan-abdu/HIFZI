@@ -77,7 +77,7 @@ export const TodayTasksSection = ({
           <EvaluationRequiredCard type="muraja" />
       ) : murajaState === 'COMPLETION_DUE' ? (
           <PlanEndCard activityType="MURAJA" localRefId={weeklyPlan?.id ?? 0} title="Muraja Plan" />
-      ) : !!weeklyPlan && todayPlan && !todayPlan.isVirtualTask ? (
+      ) : !!weeklyPlan && todayPlan ? (
         <MurajaActionCard 
           todayPlan={todayPlan} 
           weeklyPlan={weeklyPlan} 

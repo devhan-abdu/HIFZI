@@ -16,29 +16,29 @@ export const SOLAT_TIMES_DEFAULT: Record<string, { hour: number; minute: number 
 
 // Dynamic Duolingo-style motivational templates
 const MURAJA_TEMPLATES = [
-  "Consistency is the crown of the Hafiz. Today's revision is waiting to keep your heart illuminated! ",
-  "Your revision is the shield of your Quran memorization. Let's protect it today! ",
-  "A page of Muraja keeps your path clear. 5 minutes today is all it takes to keep your memory strong! ✨",
-  "Don't let what you've built slip away. Let's refresh today's revision page together! ",
+  "Consistency is the crown of the Hafiz. Today's revision is waiting to keep your heart illuminated!",
+  "Your revision is the shield of your Quran memorization. Let's protect it today!",
+  "A page of Muraja keeps your path clear. 5 minutes today is all it takes to keep your memory strong!",
+  "Don't let what you've built slip away. Let's refresh today's revision page together!",
 ];
 
 const HIFZ_TEMPLATES = [
-  "The journey of a thousand miles begins with a single step. Let's memorize today's new page! ",
-  "Your Quran is waiting for you today. Let's add a beautiful new verse to your chest! ",
-  "Every letter you memorize today is a light for your heart. Let's take today's new target! ",
-  "Elevate and recite. Let's make progress on your Hifz target today! ",
+  "The journey of a thousand miles begins with a single step. Let's memorize today's new page!",
+  "Your Quran is waiting for you today. Let's add a beautiful new verse to your chest!",
+  "Every letter you memorize today is a light for your heart. Let's take today's new target!",
+  "Elevate and recite. Let's make progress on your Hifz target today!",
 ];
 
 const COMBINED_TEMPLATES = [
-  "A double blessing today! Let's revise the old and welcome the new. You've got this! ",
-  "Revision first to strengthen the heart, then Hifz to elevate. Let's complete today's goals! ",
-  "Your crown is being woven with every page. Today's double target is waiting for you! ",
+  "A double blessing today! Let's revise the old and welcome the new. You've got this!",
+  "Revision first to strengthen the heart, then Hifz to elevate. Let's complete today's goals!",
+  "Your crown is being woven with every page. Today's double target is waiting for you!",
 ];
 
 const REST_TEMPLATES = [
-  "A rest day for your plans, but a perfect day for reflection. Open the Quran and read for the soul today! ",
-  "Even a single ayah today keeps the heart connected. Let's check in for a quick reflection! ",
-  "Rest your mind, but keep your heart close. Your Quran journey is a lifelong companion. ",
+  "A rest day for your plans, but a perfect day for reflection. Open the Quran and read for the soul today!",
+  "Even a single ayah today keeps the heart connected. Let's check in for a quick reflection!",
+  "Rest your mind, but keep your heart close. Your Quran journey is a lifelong companion.",
 ];
 
 export const habitStackingService = {
@@ -154,26 +154,29 @@ export const habitStackingService = {
       const isHifzScheduled = hifzDays.includes(dbWeekday);
       const expoWeekday = ((dbWeekday + 1) % 7) + 1;
 
-      let title = "Hifzi Journey 📖";
+      // Skip scheduling entirely if it's a rest day for BOTH plans (no notifications on rest days)
+      if (!isMurajaScheduled && !isHifzScheduled) {
+        continue;
+      }
+
+      let title = "Hifzi Journey";
       let body = "";
       let templates: string[] = [];
 
       if (isMurajaScheduled && isHifzScheduled) {
-        title = "Dual Quran Target! 🌟";
+        title = "Dual Quran Target!";
         templates = COMBINED_TEMPLATES;
       } else if (isMurajaScheduled) {
-        title = "Time for Muraja! 🔄";
+        title = "Time for Muraja!";
         templates = MURAJA_TEMPLATES;
-      } else if (isHifzScheduled) {
-        title = "Time for Hifz! 🚀";
-        templates = HIFZ_TEMPLATES;
       } else {
-        title = "Quran Habit Check-in 🌿";
-        templates = REST_TEMPLATES;
+        title = "Time for Hifz!";
+        templates = HIFZ_TEMPLATES;
       }
 
-      // Pick a random template based on dbWeekday to keep it dynamic and fresh
-      const templateIdx = dbWeekday % templates.length;
+      // Seed with week of the year so it rotates dynamically every week
+      const weekOfYear = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
+      const templateIdx = (dbWeekday + weekOfYear) % templates.length;
       body = templates[templateIdx];
 
       const identifier = `habit_stacking_day_${expoWeekday}`;
