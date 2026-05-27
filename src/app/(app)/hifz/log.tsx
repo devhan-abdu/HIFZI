@@ -100,23 +100,13 @@ export default function LogProgress() {
   }, [sessionMistakes, sessionHesitations, resetSessionTally]);
 
   useEffect(() => {
-    if (isRestDay) {
-      setStatus("completed");
-      return;
-    }
     if (hasReviewPrefill && reviewEndPage >= reviewStartPage) {
       setPages(Math.max(1, reviewEndPage - reviewStartPage + 1));
       return;
     }
     if (!logContext) return;
     setPages(logContext.totalTarget);
-  }, [hasReviewPrefill, isRestDay, logContext, reviewEndPage, reviewStartPage]);
-
-  useEffect(() => {
-    if (isRestDay) {
-      setPages(Math.max(1, endPage - startPage + 1));
-    }
-  }, [startPage, endPage, isRestDay]);
+  }, [hasReviewPrefill, logContext, reviewEndPage, reviewStartPage]);
 
   useEffect(() => {
     if (isRestDay && surahData.length > 0) {
@@ -149,7 +139,7 @@ export default function LogProgress() {
   }, [startPage]);
 
   useEffect(() => {
-    if (isRestDay || hasReviewPrefill) return;
+    if (hasReviewPrefill) return;
 
     const targetPages = logContext?.totalTarget;
     if (!targetPages) return;
@@ -160,7 +150,7 @@ export default function LogProgress() {
     } else {
       setStatus("partial");
     }
-  }, [hasReviewPrefill, isRestDay, logContext?.totalTarget, pages]);
+  }, [hasReviewPrefill, logContext?.totalTarget, pages]);
 
   const handleStatusSelection = (
     selectedStatus: "completed" | "partial" | "missed",
@@ -206,21 +196,15 @@ export default function LogProgress() {
       const today = new Date();
       const logDay = (today.getDay() + 6) % 7;
 
-      const actualStartPage = isRestDay
-        ? startPage
-        : hasReviewPrefill
-          ? reviewStartPage
-          : (logContext?.startPage ?? plan.startPage);
+      const actualStartPage = hasReviewPrefill
+        ? reviewStartPage
+        : (logContext?.startPage ?? plan.startPage);
 
-      const actualEndPage = isRestDay
-        ? endPage
-        : hasReviewPrefill
-          ? reviewStartPage + Math.max(0, pages - 1)
-          : (getTodayTask(plan, surahData, pages)?.endPage ?? actualStartPage);
+      const actualEndPage = hasReviewPrefill
+        ? reviewStartPage + Math.max(0, pages - 1)
+        : (getTodayTask(plan, surahData, pages)?.endPage ?? actualStartPage);
 
-      const pagesCompleted = isRestDay
-        ? Math.max(1, endPage - startPage + 1)
-        : pages;
+      const pagesCompleted = pages;
 
       if (hasReviewPrefill) {
         const pagesArray = Array.from(
@@ -259,25 +243,17 @@ export default function LogProgress() {
     }
   };
 
-  const heroSurahLabel = isRestDay
-    ? startSurah === endSurah
-      ? getSurahNameByNumber(startSurah)
-      : `${getSurahNameByNumber(startSurah)} – ${getSurahNameByNumber(endSurah)}`
-    : hasReviewPrefill
-      ? "Targeted Review"
-      : (logContext?.displaySurah ?? "—");
+  const heroSurahLabel = hasReviewPrefill
+    ? "Targeted Review"
+    : (logContext?.displaySurah ?? "—");
 
-  const heroRangeLabel = isRestDay
-    ? `${startPage}—${endPage}`
-    : hasReviewPrefill
-      ? `${reviewStartPage}—${reviewEndPage}`
-      : `${logContext?.startPage ?? 0}—${logContext?.endPage ?? 0}`;
+  const heroRangeLabel = hasReviewPrefill
+    ? `${reviewStartPage}—${reviewEndPage}`
+    : `${logContext?.startPage ?? 0}—${logContext?.endPage ?? 0}`;
 
-  const heroPageCount = isRestDay
-    ? Math.max(1, endPage - startPage + 1)
-    : hasReviewPrefill
-      ? Math.max(1, reviewEndPage - reviewStartPage + 1)
-      : pages;
+  const heroPageCount = hasReviewPrefill
+    ? Math.max(1, reviewEndPage - reviewStartPage + 1)
+    : pages;
 
   return (
     <>
@@ -349,41 +325,7 @@ export default function LogProgress() {
             </View>
           </View>
 
-          {isRestDay && !isLocked && (
-            <View className="p-5 mb-8 rounded-[32px] border border-slate-100 bg-white shadow-sm gap-y-4">
-              <Text className="text-slate-900 text-base mb-2 ml-1">
-                Voluntary Study Range
-              </Text>
 
-              <SurahDropdown
-                label="Start Surah"
-                surah={startSurah}
-                setSurah={setStartSurah}
-              />
-
-              <SurahPageDropdown
-                label="Start Page"
-                surah={startSurah}
-                setPage={setStartPage}
-                page={startPage}
-              />
-
-              <View className="h-[1px] bg-slate-100 my-2" />
-
-              <SurahDropdown
-                label="End Surah"
-                surah={endSurah}
-                setSurah={setEndSurah}
-              />
-
-              <SurahPageDropdown
-                label="End Page"
-                surah={endSurah}
-                setPage={setEndPage}
-                page={endPage}
-              />
-            </View>
-          )}
 
           {!isRestDay && !hasReviewPrefill && (
             <View className="bg-slate-50/50 border border-slate-100 p-4 rounded-2xl mb-8 flex-row items-center justify-between">
