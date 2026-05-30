@@ -15,38 +15,33 @@ export function DayByDay({ progress }: { progress: IMurajaDayStatus[] | null}) {
         const isCompleted = day.status === "completed";
         const isMissed = day.status === "missed";
         const isRest = day.status === "rest";
-        const isPending = day.status === "pending";
-        const isFuture = day.status === "future";
-
-        const isTodayPending = day.isToday && isPending;
+        const isPending = day.status === "pending" || day.status === "future"; // both pending and future get the standard pending styling
 
         return (
           <View key={day.date} className="items-center">
             <View
               className={`w-9 h-9 rounded-full items-center justify-center mb-2 
-                ${isCompleted ? "bg-primary" : ""}
-                ${isMissed ? "bg-red-50 border border-red-100" : ""}
-                ${isRest ? "bg-gray-50 border border-gray-200 " : ""}
-                ${isTodayPending ? "border-2 border-primary border-dashed bg-white" : ""}
-                ${isFuture ? "bg-primary/5 border border-gray-200 " : ""}
+                ${day.isToday ? "border-2 border-primary border-dashed" : ""}
+                ${isCompleted ? (day.isToday ? "bg-primary/10" : "bg-primary") : ""}
+                ${isMissed ? "bg-red-50" : ""}
+                ${!day.isToday && isMissed ? "border border-red-100" : ""}
+                ${isRest ? "bg-gray-50" : ""}
+                ${!day.isToday && isRest ? "border border-gray-200" : ""}
+                ${isPending ? "bg-primary/5" : ""}
+                ${!day.isToday && isPending ? "border border-gray-200" : ""}
               `}
             >
-              {isCompleted ?
-                <Ionicons name="checkmark" size={16} color="white" />
-              : isMissed ?
+              {isCompleted ? (
+                <Ionicons name="checkmark" size={16} color={day.isToday ? "#276359" : "white"} />
+              ) : isMissed ? (
                 <Ionicons name="close" size={14} color="#f87171" />
-              : isRest ?
+              ) : isRest ? (
                 <Ionicons name="cafe-outline" size={14} color="#9ca3af" />
-              : <Text
-                  className={`text-[10px] ${
-                    day.isToday ? "text-primary"
-                    : isFuture ? "text-primary"
-                    : "text-gray-400"
-                  }`}
-                >
+              ) : (
+                <Text className="text-primary text-[10px]">
                   {day.dayName[0]}
                 </Text>
-              }
+              )}
             </View>
 
             <Text

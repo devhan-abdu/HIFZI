@@ -2,7 +2,8 @@ import React, { useState, useCallback } from "react";
 import { Text } from "@/src/components/common/ui/Text";
 import { View } from "react-native";
 
-import { router, useFocusEffect } from "expo-router";
+import { useFocusEffect } from "expo-router";
+import { useNavigate } from "@/src/hooks/useNavigate";
 
 import Screen from "@/src/components/screen/Screen";
 import {
@@ -57,6 +58,7 @@ export default function MurajaIndex() {
   const { updateLog, isUpdating } = useMurajaOperation();
   const { alertConfig, hideAlert } = useAlert();
   const [qualityModalVisible, setQualityModalVisible] = useState(false);
+  const { push } = useNavigate();
 
   const handleUpdate = async (status: "completed" | "pending" | "missed", quality?: number) => {
     const todayStr = new Date().toISOString().slice(0, 10);
@@ -139,48 +141,60 @@ export default function MurajaIndex() {
                     }
                   }}
                   onStart={() => {
-                    router.push(`/(app)/quran/reader?page=${todayTask.startPage}&planId=${weeklyPlan.id}&type=muraja&start=${todayTask.startPage}&end=${todayTask.endPage}`);
+                    push(`/(app)/quran/reader?page=${todayTask.startPage}&planId=${weeklyPlan.id}&type=muraja&start=${todayTask.startPage}&end=${todayTask.endPage}`);
                   }}
-                  onDetails={() => router.push("/(app)/muraja/log")}
+                  onDetails={() => push("/(app)/muraja/log")}
                 />
               ) : (
-                <RestDayCardSingle type="muraja" onLog={() => router.push("/(app)/muraja/log")} />
+                <RestDayCardSingle type="muraja" onLog={() => push("/(app)/muraja/log")} />
               )}
             </View>
 
-            <View className="mt-6">
-              <Text className="text-gray-400  uppercase tracking-[2px] text-[10px] mb-1 px-1">
+            <View className="mt-10 mb-2 px-1">
+              <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
+                Activity
+              </Text>
+              <Text className="text-xl text-gray-900 mb-5">
+                Weekly Consistency
+              </Text>
+              <DayByDay progress={weekProgress ?? null} />
+            </View>
+
+            <View className="mt-10">
+              <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2 px-1">
                 Insights
               </Text>
-              <Text className="text-xl  text-gray-900 mb-4 px-1">
+              <Text className="text-xl text-gray-900 mb-4 px-1">
                 Muraja Analytics
               </Text>
 
               <View className="flex-row flex-wrap justify-between">
                 <StatCard
                   title="Completed"
-                  value={stats?.totalCompletedPages ?? ""}
+                  value={stats?.totalCompletedPages ?? 0}
                   unit="Pages"
                   icon="checkmark-done-circle-outline"
                 />
                 <StatCard
-                  title="Total Progress"
-                  value={Number(stats?.overAllProgress)}
-                  unit="%"
-                  icon="trending-up-outline"
+                  title="Remaining"
+                  value={Math.max(0, (weeklyPlan.endPage ?? 604) - (stats?.currentPage ?? 0))}
+                  unit="Pages"
+                  icon="book-outline"
+                />
+                <StatCard
+                  title="Current Streak"
+                  value={stats?.streak ?? 0}
+                  unit="Days"
+                  icon="flame-outline"
+                />
+                <StatCard
+                  title="Missed"
+                  value={stats?.missedDaysCount ?? 0}
+                  unit="Days"
+                  type="danger"
+                  icon="alert-circle-outline"
                 />
               </View>
-            </View>
-            <View className="mt-6 mb-1 px-1">
-              <Text className="text-gray-400   uppercase tracking-[2px] text-[10px] mb-2">
-                Activity
-              </Text>
-
-              <Text className="text-xl  text-gray-900 mb-5">
-                Weekly Consistency
-              </Text>
-
-              <DayByDay progress={weekProgress ?? null} />
             </View>
           </View>
         </ScreenContent>
@@ -189,7 +203,7 @@ export default function MurajaIndex() {
           <View className="flex-row gap-x-3">
             <Button
               className={`flex-1 shadow-lg ${(isEvalDue || isCompDue) ? 'opacity-50' : 'shadow-primary/20'}`}
-              onPress={() => !(isEvalDue || isCompDue) && router.push(`/(app)/muraja/log`)}
+              onPress={() => !(isEvalDue || isCompDue) && push(`/(app)/muraja/log`)}
               disabled={isEvalDue || isCompDue}
             >
               <Ionicons name="add-circle" size={20} color="white" />
@@ -201,7 +215,7 @@ export default function MurajaIndex() {
             <Button
               variant="outline"
               className="flex-1"
-              onPress={() => router.push("/(app)/muraja/create-muraja-plan")}
+              onPress={() => push("/(app)/muraja/create-muraja-plan")}
             >
               <Ionicons name="pencil-outline" size={18} color="#276359" />
               <Text className="text-primary">
