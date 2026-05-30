@@ -98,41 +98,45 @@ export const habitStackingService = {
       where: and(eq(hifzPlans.userId, userId), eq(hifzPlans.status, 'active')),
     });
 
-    const activePlan = activeMuraja || activeHifz;
-    if (!activePlan) return;
+    if (!activeMuraja && !activeHifz) return;
 
-    // 3. Extract preferred time and custom time settings
-    const preferredTime = activePlan.preferredTime ?? "Isha";
-    const isCustomTime = activePlan.isCustomTime ?? false;
+    // Helper to parse timing for a plan
+    const getPlanTiming = async (plan: any) => {
+      if (!plan) return null;
+      const preferredTime = plan.preferredTime ?? "Isha";
+      const isCustomTime = plan.isCustomTime ?? false;
 
-    let hour = 19;
-    let minute = 30;
+      let hour = 19;
+      let minute = 30;
 
-    if (isCustomTime) {
-      const match = preferredTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
-      if (match) {
-        hour = parseInt(match[1], 10);
-        minute = parseInt(match[2], 10);
-        const ampm = match[3].toUpperCase();
-        if (ampm === 'PM' && hour < 12) hour += 12;
-        if (ampm === 'AM' && hour === 12) hour = 0;
+      if (isCustomTime) {
+        const match = preferredTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (match) {
+          hour = parseInt(match[1], 10);
+          minute = parseInt(match[2], 10);
+          const ampm = match[3].toUpperCase();
+          if (ampm === 'PM' && hour < 12) hour += 12;
+          if (ampm === 'AM' && hour === 12) hour = 0;
+        } else {
+          const parts = preferredTime.split(':');
+          if (parts.length === 2) {
+            hour = parseInt(parts[0], 10);
+            minute = parseInt(parts[1], 10);
+          }
+        }
       } else {
-        const parts = preferredTime.split(':');
-        if (parts.length === 2) {
-          hour = parseInt(parts[0], 10);
-          minute = parseInt(parts[1], 10);
+        const time = SOLAT_TIMES_DEFAULT[preferredTime.toLowerCase().trim()];
+        if (time) {
+          hour = time.hour;
+          minute = time.minute;
         }
       }
-    } else {
-      const time = SOLAT_TIMES_DEFAULT[preferredTime.toLowerCase().trim()];
-      if (time) {
-        hour = time.hour;
-        minute = time.minute;
-      }
-    }
 
-    const timing = await this.getDynamicPreferredTime(userId, hour, minute);
-    console.log(`Preferred time: ${hour}:${minute}, Dynamic timing used: ${timing.isDynamic} (${timing.hour}:${timing.minute})`);
+      return await this.getDynamicPreferredTime(userId, hour, minute);
+    };
+
+    const timingMuraja = await getPlanTiming(activeMuraja);
+    const timingHifz = await getPlanTiming(activeHifz);
 
     const parseDays = (selectedDays: any): number[] => {
       if (!selectedDays) return [];
@@ -159,50 +163,147 @@ export const habitStackingService = {
         continue;
       }
 
-      let title = "Hifzi Journey";
-      let body = "";
-      let templates: string[] = [];
-
-      if (isMurajaScheduled && isHifzScheduled) {
-        title = "Dual Quran Target!";
-        templates = COMBINED_TEMPLATES;
-      } else if (isMurajaScheduled) {
-        title = "Time for Muraja!";
-        templates = MURAJA_TEMPLATES;
-      } else {
-        title = "Time for Hifz!";
-        templates = HIFZ_TEMPLATES;
-      }
-
       // Seed with week of the year so it rotates dynamically every week
       const weekOfYear = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
-      const templateIdx = (dbWeekday + weekOfYear) % templates.length;
-      body = templates[templateIdx];
+      const templateIdx = (dbWeekday + weekOfYear);
 
-      const identifier = `habit_stacking_day_${expoWeekday}`;
-      try {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title,
-            body,
-            data: { type: 'habit_stacking', isDynamic: timing.isDynamic },
-            sound: true,
-            ...(Platform.OS === "android" ? { channelId: "default" } : {}),
-          },
-          trigger: {
-            type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
-            weekday: expoWeekday,
-            hour: timing.hour,
-            minute: timing.minute,
-          },
-          identifier,
-        });
-      } catch (err) {
-        console.error(`Failed to schedule notification for day ${expoWeekday}:`, err);
+      // Scenario A: Both plans scheduled today
+      if (isMurajaScheduled && isHifzScheduled && timingMuraja && timingHifz) {
+        const sameTime = timingMuraja.hour === timingHifz.hour && timingMuraja.minute === timingHifz.minute;
+
+        if (sameTime) {
+          // Both have the same time -> Schedule exactly ONE combined notification
+          const title = "Dual Quran Target!";
+          const body = COMBINED_TEMPLATES[templateIdx % COMBINED_TEMPLATES.length];
+          const identifier = `habit_stacking_day_${expoWeekday}_combined`;
+          try {
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title,
+                body,
+                data: { type: 'habit_stacking', isDynamic: timingMuraja.isDynamic },
+                sound: true,
+                ...(Platform.OS === "android" ? { channelId: "default" } : {}),
+              },
+              trigger: {
+                type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+                weekday: expoWeekday,
+                hour: timingMuraja.hour,
+                minute: timingMuraja.minute,
+              },
+              identifier,
+            });
+          } catch (err) {
+            console.error(`Failed to schedule unified combined notification for day ${expoWeekday}:`, err);
+          }
+        } else {
+          // Different times -> Schedule TWO separate notifications
+          // 1. Muraja'a
+          const mTitle = "Time for Muraja!";
+          const mBody = MURAJA_TEMPLATES[templateIdx % MURAJA_TEMPLATES.length];
+          const mIdentifier = `habit_stacking_day_${expoWeekday}_muraja`;
+          try {
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: mTitle,
+                body: mBody,
+                data: { type: 'habit_stacking', isDynamic: timingMuraja.isDynamic },
+                sound: true,
+                ...(Platform.OS === "android" ? { channelId: "default" } : {}),
+              },
+              trigger: {
+                type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+                weekday: expoWeekday,
+                hour: timingMuraja.hour,
+                minute: timingMuraja.minute,
+              },
+              identifier: mIdentifier,
+            });
+          } catch (err) {
+            console.error(`Failed to schedule separate Muraja notification for day ${expoWeekday}:`, err);
+          }
+
+          // 2. Hifz
+          const hTitle = "Time for Hifz!";
+          const hBody = HIFZ_TEMPLATES[templateIdx % HIFZ_TEMPLATES.length];
+          const hIdentifier = `habit_stacking_day_${expoWeekday}_hifz`;
+          try {
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: hTitle,
+                body: hBody,
+                data: { type: 'habit_stacking', isDynamic: timingHifz.isDynamic },
+                sound: true,
+                ...(Platform.OS === "android" ? { channelId: "default" } : {}),
+              },
+              trigger: {
+                type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+                weekday: expoWeekday,
+                hour: timingHifz.hour,
+                minute: timingHifz.minute,
+              },
+              identifier: hIdentifier,
+            });
+          } catch (err) {
+            console.error(`Failed to schedule separate Hifz notification for day ${expoWeekday}:`, err);
+          }
+        }
+      }
+      // Scenario B: Only Muraja'a scheduled today
+      else if (isMurajaScheduled && timingMuraja) {
+        const title = "Time for Muraja!";
+        const body = MURAJA_TEMPLATES[templateIdx % MURAJA_TEMPLATES.length];
+        const identifier = `habit_stacking_day_${expoWeekday}_muraja`;
+        try {
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title,
+              body,
+              data: { type: 'habit_stacking', isDynamic: timingMuraja.isDynamic },
+              sound: true,
+              ...(Platform.OS === "android" ? { channelId: "default" } : {}),
+            },
+            trigger: {
+              type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+              weekday: expoWeekday,
+              hour: timingMuraja.hour,
+              minute: timingMuraja.minute,
+            },
+            identifier,
+          });
+        } catch (err) {
+          console.error(`Failed to schedule Muraja notification for day ${expoWeekday}:`, err);
+        }
+      }
+      // Scenario C: Only Hifz scheduled today
+      else if (isHifzScheduled && timingHifz) {
+        const title = "Time for Hifz!";
+        const body = HIFZ_TEMPLATES[templateIdx % HIFZ_TEMPLATES.length];
+        const identifier = `habit_stacking_day_${expoWeekday}_hifz`;
+        try {
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title,
+              body,
+              data: { type: 'habit_stacking', isDynamic: timingHifz.isDynamic },
+              sound: true,
+              ...(Platform.OS === "android" ? { channelId: "default" } : {}),
+            },
+            trigger: {
+              type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+              weekday: expoWeekday,
+              hour: timingHifz.hour,
+              minute: timingHifz.minute,
+            },
+            identifier,
+          });
+        } catch (err) {
+          console.error(`Failed to schedule Hifz notification for day ${expoWeekday}:`, err);
+        }
       }
     }
 
-    console.log(`Successfully scheduled consolidated dynamic reminders at ${timing.hour}:${timing.minute}`);
+    console.log(`Successfully scheduled consolidated dynamic reminders`);
   },
 
   async scheduleReminders(plan: { 

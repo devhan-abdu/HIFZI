@@ -2,6 +2,8 @@ import { db } from "@/src/lib/db/local-client";
 import { userStats } from "@/src/features/user/database/userSchema";
 import { habitEvents, notifications, scheduledNotifications } from "../database/notificationSchema";
 import { activityPlans } from "@/src/features/habits/database/habitSchema";
+import { weeklyMurajaPlans } from "@/src/features/muraja/database/murajaSchema";
+import { hifzPlans } from "@/src/features/hifz/database/hifzSchema";
 import { notificationRepository } from "./notificationRepository";
 import { notificationManager } from "./notificationManager";
 import { eq, and, sql } from "drizzle-orm";
@@ -337,55 +339,63 @@ export const notificationService = {
         await notificationRepository.deleteScheduledNotification(userId, row.eventKey);
       }
 
-      for (const habit of ['hifz', 'muraja'] as const) {
-        await this.scheduleSmartReminders(userId, habit, now);
-      }
+      await this.scheduleSmartReminders(userId, now);
     } finally {
       schedulingLocks.delete(lockKey);
     }
   },
 
-  async scheduleSmartReminders(userId: string, habit: 'hifz' | 'muraja', now: Date) {
+  async scheduleSmartReminders(userId: string, now: Date) {
     const todayKey = this.toDateKey(now);
-    const scheduleKey = `schedule:risk:${habit}:${todayKey}`;
+    const unifiedKey = `schedule:risk:unified:${todayKey}`;
+
+    // Cleanup legacy separate notifications if any exist
+    for (const legacyHabit of ['hifz', 'muraja']) {
+      const legacyKey = `schedule:risk:${legacyHabit}:${todayKey}`;
+      const existing = await notificationRepository.getScheduledNotification(userId, legacyKey);
+      if (existing?.notificationIdentifier) await notificationManager.cancel(existing.notificationIdentifier);
+      await notificationRepository.deleteScheduledNotification(userId, legacyKey);
+    }
 
     const allEvents = await notificationRepository.getHabitEvents(userId);
     
-    // 1. Cancel and delete all scheduled streak-risk warnings if user has logged *either* plan successfully today.
+    // 1. Cancel and delete unified streak-risk warning if user has logged *either* plan successfully today.
     const hasLoggedAnyToday = allEvents.some(e => e.date === todayKey && e.status !== 'missed');
     if (hasLoggedAnyToday) {
-      const existing = await notificationRepository.getScheduledNotification(userId, scheduleKey);
+      const existing = await notificationRepository.getScheduledNotification(userId, unifiedKey);
       if (existing?.notificationIdentifier) await notificationManager.cancel(existing.notificationIdentifier);
-      await notificationRepository.deleteScheduledNotification(userId, scheduleKey);
+      await notificationRepository.deleteScheduledNotification(userId, unifiedKey);
       return;
     }
 
-    // 2. Fetch the plan for this habit to verify if today is a planned study day.
-    const activePlan = await db.query.activityPlans.findFirst({
-      where: and(
-        eq(activityPlans.userId, userId),
-        eq(activityPlans.activityType, habit.toUpperCase() as any),
-        eq(activityPlans.status, 'active')
-      )
+    // 2. Fetch the plans to verify if today is a planned study day for EITHER plan.
+    const activeMuraja = await db.query.weeklyMurajaPlans.findFirst({
+      where: and(eq(weeklyMurajaPlans.userId, userId), eq(weeklyMurajaPlans.isActive, true)),
+    });
+    const activeHifz = await db.query.hifzPlans.findFirst({
+      where: and(eq(hifzPlans.userId, userId), eq(hifzPlans.status, 'active')),
     });
     
-    let isPlannedToday = false;
-    if (activePlan?.metadata) {
-      try {
-        const meta = JSON.parse(activePlan.metadata);
-        const selectedDays = meta.selectedDays || [0,1,2,3,4,5,6];
-        const dayOfWeek = (now.getDay() + 6) % 7; // Mon=0 ... Sun=6
-        isPlannedToday = selectedDays.includes(dayOfWeek);
-      } catch (e) {}
-    } else {
-      isPlannedToday = true;
-    }
+    const dayOfWeek = (now.getDay() + 6) % 7; // Mon=0 ... Sun=6
 
-    // If today is NOT planned for this habit, we do not schedule streak risk!
+    const parseDays = (selectedDays: any): number[] => {
+      if (!selectedDays) return [];
+      if (typeof selectedDays === "string") {
+        try { return JSON.parse(selectedDays); } catch { return []; }
+      }
+      return selectedDays;
+    };
+
+    const isMurajaPlanned = activeMuraja ? parseDays(activeMuraja.selectedDays).includes(dayOfWeek) : false;
+    const isHifzPlanned = activeHifz ? parseDays(activeHifz.selectedDays).includes(dayOfWeek) : false;
+    
+    const isPlannedToday = isMurajaPlanned || isHifzPlanned;
+
+    // If today is NOT a planned day for either plan, we do not schedule streak risk!
     if (!isPlannedToday) {
-      const existing = await notificationRepository.getScheduledNotification(userId, scheduleKey);
+      const existing = await notificationRepository.getScheduledNotification(userId, unifiedKey);
       if (existing?.notificationIdentifier) await notificationManager.cancel(existing.notificationIdentifier);
-      await notificationRepository.deleteScheduledNotification(userId, scheduleKey);
+      await notificationRepository.deleteScheduledNotification(userId, unifiedKey);
       return;
     }
 
@@ -393,8 +403,11 @@ export const notificationService = {
     const currentStats = await db.query.userStats.findFirst({
       where: eq(userStats.userId, userId)
     });
-    const currentStreak = currentStats?.[habit === 'hifz' ? 'hifzCurrentStreak' : 'murajaCurrentStreak'] ?? 0;
-    if (currentStreak === 0) {
+    const hifzStreak = currentStats?.hifzCurrentStreak ?? 0;
+    const murajaStreak = currentStats?.murajaCurrentStreak ?? 0;
+    const hasActiveStreak = hifzStreak > 0 || murajaStreak > 0;
+
+    if (!hasActiveStreak) {
       return;
     }
 
@@ -402,18 +415,17 @@ export const notificationService = {
     triggerDate.setHours(STREAK_RISK_HOUR, 0, 0, 0);
 
     if (now.getTime() < triggerDate.getTime()) {
-      const existing = await notificationRepository.getScheduledNotification(userId, scheduleKey);
+      const existing = await notificationRepository.getScheduledNotification(userId, unifiedKey);
       if (!existing) {
         const body = STREAK_WARNING_TEMPLATES[Math.floor(Math.random() * STREAK_WARNING_TEMPLATES.length)];
         const identifier = await notificationManager.schedule({
-          title: "Streak Risk",
+          title: "Streak Risk!",
           body,
           data: { 
             userId, 
             type: 'warning', 
-            habit, 
-            eventKey: scheduleKey,
-            title: "Streak Risk",
+            eventKey: unifiedKey,
+            title: "Streak Risk!",
             message: body
           },
           trigger: triggerDate
@@ -422,8 +434,8 @@ export const notificationService = {
         if (identifier) {
           await notificationRepository.upsertScheduledNotification(userId, {
             kind: 'streak_risk',
-            habitType: habit,
-            eventKey: scheduleKey,
+            habitType: isHifzPlanned ? 'hifz' : 'muraja',
+            eventKey: unifiedKey,
             scheduledFor: triggerDate.toISOString(),
             notificationIdentifier: identifier
           });
