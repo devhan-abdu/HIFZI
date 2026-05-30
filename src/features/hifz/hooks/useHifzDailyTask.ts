@@ -31,13 +31,37 @@ export function useHifzDailyTask() {
     }
 
     const dayNumber = (today.getDay() + 6) % 7;
-    const targetInfo = getTargetPage(
+    let targetInfo = getTargetPage(
       hifz.selectedDays,
       analytics.plannedPages,
       analytics.completedPages,
       hifz.pagesPerDay,
       dayNumber,
     );
+
+    let isPlannedDay = hifz.selectedDays.includes(dayNumber);
+    let isNextPlannedDay = false;
+
+    if (!isPlannedDay && hifz.selectedDays.length > 0) {
+      // Find the next planned day (from 1 to 7 days ahead)
+      let daysToAdd = 1;
+      let nextDay = (dayNumber + 1) % 7;
+      while (!hifz.selectedDays.includes(nextDay) && daysToAdd < 7) {
+        nextDay = (nextDay + 1) % 7;
+        daysToAdd++;
+      }
+      if (hifz.selectedDays.includes(nextDay)) {
+        targetInfo = getTargetPage(
+          hifz.selectedDays,
+          analytics.plannedPages,
+          analytics.completedPages,
+          hifz.pagesPerDay,
+          nextDay,
+        );
+        isPlannedDay = true;
+        isNextPlannedDay = true;
+      }
+    }
 
     const hasPlannedTarget = !!targetInfo && targetInfo.totalTarget > 0;
     const fallbackTarget = Math.max(0, Math.round(hifz.pagesPerDay));
@@ -65,7 +89,8 @@ export function useHifzDailyTask() {
       ...task,
       ...targetInfo,
       isCatchup: targetInfo.catchUpAmount > 0,
-      isVirtualTask: false,
+      isVirtualTask: isNextPlannedDay ? false : !targetInfo.isPlannedDay,
+      isNextPlannedDay,
     };
   }, [hifz, surah, analytics]);
 

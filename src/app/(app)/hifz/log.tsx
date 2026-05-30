@@ -290,11 +290,13 @@ export default function LogProgress() {
                 <Text className="text-white text-[10px] uppercase tracking-[2px]">
                   {hasReviewPrefill
                     ? "Revision Session"
-                    : isRestDay
-                      ? "Extra Session"
-                      : logContext?.isPlannedDay
-                        ? "Today's Target"
-                        : "Extra"}
+                    : logContext?.isNextPlannedDay
+                      ? "Next Planned Target"
+                      : isRestDay
+                        ? "Extra Session"
+                        : logContext?.isPlannedDay
+                          ? "Today's Target"
+                          : "Extra"}
                 </Text>
               </View>
               <Text className="text-white/60 text-[10px] uppercase tracking-widest">
