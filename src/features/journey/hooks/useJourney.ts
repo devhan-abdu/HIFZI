@@ -26,6 +26,9 @@ export function useJourney() {
       return journeyService.getOverview(userId, surah);
     },
     enabled: !!userId && surah.length > 0,
+    // Always read from local SQLite — staleTime:0 ensures plan
+    // changes (pause/resume/edit) are reflected on next focus/refetch
+    staleTime: 0,
   });
 
   const sessionsQuery = useQuery({
@@ -45,6 +48,7 @@ export function useJourney() {
       );
     },
     enabled: !!userId && surah.length > 0 && !!overviewQuery.data,
+    staleTime: 0,
   });
 
   const totalSessions = sessionsQuery.data?.totalSessions ?? 0;

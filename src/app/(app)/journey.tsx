@@ -1,18 +1,21 @@
 import { View, Pressable, ActivityIndicator } from "react-native";
-import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
+import { useCallback } from "react";
 import { Header } from "@/src/components/navigation/Header";
 import Screen from "@/src/components/screen/Screen";
 import { ScreenContent } from "@/src/components/screen/ScreenContent";
 import { Text } from "@/src/components/common/ui/Text";
 import { Button } from "@/src/components/ui/Button";
 import { useJourney } from "@/src/features/journey/hooks/useJourney";
-import { JourneyOverviewSection } from "@/src/features/journey/components/JourneyOverviewSection";
+import { JourneyActivePlanHero } from "@/src/features/journey/components/JourneyActivePlanHero";
 import { JourneyStatsSection } from "@/src/features/journey/components/JourneyStatsSection";
 import { JourneyPlansSection } from "@/src/features/journey/components/JourneyPlansSection";
 import { JourneyTimelineSection } from "@/src/features/journey/components/JourneyTimelineSection";
-import { JourneyMilestonesSection } from "@/src/features/journey/components/JourneyMilestonesSection";
 import { SyncStatusPill } from "@/src/components/common/SyncStatusPill";
+import { AchievementSection } from "@/src/components/dashboard/AchievementSection";
+import { useUserBadges } from "@/src/hooks/useUserBadges";
+import { useNavigate } from "@/src/hooks/useNavigate";
 
 function SectionTitle({ children }: { children: string }) {
   return (
@@ -21,7 +24,7 @@ function SectionTitle({ children }: { children: string }) {
 }
 
 export default function JourneyScreen() {
-  const router = useRouter();
+  const { push, back } = useNavigate();
   const {
     data,
     loading,
@@ -31,108 +34,155 @@ export default function JourneyScreen() {
     hasMoreSessions,
     sessionsLoading,
     totalPlans,
+    refetch,
   } = useJourney();
+
+  // Real badges — same source as dashboard AchievementSection
+  const { data: badges = [] } = useUserBadges();
+
+  // Offline-first: re-read local SQLite every time user navigates to this screen.
+  // This ensures plan changes (pause/resume/edit) made offline are immediately
+  // reflected here without waiting for a network sync.
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
+
+  // Active plan = first plan sorted as active (journeyService sorts active first)
+  const activePlan = data?.plans.find((p) => p.status === "active") ?? null;
 
   return (
     <>
       <Header title="Journey" />
       <Screen className="px-0">
-      <ScreenContent>
-        <View
-          className="flex-row items-center mb-6 px-4"
-        >
-          <Pressable
-            onPress={() => router.back()}
-            className="w-10 h-10 rounded-full items-center justify-center bg-slate-100 mr-3"
-          >
-            <Ionicons name="arrow-back" size={18} color="#0f172a" />
-          </Pressable>
-          <View className="flex-1">
-            <Text className="text-slate-900 text-xl">Journey</Text>
-            <Text className="text-slate-500 text-xs">
-              Your Hifz & Muraja progress
-            </Text>
-            <View className="mt-2">
-              <SyncStatusPill />
-            </View>
-          </View>
-        </View>
-
-        {loading ? (
-          <View className="py-24 items-center px-4">
-            <ActivityIndicator size="large" color="#276359" />
-            <Text className="text-slate-500 text-sm mt-4">Loading journey…</Text>
-          </View>
-        ) : !data ? (
-          <View className="mx-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 items-center">
-            <Text className="text-slate-900 text-base text-center">
-              Start your journey
-            </Text>
-            <Text className="text-slate-500 text-sm mt-2 text-center">
-              Create a Hifz or Muraja plan to track progress, streaks, and milestones.
-            </Text>
-            <Button
-              onPress={() => router.push("/(app)/hifz/create-hifz-plan")}
-              className="mt-6 w-full"
+        <ScreenContent>
+          {/* Page header */}
+          <View className="flex-row items-center mb-6 px-4">
+            <Pressable
+              onPress={() => back()}
+              className="w-10 h-10 rounded-full items-center justify-center bg-slate-100 mr-3"
             >
-              Create Hifz plan
-            </Button>
-            <Button
-              variant="outline"
-              onPress={() => router.push("/(app)/muraja/create-muraja-plan")}
-              className="mt-3 w-full"
-            >
-              Create Muraja plan
-            </Button>
-          </View>
-        ) : (
-          <View className="px-4">
-            <JourneyOverviewSection overview={data.overview} />
-
-            <View className="mt-8">
-              <JourneyStatsSection stats={data.stats} testStats={data.testStats} />
-            </View>
-
-            <SectionTitle>All plans</SectionTitle>
-            <JourneyPlansSection
-              plans={data.plans}
-              totalCount={totalPlans}
-              hasMore={hasMorePlans}
-              onLoadMore={loadMorePlans}
-            />
-            {totalPlans === 0 ? (
-              <View className="flex-row gap-2 mt-3">
-                <Button
-                  onPress={() => router.push("/(app)/hifz/create-hifz-plan")}
-                  className="flex-1"
-                >
-                  Hifz plan
-                </Button>
-                <Button
-                  variant="outline"
-                  onPress={() => router.push("/(app)/muraja/create-muraja-plan")}
-                  className="flex-1"
-                >
-                  Muraja plan
-                </Button>
+              <Ionicons name="arrow-back" size={18} color="#0f172a" />
+            </Pressable>
+            <View className="flex-1">
+              <Text className="text-slate-900 text-xl">Journey</Text>
+              <Text className="text-slate-500 text-xs">
+                Your Hifz & Muraja progress
+              </Text>
+              <View className="mt-2">
+                <SyncStatusPill />
               </View>
-            ) : null}
-
-            <SectionTitle>Session log</SectionTitle>
-            <JourneyTimelineSection
-              sessions={data.sessions}
-              hasMore={hasMoreSessions}
-              loadingMore={sessionsLoading}
-              onLoadMore={loadMoreSessions}
-            />
-
-            <SectionTitle>Achievements</SectionTitle>
-            <JourneyMilestonesSection milestones={data.milestones} />
+            </View>
           </View>
-        )}
 
-        <View className="h-16" />
-      </ScreenContent>
+          {/* ── Loading ── */}
+          {loading ? (
+            <View className="py-24 items-center px-4">
+              <ActivityIndicator size="large" color="#276359" />
+              <Text className="text-slate-500 text-sm mt-4">
+                Loading journey…
+              </Text>
+            </View>
+
+          /* ── No plans yet ── */
+          ) : !data ? (
+            <View className="mx-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 items-center">
+              <Text className="text-slate-900 text-base text-center">
+                Start your journey
+              </Text>
+              <Text className="text-slate-500 text-sm mt-2 text-center">
+                Create a Hifz or Muraja plan to track progress, streaks, and
+                milestones.
+              </Text>
+              <Button
+                onPress={() => push("/(app)/hifz/create-hifz-plan")}
+                className="mt-6 w-full"
+              >
+                Create Hifz plan
+              </Button>
+              <Button
+                variant="outline"
+                onPress={() => push("/(app)/muraja/create-muraja-plan")}
+                className="mt-3 w-full"
+              >
+                Create Muraja plan
+              </Button>
+            </View>
+
+          /* ── Main content ── */
+          ) : (
+            <View className="px-4">
+
+              {/* ── Hero: active plan or aggregate overview ── */}
+              <JourneyActivePlanHero
+                activePlan={activePlan}
+                overview={data.overview}
+              />
+
+              {/* ── Stats: streak, sessions, pages, tests ── */}
+              <View className="mt-8">
+                <JourneyStatsSection
+                  stats={data.stats}
+                  testStats={data.testStats}
+                />
+              </View>
+
+              {/* ── All plans ── */}
+              <SectionTitle>All plans</SectionTitle>
+              <JourneyPlansSection
+                plans={data.plans}
+                totalCount={totalPlans}
+                hasMore={hasMorePlans}
+                onLoadMore={loadMorePlans}
+              />
+              {totalPlans === 0 ? (
+                <View className="flex-row gap-2 mt-3">
+                  <Button
+                    onPress={() => push("/(app)/hifz/create-hifz-plan")}
+                    className="flex-1"
+                  >
+                    Hifz plan
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onPress={() => push("/(app)/muraja/create-muraja-plan")}
+                    className="flex-1"
+                  >
+                    Muraja plan
+                  </Button>
+                </View>
+              ) : null}
+
+              {/* ── Session log ── */}
+              <SectionTitle>Session log</SectionTitle>
+              <JourneyTimelineSection
+                sessions={data.sessions}
+                hasMore={hasMoreSessions}
+                loadingMore={sessionsLoading}
+                onLoadMore={loadMoreSessions}
+              />
+
+              {/* ── Real achievements from local DB (same as dashboard) ── */}
+              <SectionTitle>Achievements</SectionTitle>
+              {badges.length === 0 ? (
+                <View className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 mb-4">
+                  <Text className="text-slate-900">No achievements yet</Text>
+                  <Text className="text-slate-500 text-sm mt-1">
+                    Keep logging sessions and passing evaluations to earn
+                    badges.
+                  </Text>
+                </View>
+              ) : (
+                <View className="mb-4">
+                  <AchievementSection badges={badges} />
+                </View>
+              )}
+            </View>
+          )}
+
+          <View className="h-16" />
+        </ScreenContent>
       </Screen>
     </>
   );
