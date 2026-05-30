@@ -48,7 +48,7 @@ class SyncEngine {
   async onLogin(userId: string): Promise<void> {
     this.userId = userId;
     await this.runSyncCycle({ pullFirst: true });
-    this.subscribeRealtime(userId);
+    await this.subscribeRealtime(userId);
     this.startForegroundInterval();
   }
 
@@ -60,10 +60,10 @@ class SyncEngine {
     useSyncStore.getState().reset();
   }
 
-  subscribeRealtime(userId: string) {
-    void this.unsubscribeRealtime();
+  async subscribeRealtime(userId: string) {
+    await this.unsubscribeRealtime();
 
-    this.channel = supabase
+    const chan = supabase
       .channel(`hifzi-sync-${userId}`)
       .on(
         "postgres_changes",
@@ -99,8 +99,10 @@ class SyncEngine {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => void this.handleRealtimeRow("muraja_logs", payload.new as RemoteSyncRow),
-      )
-      .subscribe();
+      );
+
+    this.channel = chan;
+    chan.subscribe();
   }
 
   private async handleRealtimeRow(table: SyncTableName, row: RemoteSyncRow | null) {
@@ -114,8 +116,13 @@ class SyncEngine {
 
   private async unsubscribeRealtime() {
     if (this.channel) {
-      await supabase.removeChannel(this.channel);
+      const chan = this.channel;
       this.channel = null;
+      try {
+        await supabase.removeChannel(chan);
+      } catch (err) {
+        console.warn("[sync] Error removing channel:", err);
+      }
     }
   }
 

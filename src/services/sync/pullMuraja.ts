@@ -106,9 +106,21 @@ export async function pullMurajaLogs(
     const localId = Number(row.local_id);
     if (!localId) continue;
 
-    const local = await db.query.dailyMurajaLogs.findFirst({
+    let local = await db.query.dailyMurajaLogs.findFirst({
       where: eq(dailyMurajaLogs.id, localId),
     });
+
+    if (!local) {
+      const localByDate = await db.query.dailyMurajaLogs.findFirst({
+        where: and(
+          eq(dailyMurajaLogs.planId, planId),
+          eq(dailyMurajaLogs.date, String(row.date))
+        ),
+      });
+      if (localByDate) {
+        local = localByDate;
+      }
+    }
 
     if (local && local.syncStatus === 0) continue;
 

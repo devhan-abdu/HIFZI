@@ -229,9 +229,26 @@ export const hifzService = {
         await tx.update(hifzLogs).set(logValues).where(eq(hifzLogs.id, existing.id));
         localId = existing.id;
       } else {
-        const [newLog] = await tx.insert(hifzLogs).values(logValues).returning({ id: hifzLogs.id });
-        localId = newLog.id;
-        created = true;
+        try {
+          const [newLog] = await tx.insert(hifzLogs).values(logValues).returning({ id: hifzLogs.id });
+          localId = newLog.id;
+          created = true;
+        } catch (insertErr) {
+          // Robust fallback: if a race condition inserted the row concurrently, update it instead of throwing
+          const raceExisting = await tx.query.hifzLogs.findFirst({
+            where: and(
+              eq(hifzLogs.userId, userId),
+              eq(hifzLogs.hifzPlanId, todayLog.hifzPlanId),
+              eq(hifzLogs.date, todayLog.date)
+            )
+          });
+          if (raceExisting) {
+            await tx.update(hifzLogs).set(logValues).where(eq(hifzLogs.id, raceExisting.id));
+            localId = raceExisting.id;
+          } else {
+            throw insertErr;
+          }
+        }
       }
 
       changed = true;

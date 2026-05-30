@@ -108,9 +108,22 @@ export async function pullHifzLogs(
     const localId = Number(row.local_id);
     if (!localId) continue;
 
-    const local = await db.query.hifzLogs.findFirst({
+    let local = await db.query.hifzLogs.findFirst({
       where: eq(hifzLogs.id, localId),
     });
+
+    if (!local) {
+      const localByDate = await db.query.hifzLogs.findFirst({
+        where: and(
+          eq(hifzLogs.userId, userId),
+          eq(hifzLogs.hifzPlanId, hifzPlanId),
+          eq(hifzLogs.date, String(row.date))
+        ),
+      });
+      if (localByDate) {
+        local = localByDate;
+      }
+    }
 
     if (local && local.syncStatus === 0) continue;
 
