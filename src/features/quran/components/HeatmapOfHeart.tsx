@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, memo } from "react";
 import { View, Pressable, Dimensions } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
-import { router } from "expo-router";
+import { useNavigate } from "@/src/hooks/useNavigate";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from 'expo-haptics';
 import { getSurahByPage } from "../../muraja/utils/quranMapping";
@@ -46,6 +46,7 @@ const { width: screenWidth } = Dimensions.get('window');
 export const HeatmapOfHeart = () => {
   const [selectedPage, setSelectedPage] = useState<number | null>(null);
   const surahs = useCatalogStore(s => s.surahs);
+  const { push } = useNavigate();
 
   const { data: performanceData } = usePagePerformance();
 
@@ -91,8 +92,8 @@ export const HeatmapOfHeart = () => {
 
   const handleNavigate = useCallback((page: number) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    router.push(`/(app)/quran/reader?page=${page.toString()}`);
-  }, []);
+    push(`/(app)/quran/reader?page=${page.toString()}`);
+  }, [push]);
 
  
 
