@@ -17,7 +17,8 @@ import { getReviewPriorityColor } from "@/src/features/hifz/utils/reviewPriority
 import { getHifzPaceDelta, hifzStatus } from "@/src/features/hifz/utils/plan-status";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useFocusEffect } from "expo-router";
+import { useFocusEffect } from "expo-router";
+import { useNavigate } from "@/src/hooks/useNavigate";
 import { useMemo, useCallback } from "react";
 import { Pressable, View } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
@@ -28,6 +29,7 @@ import { HifzActionCard } from "@/src/components/dashboard/HifzActionCard";
 import { PlanEndCard } from "@/src/features/habits/components/PlanEndCard";
 import { useDashboardState } from "@/src/features/habits/hooks/useDashboardState";
 export default function Hifz() {
+  const { push } = useNavigate();
   const { 
     hifz, 
     loading: isLoading, 
@@ -128,10 +130,10 @@ export default function Hifz() {
               <HifzActionCard
                 hifz={hifz} 
                 task={todayTask} 
-                onDetails={() => router.push("/(app)/hifz/log")}
+                onDetails={() => push("/(app)/hifz/log")}
               />
             ) : (
-              <RestDayCardSingle type="hifz" onLog={() => router.push("/(app)/hifz/log")} />
+              <RestDayCardSingle type="hifz" onLog={() => push("/(app)/hifz/log")} />
             )}
           </View>
 
@@ -148,7 +150,7 @@ export default function Hifz() {
                 }}
                 isCompleted={isReinforcementDone}
                 onStart={() => {
-                  router.push(`/(app)/quran/reader?page=${reinforcementTask.startPage}&planId=${hifz?.id}&type=hifz&start=${reinforcementTask.startPage}&end=${reinforcementTask.endPage}`);
+                  push(`/(app)/quran/reader?page=${reinforcementTask.startPage}&planId=${hifz?.id}&type=hifz&start=${reinforcementTask.startPage}&end=${reinforcementTask.endPage}`);
                 }}
               />
             </View>
@@ -187,7 +189,7 @@ export default function Hifz() {
                           : "Due today",
                     }}
                     onStart={() => {
-                      router.push(
+                      push(
                         `/(app)/quran/reader?page=${item.startPage}&planId=${hifz?.id}&type=hifz&start=${item.startPage}&end=${item.endPage}`,
                       );
                     }}
@@ -249,7 +251,7 @@ export default function Hifz() {
           <View className="flex-row gap-x-3">
             <Button
               className={`flex-1 shadow-lg ${(isEvalDue || isCompDue) ? 'opacity-50' : 'shadow-primary/20'}`}
-              onPress={() => !(isEvalDue || isCompDue) && router.push("/(app)/hifz/log")}
+              onPress={() => !(isEvalDue || isCompDue) && push("/(app)/hifz/log")}
               disabled={isEvalDue || isCompDue}
             >
               <Ionicons name="add-circle-outline" size={20} color="white" />
@@ -261,7 +263,7 @@ export default function Hifz() {
             <Button
               variant="outline"
               className="flex-1"
-              onPress={() => router.push("/(app)/hifz/create-hifz-plan")}
+              onPress={() => push("/(app)/hifz/create-hifz-plan")}
             >
               <Ionicons name="create-outline" size={18} color="#276359" />
               <Text>

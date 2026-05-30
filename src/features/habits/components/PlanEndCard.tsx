@@ -3,7 +3,7 @@ import React from 'react';
 import { View, Pressable } from 'react-native';
 import { Text } from '@/src/components/common/ui/Text';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { useNavigate } from '@/src/hooks/useNavigate';
 
 interface PlanEndCardProps {
     activityType: 'HIFZ' | 'MURAJA';
@@ -14,10 +14,11 @@ interface PlanEndCardProps {
 
 export const PlanEndCard: React.FC<PlanEndCardProps> = ({ activityType, localRefId, title, onClose }) => {
     const isHifz = activityType === 'HIFZ';
+    const { push } = useNavigate();
     
     return (
         <Pressable 
-            onPress={() => router.push(`/(app)/plan-completion?type=${activityType}&id=${localRefId}`)}
+            onPress={() => push(`/(app)/plan-completion?type=${activityType}&id=${localRefId}`)}
             className="mb-6 overflow-hidden"
         >
             <View className="p-7 rounded-[40px] bg-white relative shadow-2xl shadow-slate-200 border border-slate-200 overflow-hidden">

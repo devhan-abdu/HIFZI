@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef, useCallback } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import {
   View,
   SectionList,
@@ -6,7 +6,8 @@ import {
   Pressable,
 } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
-import { useRouter, useFocusEffect } from "expo-router";
+import { useFocusEffect } from "expo-router";
+import { useNavigate } from "@/src/hooks/useNavigate";
 import { Ionicons } from "@expo/vector-icons";
 import { useGetSurahByJuz } from "@/src/hooks/useGetSurahByJuz";
 import { JuzHeader } from "@/src/features/quran/components/JuzHeader";
@@ -18,12 +19,11 @@ import { useCatalogStore } from "@/src/features/quran/store/catalogStore";
 import { StatusBar } from "expo-status-bar";
 
 export default function SurahIndex() {
-  const router = useRouter();
+  const { push } = useNavigate();
   const { displayData, loading, error } = useGetSurahByJuz();
   const { bookmarks } = useBookmarks();
   const surahs = useCatalogStore((store) => store.surahs);
   const [activeTab, setActiveTab] = useState<"surahs" | "bookmarks">("surahs");
-  const isNavigating = useRef(false);
 
   const [resumePage, setResumePage] = useState<number | null>(null);
 
@@ -34,12 +34,7 @@ export default function SurahIndex() {
   );
 
   const handlePress = (item: Surah) => {
-    if (isNavigating.current) return;
-    isNavigating.current = true;
-    router.push(`/quran/reader?page=${item.startingPage}`);
-    setTimeout(() => {
-      isNavigating.current = false;
-    }, 500);
+    push(`/quran/reader?page=${item.startingPage}`);
   };
 
   const bookmarkRows = useMemo(() => {
@@ -88,7 +83,7 @@ export default function SurahIndex() {
         <View className="flex-row gap-2 mb-3">
           {resumePage != null && (
             <Pressable
-              onPress={() => router.push(`/quran/reader?page=${resumePage}`)}
+              onPress={() => push(`/quran/reader?page=${resumePage}`)}
               className="flex-1 flex-row items-center justify-center rounded-2xl bg-teal-50 border border-teal-100 py-3 px-3"
             >
               <Ionicons name="book-outline" size={18} color="#0f766e" />
@@ -98,7 +93,7 @@ export default function SurahIndex() {
             </Pressable>
           )}
           <Pressable
-            onPress={() => router.push("/(app)/quran/offline")}
+            onPress={() => push("/(app)/quran/offline")}
             className="flex-1 flex-row items-center justify-center rounded-2xl bg-slate-100 py-3 px-3"
           >
             <Ionicons name="cloud-download-outline" size={18} color="#475569" />
@@ -173,7 +168,7 @@ export default function SurahIndex() {
           renderItem={({ item }) => (
             <Pressable
               onPress={() =>
-                router.push({
+                push({
                   pathname: "/quran/reader",
                   params: {
                     page: String(item.pageNumber),

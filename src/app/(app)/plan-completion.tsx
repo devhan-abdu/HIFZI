@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, ScrollView, Pressable, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Text } from '@/src/components/common/ui/Text';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
+import { useNavigate } from '@/src/hooks/useNavigate';
 import Screen from '@/src/components/screen/Screen';
 import { ScreenContent } from '@/src/components/screen/ScreenContent';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,7 +22,7 @@ const PRIMARY_BORDER = 'rgba(39,99,89,0.15)';
 
 export default function PlanCompletionScreen() {
     const { type, id } = useLocalSearchParams<{ type: 'HIFZ' | 'MURAJA'; id: string }>();
-    const router = useRouter();
+    const { push, replace, back } = useNavigate();
     const { user } = useSession();
     const { items: surah } = useLoadSurahData();
     const { markAchievementSeen } = usePlanLifecycle();
@@ -87,7 +88,7 @@ export default function PlanCompletionScreen() {
             await queryClient.invalidateQueries({ queryKey: ['activity-plans', user.id] });
             await queryClient.invalidateQueries({ queryKey: ['habit-progress', user.id] });
             await queryClient.invalidateQueries({ queryKey: ['user-stats', user.id] });
-            router.replace('/(app)');
+            replace('/(app)');
         } catch (e) {
             console.error(e);
         }
@@ -102,13 +103,13 @@ export default function PlanCompletionScreen() {
             await queryClient.invalidateQueries({ queryKey: ['hifz-plan', user.id] });
             await queryClient.invalidateQueries({ queryKey: ['activity-plans', user.id] });
             await queryClient.invalidateQueries({ queryKey: ['habit-progress', user.id] });
-            router.push('/(app)/hifz/create-hifz-plan');
+            push('/(app)/hifz/create-hifz-plan');
         } else {
             await queryClient.invalidateQueries({ queryKey: ['muraja-dashboard', user.id] });
             await queryClient.invalidateQueries({ queryKey: ['muraja-review', user.id] });
             await queryClient.invalidateQueries({ queryKey: ['activity-plans', user.id] });
             await queryClient.invalidateQueries({ queryKey: ['habit-progress', user.id] });
-            router.push('/(app)/muraja/create-muraja-plan');
+            push('/(app)/muraja/create-muraja-plan');
         }
     };
 
@@ -402,7 +403,7 @@ export default function PlanCompletionScreen() {
                         <Ionicons name="chevron-forward" size={18} color="white" />
                     </Pressable>
 
-                    <TouchableOpacity onPress={() => router.back()} className="items-center py-4">
+                    <TouchableOpacity onPress={() => back()} className="items-center py-4">
                         <Text className="text-[13px] text-slate-400">Dismiss for now</Text>
                     </TouchableOpacity>
                 </ScrollView>

@@ -1,13 +1,13 @@
 import { View, Pressable } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useNavigate } from "@/src/hooks/useNavigate";
 import Screen from "@/src/components/screen/Screen";
 import { FeatureRow } from "@/src/components/FeatureRow";
 import { ScreenContent } from "@/src/components/screen/ScreenContent";
 
 export default function MurajaEmptyState() {
-  const router = useRouter();
+  const { push } = useNavigate();
 
   return (
     <Screen>
@@ -43,7 +43,7 @@ export default function MurajaEmptyState() {
 
           <View>
             <Pressable
-              onPress={() => router.push("/(app)/muraja/create-muraja-plan")}
+              onPress={() => push("/(app)/muraja/create-muraja-plan")}
               className="bg-primary h-14 rounded-xl flex-row items-center justify-center shadow-sm active:opacity-90 active:scale-[0.98]"
             >
               <Text className="text-white  text-base mr-2">Create Weekly Plan</Text>

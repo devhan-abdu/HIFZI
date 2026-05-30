@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Text, View } from "react-native";
 import { Button } from "../../../components/ui/Button";
 import StatusBadge from "../../../components/ui/StatusBadge";
-import { useRouter } from "expo-router";
+import { useNavigate } from "@/src/hooks/useNavigate";
 import { TodayPlanType } from "@/src/types";
 
 export default function WeeklyPlanCard({
@@ -26,7 +26,7 @@ export default function WeeklyPlanCard({
     planned_end_page: endPage,
   } = plan;
 
-  const router = useRouter();
+  const { push } = useNavigate();
   const today = (() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -34,10 +34,9 @@ export default function WeeklyPlanCard({
   if (!planId) return null;
 
   const handlePress = () => {
-
-   router.push({
-     pathname: "/muraja/log",
-   });
+    push({
+      pathname: "/muraja/log",
+    });
   };
 
   const containerStyle =

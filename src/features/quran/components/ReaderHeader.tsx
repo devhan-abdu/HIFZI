@@ -1,7 +1,8 @@
 import React, { useCallback, useState } from "react";
 import { View, TouchableOpacity, Text, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter, useFocusEffect } from "expo-router";
+import { useFocusEffect } from "expo-router";
+import { useNavigate } from "@/src/hooks/useNavigate";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useReaderStore } from "../hooks/useReaderStore";
 import { useBookmarks } from "../hooks/useBookmarks";
@@ -15,7 +16,7 @@ interface ReaderHeaderProps {
 }
 
 export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
-  const router = useRouter();
+  const { push, back } = useNavigate();
   const insets = useSafeAreaInsets();
 
   const {
@@ -54,9 +55,9 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
     } else {
       closeTranslationSelector();
       // Ensure we go back to the Quran Index specifically
-      router.push("/(app)/quran");
+      push("/(app)/quran");
     }
-  }, [selectedAyah, resetSelection, closeTranslationSelector, router]);
+  }, [selectedAyah, resetSelection, closeTranslationSelector, push]);
 
   const handleToggleBookmark = async () => {
     if (selectedAyah) {
@@ -79,8 +80,8 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
   };
 
   const openOfflineSettings = useCallback(() => {
-    router.push("/(app)/quran/offline");
-  }, [router]);
+    push("/(app)/quran/offline");
+  }, [push]);
 
   if (!uiVisible) return null;
 

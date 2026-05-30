@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Alert } from "../common/Alert";
 import { Text } from "@/src/components/common/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useNavigate } from "@/src/hooks/useNavigate";
 
 export const Header = ({
   title,
@@ -19,7 +19,7 @@ export const Header = ({
   const insets = useSafeAreaInsets();
   const { user } = useSession();
   const { unreadCount } = useNotifications();
-  const router = useRouter();
+  const { push } = useNavigate();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [signOut, setSignOut] = useState(false);
@@ -57,7 +57,7 @@ export const Header = ({
 
         <View className="flex-row items-center gap-x-3">
           <Pressable
-            onPress={() => router.push("/(app)/notifications" as never)}
+            onPress={() => push("/(app)/notifications" as never)}
             className="w-11 h-11 rounded-full bg-slate-100 items-center justify-center"
           >
             <Ionicons name="notifications-outline" size={20} color="#0f172a" />
@@ -85,7 +85,7 @@ export const Header = ({
             <Pressable
               onPress={() => {
                 setMenuOpen(false);
-                router.push("/(app)/journey" as never);
+                push("/(app)/journey" as never);
               }}
               className="flex-row items-center px-4 py-3.5 border-b border-slate-100 active:bg-slate-50"
             >

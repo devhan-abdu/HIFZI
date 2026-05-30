@@ -1,11 +1,11 @@
 import { View, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useNavigate } from "@/src/hooks/useNavigate";
 import Screen from "@/src/components/screen/Screen";
 import { Text } from "@/src/components/common/ui/Text";
 import { FeatureRow } from "@/src/components/FeatureRow";
 export default function HifzEmptyState() {
-  const router = useRouter();
+  const { push } = useNavigate();
 
   return (
     <Screen>
@@ -39,7 +39,7 @@ export default function HifzEmptyState() {
 
         <View>
           <Pressable
-            onPress={() => router.push("/(app)/hifz/create-hifz-plan")}
+            onPress={() => push("/(app)/hifz/create-hifz-plan")}
             className="bg-primary h-14 rounded-xl flex-row items-center justify-center shadow-sm active:opacity-90 active:scale-[0.98]"
           >
             <Text className="text-white text-base mr-2">Create My Plan</Text>

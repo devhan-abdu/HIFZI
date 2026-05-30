@@ -8,7 +8,7 @@ import { Alert } from "../common/Alert";
 import { QualityModal } from "../common/QualityModal";
 import { useCelebrationStore } from "@/src/hooks/useCelebrationStore";
 
-import { router } from "expo-router";
+import { useNavigate } from "@/src/hooks/useNavigate";
 
 export const HifzActionCard = ({
   hifz,
@@ -28,6 +28,7 @@ export const HifzActionCard = ({
   const { addLog, isCreating: isAddingHifz } = useAddLog();
   const { user } = useSession();
   const trigger = useCelebrationStore((s) => s.trigger);
+  const { push } = useNavigate();
 
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -110,7 +111,7 @@ export const HifzActionCard = ({
           }
         }}
         onStart={() => {
-          router.push(`/(app)/quran/reader?page=${task.startPage}&planId=${hifz.id}&type=hifz&start=${task.startPage}&end=${task.endPage}`);
+          push(`/(app)/quran/reader?page=${task.startPage}&planId=${hifz.id}&type=hifz&start=${task.startPage}&end=${task.endPage}`);
         }}
         onDetails={onDetails}
       />

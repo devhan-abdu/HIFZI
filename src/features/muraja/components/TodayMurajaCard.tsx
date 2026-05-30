@@ -1,6 +1,6 @@
 import { Button } from "@/src/components/ui/Button";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useNavigate } from "@/src/hooks/useNavigate";
 import { View, Pressable, ActivityIndicator } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
 
@@ -15,7 +15,7 @@ export const TodayMurajaCard = ({
   onStatusUpdate,
   isUpdating,
 }: TodayMurajaCardProps) => {
-  const router = useRouter();
+  const { push } = useNavigate();
 
   const isDisabled = isUpdating || todayPlan.status !== "pending";
 
@@ -42,7 +42,7 @@ export const TodayMurajaCard = ({
               Status
             </Text>
             <Pressable
-              onPress={() => router.push(`/(app)/muraja/log`)}
+              onPress={() => push(`/(app)/muraja/log`)}
               className="flex-row items-center bg-primary/20 px-3 py-1.5 rounded-full active:bg-slate-100"
             >
               <Text className="text-primary   text-[11px] mr-1.5">Add Log</Text>

@@ -4,7 +4,7 @@ import { useAlert } from "@/src/hooks/useAlert";
 import { Alert } from "../common/Alert";
 import { ActionTaskCard } from "../common/ActionCard";
 import { QualityModal } from "../common/QualityModal";
-import { router } from "expo-router";
+import { useNavigate } from "@/src/hooks/useNavigate";
 import { useCelebrationStore } from "@/src/hooks/useCelebrationStore";
 
 export const MurajaActionCard = ({
@@ -20,6 +20,7 @@ export const MurajaActionCard = ({
   const { alertConfig, hideAlert } = useAlert();
   const trigger = useCelebrationStore(s => s.trigger);
   const [qualityModalVisible, setQualityModalVisible] = useState(false);
+  const { push } = useNavigate();
 
 
   const updateStatus = async (newStatus: "completed" | "pending" | "missed", quality?: number) => {
@@ -90,7 +91,7 @@ export const MurajaActionCard = ({
           }
         }}
         onStart={() => {
-          router.push(`/(app)/quran/reader?page=${todayPlan.startPage}&planId=${weeklyPlan.id}&type=muraja&start=${todayPlan.startPage}&end=${todayPlan.endPage}`);
+          push(`/(app)/quran/reader?page=${todayPlan.startPage}&planId=${weeklyPlan.id}&type=muraja&start=${todayPlan.startPage}&end=${todayPlan.endPage}`);
         }}
         onDetails={onDetails}
       />

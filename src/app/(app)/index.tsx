@@ -3,7 +3,8 @@ import Screen from "@/src/components/screen/Screen";
 import { ScreenContent } from "@/src/components/screen/ScreenContent";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { View } from "react-native";
-import { Redirect, router } from "expo-router";
+import { Redirect } from "expo-router";
+import { useNavigate } from "@/src/hooks/useNavigate";
 import Card from "@/src/components/dashboard/Card";
 import StatCard from "@/src/features/hifz/components/StatCard";
 import { DashboardSkeleton } from "@/src/components/dashboard/Skeleton";
@@ -23,6 +24,7 @@ import { useHifzDailyTask } from "@/src/features/hifz/hooks/useHifzDailyTask";
 import { useSyncStore } from "@/src/services/sync/syncStore";
 
 export default function Dashboard() {
+  const { push } = useNavigate();
   const { items: surah } = useLoadSurahData();
   const { hifz: hifzPlan, isLoading: loadingHifz } = useHifzPlan();
   const habitProgress = useHabitProgress();
@@ -142,8 +144,8 @@ export default function Dashboard() {
               </Text>
             </View>
             <TodayTasksSection
-              onLogHifz={() => router.push("/(app)/hifz/log")}
-              onLogMuraja={() => router.push("/(app)/muraja/log")}
+              onLogHifz={() => push("/(app)/hifz/log")}
+              onLogMuraja={() => push("/(app)/muraja/log")}
             />
           </View>
 

@@ -7,6 +7,7 @@ import { MurajaActionCard } from "./MurajaActionCard";
 import { CardSkeleton } from "./Skeleton";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useNavigate } from "@/src/hooks/useNavigate";
 import { PlanEndCard } from "@/src/features/habits/components/PlanEndCard";
 
 import { usePlanLifecycle } from "@/src/features/habits/hooks/usePlanLifecycle";
@@ -90,9 +91,11 @@ export const TodayTasksSection = ({
   );
 };
 
-export const EvaluationRequiredCard = ({ type }: { type: 'hifz' | 'muraja' }) => (
+export const EvaluationRequiredCard = ({ type }: { type: 'hifz' | 'muraja' }) => {
+  const { push } = useNavigate();
+  return (
     <Pressable 
-        onPress={() => router.push("/evaluation")}
+        onPress={() => push("/evaluation")}
         className="bg-white border border-[#276359]/10 rounded-2xl p-6 shadow-sm overflow-hidden"
     >
         <View className="flex-row items-center justify-between">
@@ -110,7 +113,8 @@ export const EvaluationRequiredCard = ({ type }: { type: 'hifz' | 'muraja' }) =>
             </View>
         </View>
     </Pressable>
-);
+  );
+};
 
 
 export const RestDayCardSingle = ({ type, onLog }: { type: 'hifz' | 'muraja', onLog: () => void }) => (

@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useNavigate } from "@/src/hooks/useNavigate";
 import { Pressable, View } from "react-native";
 import { TodayPlanType } from "../../../types";
 import { Text } from "@/src/components/common/ui/Text";
@@ -9,14 +9,14 @@ export default function UpcomingSessionCard({
 }: {
   upcomingSessions: TodayPlanType[];
 }) {
-  const router = useRouter();
+  const { push } = useNavigate();
 
   return (
     <View className="flex-col gap-3 px-1">
       {upcomingSessions.map((upcoming) => (
         <Pressable
           key={upcoming.id}
-          onPress={() => router.push("/(app)/muraja/log")}
+          onPress={() => push("/(app)/muraja/log")}
           style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
           className="bg-white rounded-xl p-4 border border-gray-300 bg-white shadow-sm"
         >
