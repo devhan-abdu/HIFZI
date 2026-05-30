@@ -103,7 +103,7 @@ export default function CreateHifzPlan() {
   const onSubmit = async (data: HifzPlanSchemaFormType) => {
     if (!user?.id) return;
     try {
-      const stats = calculatePlanStats(data);
+      const stats = calculatePlanStats(data, items);
       
       const planData = {
         startDate: data.start_date,

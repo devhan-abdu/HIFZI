@@ -3,16 +3,20 @@ import { HifzPlanSchemaFormType, IHifzLog, IHifzPlan } from "../types";
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 //this one is used to get finshed date but  ut i need  the status calulation not from start but last logged page
-export const calculatePlanStats = (data: HifzPlanSchemaFormType) => {
+export const calculatePlanStats = (data: HifzPlanSchemaFormType, surahData?: ISurah[]) => {
   
   const totalQuranPages = 604;
   const startPage = Number(data.start_page) || 1;
   const dailyRate = Number(data.pages_per_day) || 1;
   const weeklyFreq = data.selectedDays?.length || 1;
 
+  const foundSurah = surahData?.find(s => s.number === Number(data.start_surah));
+  const surahEndingPage = foundSurah ? foundSurah.endingPage : startPage;
+  const surahStartingPage = foundSurah ? foundSurah.startingPage : 1;
+
   const totalPages = data.total_pages || (data.direction === "forward" 
     ? totalQuranPages - startPage + 1 
-    : startPage);
+    : surahEndingPage - startPage + surahStartingPage);
 
   const sessionNeeded = Math.ceil(totalPages / dailyRate);
   let daysNeeded = 1;
@@ -39,15 +43,18 @@ export const calculateFinishedDate = (
     pagesPerDay: number, 
     weeklyFreq: number,
     totalPlanPages?: number,
-    startPage: number = 1
+    startPage: number = 1,
+    actualRemainingPages?: number
 ) => {
   const totalQuranPages = 604;
 
-  const totalPages = totalPlanPages 
-    ? Math.max(0, totalPlanPages - (direction === 'forward' ? (currentPage - startPage + 1) : (startPage - currentPage + 1)))
-    : (direction === "forward" 
-        ? totalQuranPages - currentPage + 1 
-        : currentPage);
+  const totalPages = typeof actualRemainingPages === "number"
+    ? actualRemainingPages
+    : (totalPlanPages 
+        ? Math.max(0, totalPlanPages - (direction === 'forward' ? (currentPage - startPage + 1) : (startPage - currentPage + 1)))
+        : (direction === "forward" 
+            ? totalQuranPages - currentPage + 1 
+            : currentPage));
 
   const sessionNeeded = Math.ceil(totalPages / pagesPerDay);
   let daysNeeded = 1;

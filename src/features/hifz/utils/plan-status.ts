@@ -92,7 +92,8 @@ export const hifzStatus = (
         plan.pagesPerDay,
         plan.selectedDays.length || 1,
         plan.totalPages,
-        plan.startPage
+        plan.startPage,
+        remainingPages
       );
 
     return {

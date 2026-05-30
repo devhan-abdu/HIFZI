@@ -29,7 +29,7 @@ const StatsSummary = ({
     evaluation_day: formData.evaluation_day ?? 5,
   };
   const stats = useMemo(
-    () => calculatePlanStats(safeFormData),
+    () => calculatePlanStats(safeFormData, surah.items),
     [
       formData.start_page,
       formData.pages_per_day,
@@ -38,6 +38,7 @@ const StatsSummary = ({
       formData.start_date,
       formData.start_surah,
       formData.total_pages,
+      surah.items,
     ],
   );
 
