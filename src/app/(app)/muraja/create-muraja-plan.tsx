@@ -9,7 +9,7 @@ import { Text } from "@/src/components/common/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch, type Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 
 import Screen from "@/src/components/screen/Screen";
@@ -24,6 +24,7 @@ import SurahDropdown, {
   SurahPageDropdown,
 } from "@/src/features/muraja/components/SurahDropdown";
 import { HabitTriggerSelector } from "@/src/components/common/HabitTriggerSelector";
+import MurajaStatsSummary from "@/src/features/muraja/components/MurajaStatsSummary";
 
 import { useSession } from "@/src/hooks/useSession";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
@@ -62,8 +63,8 @@ export default function CreateWeeklyPlan() {
     setValue,
     getValues,
     reset,
-  } = useForm({
-    resolver: yupResolver(WeeklyMurajaSchema),
+  } = useForm<WeeklyMurajaFormType>({
+    resolver: yupResolver(WeeklyMurajaSchema) as Resolver<WeeklyMurajaFormType>,
     defaultValues: {
       week_start_date: new Date().toISOString().slice(0, 10),
       planned_pages_per_day: 20,
@@ -153,11 +154,17 @@ export default function CreateWeeklyPlan() {
 
     try {
       const totalPages = data.end_page - data.start_page + 1;
-      const daysNeeded = Math.ceil(totalPages / data.planned_pages_per_day);
+      const dailyRate = data.planned_pages_per_day;
+      const weeklyFreq = data.selectedDays?.length || 1;
+      const sessionNeeded = Math.ceil(totalPages / dailyRate);
+      let daysNeeded = 1;
+      if (sessionNeeded > 1) {
+        daysNeeded = Math.ceil(((sessionNeeded - 1) / weeklyFreq) * 7) + 1;
+      }
       
       const startDate = new Date(data.week_start_date);
       const endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + daysNeeded);
+      endDate.setDate(startDate.getDate() + (daysNeeded - 1));
 
       const planPayload: Omit<IWeeklyMurajaPLan, "id"> = {
         user_id: user.id,
@@ -467,7 +474,7 @@ export default function CreateWeeklyPlan() {
                 </View>
               )}
             />
-            <View>
+            <View className="mb-4">
               <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-2 ml-1 ">
                 Personal Intentions
               </Text>
@@ -494,6 +501,11 @@ export default function CreateWeeklyPlan() {
                 )}
               />
             </View>
+          </View>
+
+          <SectionHeader title="Plan Summary" />
+          <View className="p-5 mb-10 rounded-[32px] border border-slate-100 bg-white">
+            <MurajaStatsSummary control={control} />
           </View>
         </ScreenContent>
 

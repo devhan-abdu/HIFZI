@@ -221,9 +221,18 @@ export const murajaService = {
     if (plan.isActive) {
         const remainingPages = (plan.endPage ?? 0) - trueLastPage;
         if (remainingPages > 0) {
-            const daysNeeded = Math.ceil(remainingPages / Math.max(1, plan.plannedPagesPerDay));
+            const parsedDays = typeof plan.selectedDays === "string"
+              ? JSON.parse(plan.selectedDays)
+              : (plan.selectedDays ?? []);
+            const weeklyFreq = parsedDays.length || 7;
+            const dailyRate = Math.max(1, plan.plannedPagesPerDay);
+            const sessionNeeded = Math.ceil(remainingPages / dailyRate);
+            let daysNeeded = 1;
+            if (sessionNeeded > 1) {
+              daysNeeded = Math.ceil(((sessionNeeded - 1) / weeklyFreq) * 7) + 1;
+            }
             const newEndDate = new Date();
-            newEndDate.setDate(newEndDate.getDate() + daysNeeded);
+            newEndDate.setDate(newEndDate.getDate() + (daysNeeded - 1));
             const newEndDateStr = newEndDate.toISOString().slice(0, 10);
 
             if (newEndDateStr !== plan.weekEndDate) {
@@ -462,11 +471,20 @@ export const murajaService = {
     const today = new Date().toISOString().split('T')[0];
     
     // Calculate new estimated end date based on same range and rate
-    const totalPages = (oldPlan.endPage ?? 0) - (oldPlan.startPage ?? 1) + 1;
-    const daysNeeded = Math.ceil(totalPages / (oldPlan.plannedPagesPerDay ?? 2));
+    const totalPages = Math.max(1, (oldPlan.endPage ?? 0) - (oldPlan.startPage ?? 1) + 1);
+    const parsedDays = typeof oldPlan.selectedDays === "string"
+      ? JSON.parse(oldPlan.selectedDays)
+      : (oldPlan.selectedDays ?? []);
+    const weeklyFreq = parsedDays.length || 7;
+    const dailyRate = oldPlan.plannedPagesPerDay ?? 2;
+    const sessionNeeded = Math.ceil(totalPages / dailyRate);
+    let daysNeeded = 1;
+    if (sessionNeeded > 1) {
+      daysNeeded = Math.ceil(((sessionNeeded - 1) / weeklyFreq) * 7) + 1;
+    }
     
     const endDate = new Date();
-    endDate.setDate(endDate.getDate() + daysNeeded);
+    endDate.setDate(endDate.getDate() + (daysNeeded - 1));
     const endDateStr = endDate.toISOString().split('T')[0];
 
     return await this.createPlan({

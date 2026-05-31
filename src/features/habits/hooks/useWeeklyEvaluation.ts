@@ -17,10 +17,21 @@ function computeMurajaEndDate(currentData: any, murajaTarget: number) {
   const endPage = currentData.endPage ?? currentData.end_page ?? 0;
   const lastPage = currentData.muraja_last_page ?? 0;
   const remainingPages = Math.max(0, endPage - lastPage);
-  const daysNeeded = Math.ceil(remainingPages / Math.max(1, murajaTarget));
+
+  const selectedDaysRaw = currentData.selectedDays ?? currentData.selected_days ?? [];
+  const parsedDays = typeof selectedDaysRaw === "string"
+    ? JSON.parse(selectedDaysRaw)
+    : selectedDaysRaw;
+  const weeklyFreq = parsedDays?.length || 7;
+  const dailyRate = Math.max(1, murajaTarget);
+  const sessionNeeded = Math.ceil(remainingPages / dailyRate);
+  let daysNeeded = 1;
+  if (sessionNeeded > 1) {
+    daysNeeded = Math.ceil(((sessionNeeded - 1) / weeklyFreq) * 7) + 1;
+  }
 
   const nextEndDate = new Date();
-  nextEndDate.setDate(nextEndDate.getDate() + daysNeeded);
+  nextEndDate.setDate(nextEndDate.getDate() + (daysNeeded - 1));
   return nextEndDate.toISOString().slice(0, 10);
 }
 

@@ -553,10 +553,20 @@ export const AdaptivePlanService = {
 
         if (plan) {
           const remainingPages = (plan.endPage ?? 0) - (stats?.murajaLastPage ?? 0);
-          const daysNeeded = Math.ceil(remainingPages / Math.max(1, murajaTarget));
+          const selectedDaysRaw = plan.selectedDays ?? [];
+          const parsedDays = typeof selectedDaysRaw === "string"
+            ? JSON.parse(selectedDaysRaw)
+            : selectedDaysRaw;
+          const weeklyFreq = parsedDays?.length || 7;
+          const dailyRate = Math.max(1, murajaTarget);
+          const sessionNeeded = Math.ceil(remainingPages / dailyRate);
+          let daysNeeded = 1;
+          if (sessionNeeded > 1) {
+            daysNeeded = Math.ceil(((sessionNeeded - 1) / weeklyFreq) * 7) + 1;
+          }
           
           const newEndDate = new Date();
-          newEndDate.setDate(newEndDate.getDate() + daysNeeded);
+          newEndDate.setDate(newEndDate.getDate() + (daysNeeded - 1));
           const newEndDateStr = newEndDate.toISOString().slice(0, 10);
 
           await tx.update(weeklyMurajaPlans)
