@@ -11,7 +11,15 @@ export const getTargetPage = (
   const backlog = Math.max(0, plannedTotal - completedTotal);
   const hasBacklog = backlog > 0;
 
-  if (!isPlannedDay && !hasBacklog) return 0;
+  if (dailyRate <= 0 || (!isPlannedDay && !hasBacklog)) {
+    return {
+      totalTarget: 0,
+      baseTarget: 0,
+      catchUpAmount: 0,
+      isPlannedDay,
+      hasBacklog: false
+    };
+  }
 
   let baseTarget = isPlannedDay ? dailyRate : 0;
   let catchUpAmount = 0;

@@ -20,7 +20,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.devhananabdu.hifzi"
+      "bundleIdentifier": "com.devhananabdu.hifzi.dev",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.devhananabdu.hifzi",
