@@ -11,11 +11,11 @@
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://uungvwtrbfqatqtqbqef.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1bmd2d3RyYmZxYXRxdHFicWVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0ODcyNTUsImV4cCI6MjA3OTA2MzI1NX0.mUGwA3wBskLuquKGPp5tfiiDZKf3W5HOt5mihJQPnO0",
-        "EXPO_PUBLIC_QF_CLIENT_ID": "0ee08fe9-105a-4d45-8fba-fc5ec649903a",
+        "EXPO_PUBLIC_QF_CLIENT_ID": "8d6fa56f-535d-4ee0-a1b6-3e1981b7511b",
         "EXPO_PUBLIC_BACKEND_URL": "https://uungvwtrbfqatqtqbqef.supabase.co/functions/v1",
         "EXPO_PUBLIC_QF_ENV": "prelive",
         "EXPO_PUBLIC_QF_URL": "https://prelive-oauth2.quran.foundation",
-        "EXPO_PUBLIC_REDIRECT_URI": "hifzi://login"
+        "EXPO_PUBLIC_REDIRECT_URI": "hifzi-dev://login"
       },
       "android": {
         "buildType": "apk"

@@ -61,7 +61,7 @@ export async function callQF(endpoint: string, options?: QFOptions) {
 
     if (!sessionToken) throw new Error("AUTH_REQUIRED");
 
-    const res = await fetch(`${BACKEND_BASE_URL}/qf-proxy`, {
+    const res = await fetch(`${BACKEND_BASE_URL}/qf-proxy-dev`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
