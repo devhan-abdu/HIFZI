@@ -57,6 +57,7 @@ export default function LogProgress() {
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [reviewed, setReviewed] = useState(false);
+  const [sessionMode, setSessionMode] = useState<"append" | "overwrite">("append");
 
   const [startSurah, setStartSurah] = useState(1);
   const [startPage, setStartPage] = useState(1);
@@ -74,6 +75,7 @@ export default function LogProgress() {
 
   const isRestDay =
     !hasReviewPrefill && (!logContext || logContext.isVirtualTask);
+  const hasExistingProgress = logContext && (logContext.completedPages ?? 0) > 0;
 
   const sessionMistakes = useReaderSessionStore((s) => s.mistakes);
   const sessionHesitations = useReaderSessionStore((s) => s.hesitations);
@@ -105,7 +107,13 @@ export default function LogProgress() {
       return;
     }
     if (!logContext) return;
-    setPages(logContext.totalTarget);
+    
+    if (hasExistingProgress) {
+        setStatus("completed");
+        setPages(Math.max(0, logContext.totalTarget - logContext.completedPages));
+    } else {
+        setPages(logContext.totalTarget);
+    }
   }, [hasReviewPrefill, logContext, reviewEndPage, reviewStartPage]);
 
   useEffect(() => {
@@ -155,6 +163,7 @@ export default function LogProgress() {
   const handleStatusSelection = (
     selectedStatus: "completed" | "partial" | "missed",
   ) => {
+    setStatus(selectedStatus);
     const targetPages =
       hasReviewPrefill && reviewEndPage >= reviewStartPage
         ? Math.max(1, reviewEndPage - reviewStartPage + 1)
@@ -162,7 +171,7 @@ export default function LogProgress() {
 
     if (selectedStatus === "completed") {
       setPages(targetPages);
-    } else if (pages === 0 || selectedStatus === "missed") {
+    } else if (selectedStatus === "missed") {
       setPages(0);
     } else {
       setPages(Math.max(1, Math.floor(targetPages / 2)));
@@ -196,15 +205,20 @@ export default function LogProgress() {
       const today = new Date();
       const logDay = (today.getDay() + 6) % 7;
 
+      const isMissed = status === "missed";
+      const finalPages = isMissed ? 0 : (hasExistingProgress && sessionMode === "append" && !hasReviewPrefill
+        ? logContext.completedPages + pages 
+        : pages);
+
       const actualStartPage = hasReviewPrefill
         ? reviewStartPage
-        : (logContext?.startPage ?? plan.startPage);
+        : (hasExistingProgress && sessionMode === "append" ? logContext.startPage : (logContext?.startPage ?? plan.startPage));
 
       const actualEndPage = hasReviewPrefill
-        ? reviewStartPage + Math.max(0, pages - 1)
-        : (getTodayTask(plan, surahData, pages)?.endPage ?? actualStartPage);
+        ? reviewStartPage + Math.max(0, finalPages - 1)
+        : (getTodayTask(plan, surahData, finalPages)?.endPage ?? actualStartPage);
 
-      const pagesCompleted = pages;
+      const pagesCompleted = finalPages;
 
       if (hasReviewPrefill) {
         const pagesArray = Array.from(
@@ -231,6 +245,11 @@ export default function LogProgress() {
         };
 
         await addLog({ todayLog: payload, userId: user?.id });
+      }
+
+      if (isMissed) {
+        router.back();
+        return;
       }
 
       router.back();
@@ -282,10 +301,33 @@ export default function LogProgress() {
             </View>
           )}
 
-          <View className="bg-primary rounded-[40px] p-7 mb-8 shadow-xl shadow-primary/30 overflow-hidden relative">
-            <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
+          {hasExistingProgress && !isLocked && !hasReviewPrefill && (
+            <View className="mb-8 p-4 bg-primary/5 border border-primary/10 rounded-2xl">
+              <View className="flex-row items-center gap-3 mb-3">
+                <Ionicons name="information-circle" size={20} color="#276359" />
+                <Text className="text-primary text-sm font-medium">
+                  Today's Progress: {logContext.completedPages} pages logged
+                </Text>
+              </View>
+              <View className="flex-row gap-2">
+                <Pressable
+                  onPress={() => setSessionMode("append")}
+                  className={`flex-1 py-2 px-3 rounded-xl border ${sessionMode === "append" ? "bg-primary border-primary" : "bg-white border-slate-200"}`}
+                >
+                  <Text className={`text-center text-xs font-medium ${sessionMode === "append" ? "text-white" : "text-slate-600"}`}>Add (Continue)</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setSessionMode("overwrite")}
+                  className={`flex-1 py-2 px-3 rounded-xl border ${sessionMode === "overwrite" ? "bg-primary border-primary" : "bg-white border-slate-200"}`}
+                >
+                  <Text className={`text-center text-xs font-medium ${sessionMode === "overwrite" ? "text-white" : "text-slate-600"}`}>Overwrite (New)</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
 
-            <View className="flex-row justify-between items-center mb-6">
+          <View className="bg-primary rounded-3xl p-6 mb-8 shadow-sm">
+            <View className="flex-row justify-between items-center mb-4">
               <View className="bg-white/10 px-2.5 py-1 rounded-lg border border-white/10">
                 <Text className="text-white text-[10px] uppercase tracking-[2px]">
                   {hasReviewPrefill
@@ -295,7 +337,7 @@ export default function LogProgress() {
                       : isRestDay
                         ? "Extra Session"
                         : logContext?.isPlannedDay
-                          ? "Today's Target"
+                          ? "Study Target"
                           : "Extra"}
                 </Text>
               </View>
@@ -306,7 +348,7 @@ export default function LogProgress() {
 
             <View className="flex-row items-end justify-between">
               <View className="flex-1">
-                <Text className="text-white text-3xl tracking-tighter">
+                <Text className="text-white text-2xl tracking-tighter">
                   {heroSurahLabel}
                 </Text>
                 <Text className="text-white/50 text-xs mt-1">
@@ -452,14 +494,22 @@ export default function LogProgress() {
                   </View>
                   <View className="flex-row items-center bg-slate-50 rounded-xl p-1 border border-slate-100">
                     <Pressable
-                      onPress={() => setPages((prev) => Math.max(0, prev - 1))}
+                      onPress={() => {
+                        const newPages = Math.max(0, pages - 1);
+                        setPages(newPages);
+                        if (newPages === 0) setStatus("missed");
+                      }}
                       className="w-9 h-9 items-center justify-center active:bg-white rounded-lg"
                     >
                       <Ionicons name="remove" size={18} color="#276359" />
                     </Pressable>
                     <Text className="text-xl text-slate-900 px-4">{pages}</Text>
                     <Pressable
-                      onPress={() => setPages((prev) => prev + 1)}
+                      onPress={() => {
+                        const newPages = pages + 1;
+                        setPages(newPages);
+                        if (status === "missed") setStatus("partial");
+                      }}
                       className="w-9 h-9 items-center justify-center active:bg-white rounded-lg"
                     >
                       <Ionicons name="add" size={18} color="#276359" />

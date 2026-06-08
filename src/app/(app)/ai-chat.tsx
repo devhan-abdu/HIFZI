@@ -1,5 +1,6 @@
 import { Header } from "@/src/components/navigation/Header";
 import { Text } from "@/src/components/common/ui/Text";
+import { FormattedMessage } from "@/src/components/ui/FormattedMessage";
 import { askQuranQuestion } from "@/src/features/ai/services/quranAI";
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -143,13 +144,16 @@ export default function AIChatScreen() {
                   key={`${message.role}-${index}-${message.timestamp.getTime()}`}
                   className={`mb-4 flex-row ${isUser ? "justify-end" : "justify-start"}`}
                 >
+                  {/* AI avatar */}
                   {!isUser && (
                     <View className="w-8 h-8 rounded-full bg-emerald-100 items-center justify-center mr-2 mt-1 shrink-0">
                       <Ionicons name="sparkles" size={16} color="#047857" />
                     </View>
                   )}
 
-                  <View className={`max-w-[82%] ${isUser ? "items-end" : "items-start"}`}>
+                  <View
+                    className={`max-w-[82%] ${isUser ? "items-end" : "items-start"}`}
+                  >
                     <View
                       className={`rounded-2xl px-4 py-3 ${
                         isUser
@@ -157,19 +161,23 @@ export default function AIChatScreen() {
                           : "bg-white shadow-sm border border-slate-100 rounded-tl-sm"
                       }`}
                     >
-                      <Text
-                        className={`text-[15px] leading-6 ${
-                          isUser ? "text-white" : "text-slate-800"
-                        }`}
-                      >
-                        {message.text}
-                      </Text>
+                      {isUser ? (
+                        // User messages: plain text, white
+                        <Text className="text-[15px] leading-6 text-white">
+                          {message.text}
+                        </Text>
+                      ) : (
+                        // AI messages: rich formatted output
+                        <FormattedMessage text={message.text} />
+                      )}
                     </View>
+
                     <Text className="text-[10px] text-slate-400 mt-1 px-1">
                       {formatTime(message.timestamp)}
                     </Text>
                   </View>
 
+                  {/* User avatar */}
                   {isUser && (
                     <View className="w-8 h-8 rounded-full bg-slate-200 items-center justify-center ml-2 mt-1 shrink-0">
                       <Ionicons name="person" size={16} color="#64748b" />
@@ -179,18 +187,22 @@ export default function AIChatScreen() {
               );
             })}
 
+            {/* Loading dots */}
             {loading && (
               <View className="mb-4 flex-row justify-start">
                 <View className="w-8 h-8 rounded-full bg-emerald-100 items-center justify-center mr-2 mt-1">
                   <Ionicons name="sparkles" size={16} color="#047857" />
                 </View>
                 <View className="rounded-2xl rounded-tl-sm bg-white shadow-sm border border-slate-100 px-4 py-3">
-                  <Text className="text-[15px] text-slate-500">Thinking…</Text>
+                  <Text className="text-[15px] text-slate-400 italic">
+                    Thinking…
+                  </Text>
                 </View>
               </View>
             )}
           </ScrollView>
 
+          {/* Input bar */}
           <View
             className="bg-white border-t border-slate-100 px-4 pt-3"
             style={{
@@ -217,7 +229,9 @@ export default function AIChatScreen() {
                 onPress={sendQuestion}
                 disabled={loading || !question.trim()}
                 className={`w-10 h-10 rounded-full items-center justify-center mb-0.5 shrink-0 ${
-                  loading || !question.trim() ? "bg-slate-200" : "bg-emerald-700"
+                  loading || !question.trim()
+                    ? "bg-slate-200"
+                    : "bg-emerald-700"
                 }`}
               >
                 <Ionicons

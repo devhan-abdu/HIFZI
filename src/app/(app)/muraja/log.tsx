@@ -38,57 +38,71 @@ export default function LogPage() {
   const planState = getPlanState(weeklyPlan?.id, 'MURAJA');
   const isLocked = planState === 'EVALUATION_DUE' || planState === 'COMPLETION_DUE';
 
+  const isRestDay = !todayTask || todayTask.isVirtualTask;
+  const hasExistingProgress = todayTask && (todayTask.completedPages ?? 0) > 0;
+
   const [status, setStatus] = useState<StatusType>("pending");
-  const [pages, setPages] = useState<number>(weeklyPlan?.planned_pages_per_day || 1);
+  const [pages, setPages] = useState<number>(0);
   const [min, setMin] = useState("");
   const [note, setNote] = useState("");
   const [mistakes, setMistakes] = useState(0);
   const [hesitations, setHesitations] = useState(0);
   const [error, setError] = useState("");
+  
+  const [sessionMode, setSessionMode] = useState<"append" | "overwrite">("append");
 
-  // Rest Day state variables for voluntary logging
   const [startSurah, setStartSurah] = useState<number>(1);
   const [startPage, setStartPage] = useState<number>(1);
   const [endSurah, setEndSurah] = useState<number>(1);
   const [endPage, setEndPage] = useState<number>(1);
 
-  const isRestDay = !todayTask || todayTask.isVirtualTask;
-
+  // Initialize from todayTask
   useEffect(() => {
-    if (todayTask) {
-      setPages(todayTask.completedPages);
-      setStatus(todayTask.status);
+    if (todayTask && !isRestDay) {
+      setStartSurah(todayTask.startSurah || 1);
+      setStartPage(todayTask.startPage || 1);
+      setEndSurah(todayTask.endSurah || 1);
+      setEndPage(todayTask.endPage || 1);
+      
+      const targetPages = todayTask.endPage - todayTask.startPage + 1;
+      
+      if (hasExistingProgress) {
+        setStatus("completed");
+        // For append mode, we might want default pages to 0, but let's show the remaining
+        const remaining = Math.max(0, targetPages - todayTask.completedPages);
+        setPages(remaining);
+      } else {
+        setPages(targetPages);
+        setStatus(todayTask.status || "pending");
+      }
       setMin(weeklyPlan?.estimated_time_min?.toString() || "");
     } else {
       setStatus("completed");
     }
-  }, [todayTask, weeklyPlan]);
+  }, [todayTask, weeklyPlan, isRestDay]);
 
-  // Sync rest day pages count
+  // Sync pages count when dropdowns change
   useEffect(() => {
-    if (isRestDay) {
-      setPages(Math.max(1, endPage - startPage + 1));
-    }
-  }, [startPage, endPage, isRestDay]);
+    setPages(Math.max(1, endPage - startPage + 1));
+  }, [startPage, endPage]);
 
-  // Handle dropdown selection bounds
   useEffect(() => {
-    if (isRestDay && items.length > 0) {
+    if (items.length > 0) {
       const startFound = items.find(s => s.number === startSurah);
       if (startFound) {
         setStartPage(startFound.startingPage);
       }
     }
-  }, [startSurah, isRestDay, items]);
+  }, [startSurah, items]);
 
   useEffect(() => {
-    if (isRestDay && items.length > 0) {
+    if (items.length > 0) {
       const endFound = items.find(s => s.number === endSurah);
       if (endFound) {
         setEndPage(endFound.startingPage);
       }
     }
-  }, [endSurah, isRestDay, items]);
+  }, [endSurah, items]);
 
   useEffect(() => {
     if (startSurah > endSurah) {
@@ -134,15 +148,24 @@ export default function LogPage() {
     }
 
     try {
+      const isMissed = status === "missed";
+      const finalPages = isMissed ? 0 : (hasExistingProgress && sessionMode === "append" 
+        ? todayTask.completedPages + pages 
+        : pages);
+        
+      const finalStartPage = (hasExistingProgress && sessionMode === "append") 
+        ? todayTask.startPage 
+        : startPage;
+
       await updateLog({
         plan_id: weeklyPlan?.id,
         date: todayStr,
-        start_page: isRestDay ? startPage : (todayTask?.startPage ?? weeklyPlan.planned_pages_per_day ?? 1),
-        end_page: isRestDay ? endPage : (status === "completed" ? todayTask?.endPage : todayTask?.startPage),
-        completed_pages: Number(pages),
+        start_page: isMissed ? todayTask?.startPage ?? startPage : finalStartPage,
+        end_page: isMissed ? todayTask?.endPage ?? endPage : endPage,
+        completed_pages: Number(finalPages),
         actual_time_min: Number(min) || 0,
         status: status,
-        is_catchup: todayTask?.isCatchup ? 1 : 0,
+        is_catchup: 0,
         sync_status: 0,
         remote_id: null,
         mistakes_count: mistakes,
@@ -150,18 +173,12 @@ export default function LogPage() {
         quality_score: PerformanceService.deriveQualityScore(mistakes, hesitations),
       });
 
-      if (status === "missed") {
+      if (isMissed) {
         router.back();
         return;
       }
 
-      const title = todayTask?.isCatchup ? "Caught Up!" : "Progress Saved";
-      const message =
-        todayTask?.isCatchup ?
-          "MashaAllah! You've cleared your debt."
-        : "Your daily muraja has been recorded.";
-
-      showSuccess(title, message, () => router.back());
+      showSuccess("Progress Saved", "Your daily muraja has been recorded.", () => router.back());
     } catch (err) {
       showError("Ups!", "Failed to save log");
       console.log(err, "muraja log");
@@ -205,58 +222,56 @@ export default function LogPage() {
             </View>
           )}
 
-          {todayTask?.isCatchup && (
-            <View className="bg-orange-50 border border-orange-100 p-4 rounded-2xl mb-8 flex-row items-center gap-3">
-              <Ionicons name="refresh-circle" size={24} color="#f97316" />
-              <View className="flex-1">
-                <Text className="text-orange-900  text-sm">Catch-Up Mode</Text>
-                <Text className="text-orange-700/70 text-xs">
-                  Completing missed pages to stay on track
+          {hasExistingProgress && !isLocked && (
+            <View className="mb-8 p-4 bg-primary/5 border border-primary/10 rounded-2xl">
+              <View className="flex-row items-center gap-3 mb-3">
+                <Ionicons name="information-circle" size={20} color="#276359" />
+                <Text className="text-primary text-sm font-medium">
+                  Today's Progress: {todayTask.completedPages} pages logged
                 </Text>
+              </View>
+              <View className="flex-row gap-2">
+                <Pressable
+                  onPress={() => setSessionMode("append")}
+                  className={`flex-1 py-2 px-3 rounded-xl border ${sessionMode === "append" ? "bg-primary border-primary" : "bg-white border-slate-200"}`}
+                >
+                  <Text className={`text-center text-xs font-medium ${sessionMode === "append" ? "text-white" : "text-slate-600"}`}>Add (Continue)</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setSessionMode("overwrite")}
+                  className={`flex-1 py-2 px-3 rounded-xl border ${sessionMode === "overwrite" ? "bg-primary border-primary" : "bg-white border-slate-200"}`}
+                >
+                  <Text className={`text-center text-xs font-medium ${sessionMode === "overwrite" ? "text-white" : "text-slate-600"}`}>Overwrite (New)</Text>
+                </Pressable>
               </View>
             </View>
           )}
 
-          <View className="bg-primary rounded-[40px] p-7 mb-8 shadow-xl shadow-primary/30 overflow-hidden relative">
-            <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
-            
-            <View className="flex-row justify-between items-center mb-6">
+          <View className="bg-primary rounded-3xl p-6 mb-8 shadow-sm">
+            <View className="flex-row justify-between items-center mb-4">
               <View className="bg-white/10 px-2.5 py-1 rounded-lg border border-white/10">
                 <Text className="text-white text-[10px] uppercase tracking-[2px]">
-                  {isRestDay ? "Extra Session" : "Today's Target"}
+                  {isRestDay ? "Extra Session" : "Study Target"}
                 </Text>
               </View>
-              <View className="flex-row items-center gap-2">
-                {todayTask?.isCatchup && (
-                  <View className="bg-orange-400 px-2 py-0.5 rounded-md">
-                    <Text className="text-white text-[9px] uppercase">Catchup</Text>
-                  </View>
-                )}
-                <Text className="text-white/60 text-[10px] uppercase tracking-widest">Muraja</Text>
-              </View>
+              <Text className="text-white/60 text-[10px] uppercase tracking-widest">Muraja</Text>
             </View>
 
             <View className="flex-row items-end justify-between">
               <View className="flex-1">
-                <Text className="text-white text-3xl tracking-tighter">
-                  {isRestDay ? (
-                    startSurah === endSurah ?
-                      getSurahNameByNumber(startSurah)
-                    : `${getSurahNameByNumber(startSurah)} – ${getSurahNameByNumber(endSurah)}`
-                  ) : todayTask ? (
-                    todayTask.startSurah === todayTask.endSurah ?
-                      todayTask.startSurah
-                    : `${todayTask.startSurah} – ${todayTask.endSurah}`
-                  ) : "Extra Revision"}
+                <Text className="text-white text-2xl tracking-tighter">
+                  {startSurah === endSurah ?
+                    getSurahNameByNumber(startSurah)
+                  : `${getSurahNameByNumber(startSurah)} – ${getSurahNameByNumber(endSurah)}`}
                 </Text>
                 <Text className="text-white/50 text-xs mt-1">
-                  Range: {isRestDay ? `${startPage}—${endPage}` : todayTask ? `${todayTask.startPage}—${todayTask.endPage}` : "Extra"}
+                  Range: {startPage}—{endPage}
                 </Text>
               </View>
               <View className="items-end">
                 <View className="flex-row items-baseline">
                   <Text className="text-white text-2xl tracking-tighter">
-                    {isRestDay ? `${endPage - startPage + 1}` : todayTask ? `${todayTask.endPage - todayTask.startPage + 1}` : "0"}
+                    {pages}
                   </Text>
                   <Text className="text-white/40 text-sm ml-1">Pgs</Text>
                 </View>
@@ -265,10 +280,10 @@ export default function LogPage() {
             </View>
           </View>
 
-          {/* Rest Day Voluntary Dropdowns */}
-          {isRestDay && !isLocked && (
-            <View className="p-5 mb-8 rounded-[32px] border border-slate-100 bg-white shadow-sm gap-y-4">
-              <Text className="text-slate-900 text-base mb-2 ml-1">Voluntary Study Range</Text>
+          {/* Voluntary Dropdowns */}
+          {!isLocked && (
+            <View className="p-5 mb-8 rounded-3xl border border-slate-100 bg-white shadow-sm gap-y-4">
+              <Text className="text-slate-900 text-base mb-2 ml-1">Study Range</Text>
               
               <SurahDropdown 
                 label="Start Surah" 
@@ -301,7 +316,7 @@ export default function LogPage() {
           )}
 
           {/* 3. Status Selection */}
-          {!isLocked && !isRestDay && (
+          {!isLocked && (
             <View className="mb-8">
               <Text className="text-slate-900 text-base mb-4 ml-1">How did it go?</Text>
               <View className="flex-row justify-between">
@@ -311,11 +326,7 @@ export default function LogPage() {
                   active={status === "completed"}
                   onPress={() => {
                     setStatus("completed");
-                    if (isRestDay) {
-                      setPages(endPage - startPage + 1);
-                    } else if (todayTask) {
-                      setPages(todayTask.endPage - todayTask.startPage + 1);
-                    }
+                    setPages(endPage - startPage + 1);
                   }}
                 />
                 <StatusTab
@@ -324,13 +335,7 @@ export default function LogPage() {
                   active={status === "partial"}
                   onPress={() => {
                     setStatus("partial");
-                    if (isRestDay) {
-                      setPages(Math.max(1, Math.floor((endPage - startPage + 1) / 2)));
-                    } else if (todayTask) {
-                      setPages(
-                        Math.floor((todayTask.endPage - todayTask.startPage + 1) / 2),
-                      );
-                    }
+                    setPages(Math.max(1, Math.floor((endPage - startPage + 1) / 2)));
                   }}
                 />
                 <StatusTab
@@ -410,14 +415,22 @@ export default function LogPage() {
                   </View>
                   <View className="flex-row items-center bg-slate-50 rounded-xl p-1 border border-slate-100">
                     <Pressable
-                      onPress={() => setPages((p: number) => Math.max(0, p - 1))}
+                      onPress={() => {
+                        const newPages = Math.max(0, pages - 1);
+                        setPages(newPages);
+                        if (newPages === 0) setStatus("missed");
+                      }}
                       className="w-9 h-9 items-center justify-center active:bg-white rounded-lg"
                     >
                       <Ionicons name="remove" size={18} color="#276359" />
                     </Pressable>
                     <Text className="text-xl text-slate-900 px-4">{pages}</Text>
                     <Pressable
-                      onPress={() => setPages((p: number) => p + 1)}
+                      onPress={() => {
+                        const newPages = pages + 1;
+                        setPages(newPages);
+                        if (status === "missed") setStatus("partial");
+                      }}
                       className="w-9 h-9 items-center justify-center active:bg-white rounded-lg"
                     >
                       <Ionicons name="add" size={18} color="#276359" />
