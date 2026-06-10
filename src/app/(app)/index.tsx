@@ -3,6 +3,9 @@ import Screen from "@/src/components/screen/Screen";
 import { ScreenContent } from "@/src/components/screen/ScreenContent";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { View } from "react-native";
+import { useAppActiveRefresh } from "@/src/hooks/useAppActiveRefresh";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { Redirect } from "expo-router";
 import { useNavigate } from "@/src/hooks/useNavigate";
 import Card from "@/src/components/dashboard/Card";
@@ -24,6 +27,11 @@ import { useHifzDailyTask } from "@/src/features/hifz/hooks/useHifzDailyTask";
 import { useSyncStore } from "@/src/services/sync/syncStore";
 
 export default function Dashboard() {
+  const queryClient = useQueryClient();
+  useAppActiveRefresh(useCallback(() => {
+    queryClient.invalidateQueries();
+  }, [queryClient]));
+
   const { push } = useNavigate();
   const { items: surah } = useLoadSurahData();
   const { hifz: hifzPlan, isLoading: loadingHifz } = useHifzPlan();

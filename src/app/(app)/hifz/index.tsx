@@ -28,6 +28,7 @@ import { sendTestNotification } from "@/src/utils/testNotifications";
 import { HifzActionCard } from "@/src/components/dashboard/HifzActionCard";
 import { PlanEndCard } from "@/src/features/habits/components/PlanEndCard";
 import { useDashboardState } from "@/src/features/habits/hooks/useDashboardState";
+import { useAppActiveRefresh } from "@/src/hooks/useAppActiveRefresh";
 export default function Hifz() {
   const { push } = useNavigate();
   const { 
@@ -39,19 +40,23 @@ export default function Hifz() {
     isReinforcementDone,
     todayTask, 
     dailyReviews,
+    hasTodayLog,
   } = useHifzDailyTask();
 
   const {
     state: dashboardState,
     refetchAll,
     isLoading: isStateLoading,
-  } = useDashboardState('HIFZ', hifz, todayTask, !todayTask, isLoading, refetch);
+  } = useDashboardState('HIFZ', hifz, todayTask, !todayTask, isLoading, refetch, hasTodayLog);
 
   useFocusEffect(
     useCallback(() => {
       refetchAll();
     }, [refetchAll])
   );
+  useAppActiveRefresh(useCallback(() => {
+    refetchAll();
+  }, [refetchAll]));
   const { user } = useSession();
 
   const handleSendTestNotification = async () => {
@@ -92,9 +97,6 @@ export default function Hifz() {
   if (!hifz) return <HifzEmptyState />;
   if (!analytics) return <HifzTrackerSkeleton />;
 
-  const isEvalDue = dashboardState.type === 'EVALUATION_DUE';
-  const isCompDue = dashboardState.type === 'PLAN_FINISHED';
-
   return (
     <>
       <Screen>
@@ -126,15 +128,15 @@ export default function Hifz() {
                <EvaluationRequiredCard type="hifz" />
             ) : dashboardState.type === 'PLAN_FINISHED' ? (
                <PlanEndCard activityType="HIFZ" localRefId={hifz?.id ?? 0} title={analytics!.startSurah?.toString() ?? ''} />
-            ) : dashboardState.type === 'TODAY_TASK' ? (
+            ) : (dashboardState.type === 'COMPLETED_TODAY' || dashboardState.type === 'PLANNED_DAY' || dashboardState.type === 'CATCHUP_DAY') ? (
               <HifzActionCard
                 hifz={hifz} 
-                task={todayTask} 
+                task={dashboardState.task} 
                 onDetails={() => push("/(app)/hifz/log")}
               />
-            ) : (
+            ) : dashboardState.type === 'REST_DAY' ? (
               <RestDayCardSingle type="hifz" onLog={() => push("/(app)/hifz/log")} />
-            )}
+            ) : null}
           </View>
 
           {reinforcementTask && (
@@ -250,13 +252,13 @@ export default function Hifz() {
         <ScreenFooter>
           <View className="flex-row gap-x-3">
             <Button
-              className={`flex-1 shadow-lg ${(isEvalDue || isCompDue) ? 'opacity-50' : 'shadow-primary/20'}`}
-              onPress={() => !(isEvalDue || isCompDue) && push("/(app)/hifz/log")}
-              disabled={isEvalDue || isCompDue}
+              className={`flex-1 shadow-lg ${(dashboardState.type === 'EVALUATION_DUE' || dashboardState.type === 'PLAN_FINISHED') ? 'opacity-50' : 'shadow-primary/20'}`}
+              onPress={() => !(dashboardState.type === 'EVALUATION_DUE' || dashboardState.type === 'PLAN_FINISHED') && push("/(app)/hifz/log")}
+              disabled={dashboardState.type === 'EVALUATION_DUE' || dashboardState.type === 'PLAN_FINISHED'}
             >
-              <Ionicons name="add-circle-outline" size={20} color="white" />
+              <Ionicons name="add-circle" size={20} color="white" />
               <Text className="text-white">
-                {isEvalDue ? 'Test Required' : isCompDue ? 'Plan Completed' : 'Log Progress'}
+                {dashboardState.type === 'EVALUATION_DUE' ? 'Test Required' : dashboardState.type === 'PLAN_FINISHED' ? 'Plan Completed' : 'Log Progress'}
               </Text>
             </Button>
 

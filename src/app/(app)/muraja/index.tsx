@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useCallback } from "react";
 import { Text } from "@/src/components/common/ui/Text";
 import { View } from "react-native";
 
@@ -14,22 +14,23 @@ import { Button } from "@/src/components/ui/Button";
 import { SectionHeader } from "@/src/components/SectionHeader";
 
 import { useWeeklyMuraja } from "@/src/features/muraja/hooks/useWeeklyMuraja";
-import { useMurajaOperation } from "@/src/features/muraja/hooks/useMurajaOperation";
 
 import { WeeklyOverviewCard } from "@/src/features/muraja/components/WeeklyOverviewCard";
 import { WeeklyMurajaSkeleton } from "@/src/features/muraja/components/skeletons";
 import MurajaEmptyState from "@/src/features/muraja/components/MurajaEmptyState";
 import StatCard from "@/src/features/hifz/components/StatCard";
 import { DayByDay } from "@/src/features/muraja/components/DayByDay";
+import { MurajaActionCard } from "@/src/components/dashboard/MurajaActionCard";
 import { ActionTaskCard } from "@/src/components/common/ActionCard";
 import { EvaluationRequiredCard, RestDayCardSingle } from "@/src/components/dashboard/TodayTask";
 import { Ionicons } from "@expo/vector-icons";
 import { PlanEndCard } from "@/src/features/habits/components/PlanEndCard";
-import { QualityModal } from "@/src/components/common/QualityModal";
 import { useAlert } from "@/src/hooks/useAlert";
 import { Alert } from "@/src/components/common/Alert";
 import { useDashboardState } from "@/src/features/habits/hooks/useDashboardState";
-
+import { useAppActiveRefresh } from "@/src/hooks/useAppActiveRefresh";
+import { getSurahByPage } from "@/src/features/muraja/utils/quranMapping";
+import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 
 export default function MurajaIndex() {
   const {
@@ -41,7 +42,10 @@ export default function MurajaIndex() {
     error,
     refetch,
     isRestDay,
+    today_extra_sessions,
   } = useWeeklyMuraja();
+
+  const { items: surahData } = useLoadSurahData();
 
   const {
     state: dashboardState,
@@ -54,36 +58,20 @@ export default function MurajaIndex() {
       refetchAll();
     }, [refetchAll])
   );
+  useAppActiveRefresh(useCallback(() => {
+    refetchAll();
+  }, [refetchAll]));
 
-  const { updateLog, isUpdating } = useMurajaOperation();
   const { alertConfig, hideAlert } = useAlert();
-  const [qualityModalVisible, setQualityModalVisible] = useState(false);
   const { push } = useNavigate();
 
-  const handleUpdate = async (status: "completed" | "pending" | "missed", quality?: number) => {
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const isCompleted = status === "completed";
-
-    if (!weeklyPlan || !todayTask) return;
-    try {
-      await updateLog({
-        plan_id: weeklyPlan?.id,
-        date: todayStr,
-        start_page: todayTask.startPage,
-        end_page: isCompleted ? todayTask.endPage : todayTask.startPage,
-        completed_pages: isCompleted ? (weeklyPlan.planned_pages_per_day || 0) : 0,
-        actual_time_min: weeklyPlan.estimated_time_min || 0,
-        status: status,
-        is_catchup: todayTask.isCatchup ? 1 : 0,
-        sync_status: 0,
-        remote_id: null,
-        mistakes_count: 0,
-        hesitation_count: 0,
-        quality_score: quality
-      });
-    } catch (err: any) {
-      console.log("Undo/Redo failed", err);
-    }
+  const handleTakeTest = () => {
+    if (!todayTask) return;
+    const pages = Array.from(
+      { length: todayTask.endPage - todayTask.startPage + 1 },
+      (_, i) => todayTask.startPage + i,
+    );
+    push(`/(app)/test/exam?pages=${JSON.stringify(pages)}&type=MURAJA`);
   };
 
   if (isStateLoading)
@@ -110,45 +98,69 @@ export default function MurajaIndex() {
     : `${todayTask?.startSurah} – ${todayTask?.endSurah}`;
 
   if (weeklyPlan) {
-    const isEvalDue = dashboardState.type === 'EVALUATION_DUE';
-    const isCompDue = dashboardState.type === 'PLAN_FINISHED';
 
     return (
       <Screen>
         <ScreenContent>
           <View className="mb-12">
-            <WeeklyOverviewCard weeklyPlan={weeklyPlan} />
+            <WeeklyOverviewCard weeklyPlan={weeklyPlan} stats={stats ?? null} />
 
             <View className="mt-6 mb-4">
               <SectionHeader title="Next Milestone" />
-              {isEvalDue ? (
+              {dashboardState.type === 'EVALUATION_DUE' ? (
                 <EvaluationRequiredCard type="muraja" />
-              ) : isCompDue ? (
+              ) : dashboardState.type === 'PLAN_FINISHED' ? (
                  <PlanEndCard activityType="MURAJA" localRefId={weeklyPlan.id} title="Muraja Plan" />
-              ) : (dashboardState.type === 'TODAY_TASK' && todayTask) ? (
-                <ActionTaskCard
-                  typeLabel="Muraja'a"
-                  title={title ?? ''}
-                  subTitle={`Pages ${todayTask.startPage} – ${todayTask.endPage}`}
-                  status={todayTask.status} 
-                  isCatchup={todayTask.isCatchup}
-                  isLoading={isUpdating}
-                  onDone={() => {
-                    if (todayTask.status === "completed" || todayTask.status === "partial") {
-                        handleUpdate("pending");
-                    } else {
-                        setQualityModalVisible(true);
-                    }
-                  }}
-                  onStart={() => {
-                    push(`/(app)/quran/reader?page=${todayTask.startPage}&planId=${weeklyPlan.id}&type=muraja&start=${todayTask.startPage}&end=${todayTask.endPage}`);
-                  }}
-                  onDetails={() => push("/(app)/muraja/log")}
-                />
-              ) : (
+              ) : (dashboardState.type === 'COMPLETED_TODAY' || dashboardState.type === 'PLANNED_DAY' || dashboardState.type === 'CATCHUP_DAY') ? (
+                <View className="gap-y-3">
+                  <MurajaActionCard
+                    todayPlan={dashboardState.task}
+                    weeklyPlan={weeklyPlan}
+                    onDetails={() => push("/(app)/muraja/log")}
+                  />
+                  <Button
+                    variant="outline"
+                    onPress={handleTakeTest}
+                    className="border-primary/20"
+                  >
+                    <Ionicons name="school-outline" size={17} color="#276359" />
+                    <Text className="text-primary">Take Today's Test</Text>
+                  </Button>
+                </View>
+              ) : dashboardState.type === 'REST_DAY' ? (
                 <RestDayCardSingle type="muraja" onLog={() => push("/(app)/muraja/log")} />
-              )}
+              ) : null}
             </View>
+
+            {today_extra_sessions && today_extra_sessions.length > 0 && (
+              <View className="mt-6 mb-4">
+                <SectionHeader title="Extra Sessions" />
+                <View className="gap-y-3">
+                  {today_extra_sessions.map((session: any) => {
+                    const startS = getSurahByPage(session.start_page, surahData) ?? "";
+                    const endPage = session.start_page + session.completed_pages - 1;
+                    const endS = getSurahByPage(endPage, surahData) ?? "";
+                    const title = startS === endS ? startS : `${startS} – ${endS}`;
+                    const subTitle = `${session.completed_pages} pages done · ${session.start_page}–${endPage}`;
+                    
+                    return (
+                      <ActionTaskCard
+                        key={session.id}
+                        typeLabel="Extra Session"
+                        title={title}
+                        subTitle={subTitle}
+                        status="completed"
+                        isLoading={false}
+                        onDone={() => {}}
+                        onStart={() => push(`/(app)/quran/reader?page=${session.start_page}&type=muraja&start=${session.start_page}&end=${endPage}`)}
+                        onDetails={() => {}}
+                        hideActionButtons={true}
+                      />
+                    );
+                  })}
+                </View>
+              </View>
+            )}
 
             <View className="mt-10 mb-2 px-1">
               <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
@@ -182,10 +194,10 @@ export default function MurajaIndex() {
                   icon="book-outline"
                 />
                 <StatCard
-                  title="Current Streak"
-                  value={stats?.streak ?? 0}
-                  unit="Days"
-                  icon="flame-outline"
+                  title="Accuracy"
+                  value={stats?.accuracy ?? 100}
+                  unit="Score"
+                  icon="trophy-outline"
                 />
                 <StatCard
                   title="Missed"
@@ -202,13 +214,13 @@ export default function MurajaIndex() {
         <ScreenFooter>
           <View className="flex-row gap-x-3">
             <Button
-              className={`flex-1 shadow-lg ${(isEvalDue || isCompDue) ? 'opacity-50' : 'shadow-primary/20'}`}
-              onPress={() => !(isEvalDue || isCompDue) && push(`/(app)/muraja/log`)}
-              disabled={isEvalDue || isCompDue}
+              className={`flex-1 shadow-lg ${(dashboardState.type === 'EVALUATION_DUE' || dashboardState.type === 'PLAN_FINISHED') ? 'opacity-50' : 'shadow-primary/20'}`}
+              onPress={() => !(dashboardState.type === 'EVALUATION_DUE' || dashboardState.type === 'PLAN_FINISHED') && push(`/(app)/muraja/log`)}
+              disabled={dashboardState.type === 'EVALUATION_DUE' || dashboardState.type === 'PLAN_FINISHED'}
             >
               <Ionicons name="add-circle" size={20} color="white" />
               <Text className="text-white">
-                 {isEvalDue ? 'Test Required' : isCompDue ? 'Plan Completed' : 'Log Progress'}
+                 {dashboardState.type === 'EVALUATION_DUE' ? 'Test Required' : dashboardState.type === 'PLAN_FINISHED' ? 'Plan Completed' : 'Log Progress'}
               </Text>
             </Button>
 
@@ -224,15 +236,6 @@ export default function MurajaIndex() {
             </Button>
           </View>
         </ScreenFooter>
-        <QualityModal
-          visible={qualityModalVisible}
-          onClose={() => setQualityModalVisible(false)}
-          onSelect={(score) => {
-            setQualityModalVisible(false);
-            handleUpdate("completed", score);
-          }}
-          title="Rate your Muraja session"
-        />
         <Alert {...alertConfig} onCancel={hideAlert} confirmText="OK" />
       </Screen>
     );

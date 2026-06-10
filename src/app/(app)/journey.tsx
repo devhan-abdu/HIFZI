@@ -16,6 +16,7 @@ import { SyncStatusPill } from "@/src/components/common/SyncStatusPill";
 import { AchievementSection } from "@/src/components/dashboard/AchievementSection";
 import { useUserBadges } from "@/src/hooks/useUserBadges";
 import { useNavigate } from "@/src/hooks/useNavigate";
+import { useAppActiveRefresh } from "@/src/hooks/useAppActiveRefresh";
 
 function SectionTitle({ children }: { children: string }) {
   return (
@@ -48,6 +49,9 @@ export default function JourneyScreen() {
       refetch();
     }, [refetch]),
   );
+  useAppActiveRefresh(useCallback(() => {
+    refetch();
+  }, [refetch]));
 
   // Active plan = first plan sorted as active (journeyService sorts active first)
   const activePlan = data?.plans.find((p) => p.status === "active") ?? null;
