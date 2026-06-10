@@ -1,30 +1,37 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/src/components/common/ui/Text";
 import { View } from "react-native";
-import { format } from "date-fns";
 import { IWeeklyPlanDashboardData } from "../types";
 
 export const WeeklyOverviewCard = ({
   weeklyPlan,
+  stats,
 }: {
   weeklyPlan: IWeeklyPlanDashboardData;
+  stats?: {
+    overAllProgress: string;
+    totalCompletedPages: number;
+    totalRangePages: number;
+    performanceStatus: 'ahead' | 'behind' | 'on-track';
+    accuracy: number;
+  } | null;
 }) => {
+  const progressPct = parseFloat(stats?.overAllProgress ?? "0");
+  const completed = stats?.totalCompletedPages ?? 0;
+  const total = stats?.totalRangePages ?? (weeklyPlan.weeklyTargetPages ?? 0);
+  const perf = stats?.performanceStatus ?? 'on-track';
 
-  const parseDate = (dateStr: string | null | undefined) => {
-    if (!dateStr) return "N/A";
-    try {
-      return format(new Date(dateStr), "MMM dd, yyyy");
-    } catch {
-      return dateStr;
-    }
-  };
+  const paceLabel = perf === 'ahead' ? 'Ahead' : perf === 'behind' ? 'Behind' : 'On Track';
+  const paceIcon = perf === 'ahead' ? 'trending-up' : perf === 'behind' ? 'trending-down' : 'remove';
+  const paceBg = perf === 'ahead' ? 'bg-emerald-500/20' : perf === 'behind' ? 'bg-amber-500/20' : 'bg-blue-500/20';
 
   return (
     <View className="bg-primary rounded-[40px] p-7 mb-8 shadow-2xl shadow-primary/40 overflow-hidden relative border border-white/5">
       <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
-      
-      <View className="flex-row justify-between items-end mb-6">
-        <View className="flex-1">
+
+      {/* Header row */}
+      <View className="flex-row justify-between items-start mb-6">
+        <View className="flex-1 pr-3">
           <Text className="text-white/50 uppercase tracking-[2px] text-[9px] mb-1.5">
             Plan Range
           </Text>
@@ -35,36 +42,46 @@ export const WeeklyOverviewCard = ({
           </View>
         </View>
 
-        <View className="items-end">
-           <Text className="text-white/50 uppercase tracking-[2px] text-[9px] mb-1.5">
-            Est. Completion
-          </Text>
-          <Text className="text-white text-xl tracking-tighter">
-            {parseDate(weeklyPlan.week_end_date)}
-          </Text>
+        {/* Pace badge */}
+        <View className={`flex-row items-center gap-1 px-2.5 py-1.5 rounded-full ${paceBg} border border-white/10`}>
+          <Ionicons name={paceIcon as any} size={11} color="rgba(255,255,255,0.8)" />
+          <Text className="text-white/80 text-[9px] uppercase tracking-wider">{paceLabel}</Text>
         </View>
       </View>
 
-      <View className="mb-6">
+      {/* Pages counter */}
+      <View className="mb-4">
         <Text className="text-white/40 uppercase tracking-widest text-[9px] mb-1">
-          Plan Target Volume
+          Reviewed in this cycle
         </Text>
         <Text className="text-white text-4xl tracking-tighter">
-          {weeklyPlan.weeklyTargetPages} <Text className="text-white/40 text-xl">Pages</Text>
+          {completed}{" "}
+          <Text className="text-white/40 text-xl">/ {total} pages</Text>
         </Text>
       </View>
 
-      <View className="w-full h-[2px] bg-white/10 rounded-full mb-8 overflow-hidden" />
+      {/* Linear progress bar */}
+      <View className="mb-6">
+        <View className="flex-row justify-between mb-1.5">
+          <Text className="text-white/40 text-[9px] uppercase tracking-widest">Progress</Text>
+          <Text className="text-white/70 text-[9px]">{progressPct.toFixed(0)}%</Text>
+        </View>
+        <View className="w-full h-1.5 bg-white/15 rounded-full overflow-hidden">
+          <View
+            className="h-full bg-white rounded-full"
+            style={{ width: `${Math.min(100, progressPct)}%` }}
+          />
+        </View>
+      </View>
 
+      <View className="w-full h-[1px] bg-white/10 rounded-full mb-6" />
+
+      {/* Stats row */}
       <View className="flex-row justify-between items-center">
         <View className="flex-1 items-center border-r border-white/10">
           <View className="flex-row items-center gap-1.5 mb-1">
-            <Ionicons
-              name="calendar-outline"
-              size={12}
-              color="rgba(255,255,255,0.6)"
-            />
-            <Text className="text-white text-sm ">{weeklyPlan.totalDays}</Text>
+            <Ionicons name="calendar-outline" size={12} color="rgba(255,255,255,0.6)" />
+            <Text className="text-white text-sm">{weeklyPlan.totalDays}</Text>
           </View>
           <Text className="text-white/40 text-[8px] uppercase tracking-[1.5px]">
             Days/Wk
@@ -73,12 +90,8 @@ export const WeeklyOverviewCard = ({
 
         <View className="flex-1 items-center border-r border-white/10">
           <View className="flex-row items-center gap-1.5 mb-1">
-            <Ionicons
-              name="time-outline"
-              size={12}
-              color="rgba(255,255,255,0.6)"
-            />
-            <Text className="text-white text-sm ">
+            <Ionicons name="time-outline" size={12} color="rgba(255,255,255,0.6)" />
+            <Text className="text-white text-sm">
               {weeklyPlan.estimated_time_min}m
             </Text>
           </View>
@@ -89,12 +102,8 @@ export const WeeklyOverviewCard = ({
 
         <View className="flex-1 items-center">
           <View className="flex-row items-center gap-1.5 mb-1">
-            <Ionicons
-              name="book-outline"
-              size={12}
-              color="rgba(255,255,255,0.6)"
-            />
-            <Text className="text-white text-sm ">
+            <Ionicons name="book-outline" size={12} color="rgba(255,255,255,0.6)" />
+            <Text className="text-white text-sm">
               {weeklyPlan.planned_pages_per_day}
             </Text>
           </View>

@@ -46,7 +46,7 @@ export default function MurajaEmptyState() {
               onPress={() => push("/(app)/muraja/create-muraja-plan")}
               className="bg-primary h-14 rounded-xl flex-row items-center justify-center shadow-sm active:opacity-90 active:scale-[0.98]"
             >
-              <Text className="text-white  text-base mr-2">Create Weekly Plan</Text>
+              <Text className="text-white  text-base mr-2">Create Muraja Plan</Text>
               <Ionicons name="arrow-forward" size={18} color="white" />
             </Pressable>
 

@@ -20,9 +20,23 @@ export function useCreatePlan() {
         }
     });
 
+    const updateMutation = useMutation({
+        mutationFn: async ({ planId, payload }: { planId: number; payload: Partial<IWeeklyMurajaPLan> }) => {
+            return await murajaService.updatePlan(planId, payload);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["muraja-dashboard", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["muraja-review", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["habit-progress", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["user-stats", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["activity-plans", user?.id] });
+        }
+    });
+
     return {
         createPlan: mutation.mutateAsync,
-        isCreating: mutation.isPending,
-        error: mutation.error
+        updatePlan: updateMutation.mutateAsync,
+        isCreating: mutation.isPending || updateMutation.isPending,
+        error: mutation.error || updateMutation.error
     };
 }

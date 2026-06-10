@@ -14,6 +14,7 @@ import {
     getPerformanceStatus,
     calculateTodayTask,
     getLocalDateString,
+    calculateExpectedPages,
 } from "../utils/murajaAnalytics";
 
 export const useWeeklyMuraja = () => {
@@ -85,7 +86,19 @@ export const useWeeklyMuraja = () => {
             (l: any) => l.status === "missed" || (l.status === "pending" && l.date < todayStr),
         ).length;
 
-        const performanceStatus = getPerformanceStatus(totalCompletedPages - (activeDays.length * (planned_pages_per_day ?? 1)));
+        // Accuracy: same formula as Hifz — what % of pages attempted were completed
+        const totalMissedPages = missedDaysCount * (planned_pages_per_day ?? 1);
+        const accuracy = (totalCompletedPages + totalMissedPages) === 0
+            ? 100
+            : Math.min(Math.round((totalCompletedPages / (totalCompletedPages + totalMissedPages)) * 100), 100);
+
+        const expectedPages = calculateExpectedPages(
+            week_start_date ?? "",
+            activeDays,
+            planned_pages_per_day ?? 1,
+            today
+        );
+        const performanceStatus = getPerformanceStatus(totalCompletedPages - expectedPages);
 
         // ── Today's Task (range-based, with catch-up) ────────────────────────
         const todayTask = isEvaluationDay
@@ -158,6 +171,7 @@ export const useWeeklyMuraja = () => {
                 totalCompletedPages,
                 totalRangePages,
                 performanceStatus,
+                accuracy,
                 streak: muraja_current_streak,
                 overAllProgress,
                 isEvaluationDay,
@@ -173,6 +187,7 @@ export const useWeeklyMuraja = () => {
             weekProgress: dayProgress, // backward compat alias
             isRestDay,
             hasMissedPages,
+            today_extra_sessions: data.today_extra_sessions ?? [],
         };
     }, [data, surah]);
 

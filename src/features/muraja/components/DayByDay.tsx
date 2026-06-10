@@ -21,18 +21,15 @@ export function DayByDay({ progress }: { progress: IMurajaDayStatus[] | null}) {
           <View key={day.date} className="items-center">
             <View
               className={`w-9 h-9 rounded-full items-center justify-center mb-2 
-                ${day.isToday ? "border-2 border-primary border-dashed" : ""}
-                ${isCompleted ? (day.isToday ? "bg-primary/10" : "bg-primary") : ""}
-                ${isMissed ? "bg-red-50" : ""}
-                ${!day.isToday && isMissed ? "border border-red-100" : ""}
-                ${isRest ? "bg-gray-50" : ""}
-                ${!day.isToday && isRest ? "border border-gray-200" : ""}
-                ${isPending ? "bg-primary/5" : ""}
-                ${!day.isToday && isPending ? "border border-gray-200" : ""}
+                ${day.isToday && !isCompleted && !isMissed ? "border-2 border-primary border-dashed" : ""}
+                ${isCompleted ? "bg-primary" : ""}
+                ${isMissed ? "bg-red-50 border border-red-100" : ""}
+                ${isRest ? "bg-gray-50 border border-gray-200" : ""}
+                ${isPending ? "bg-primary/5 border border-gray-200" : ""}
               `}
             >
               {isCompleted ? (
-                <Ionicons name="checkmark" size={16} color={day.isToday ? "#276359" : "white"} />
+                <Ionicons name="checkmark" size={16} color="white" />
               ) : isMissed ? (
                 <Ionicons name="close" size={14} color="#f87171" />
               ) : isRest ? (

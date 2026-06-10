@@ -346,24 +346,41 @@ export function calculateTodayTask(params: {
     // If today's log already exists in the database, return it immediately
     if (todayLog) {
         const completed = todayLog.completedPages ?? todayLog.completed_pages ?? 0;
-        const status = todayLog.status as 'pending' | 'completed' | 'partial' | 'missed';
-        const startPageVal = todayLog.startPage ?? todayLog.start_page ?? startPage;
-        
-        // Calculate dynamic end page based on completed pages or fallback to quota
-        const quotaEndVal = Math.min(startPageVal + plannedPagesPerDay - 1, endPage);
-        const actualEnd = completed > 0 ? (startPageVal + completed - 1) : quotaEndVal;
-        const endPageVal = Math.max(quotaEndVal, actualEnd);
+        const rawStatus = todayLog.status as 'pending' | 'completed' | 'partial' | 'missed';
+        const loggedStartPage = todayLog.startPage ?? todayLog.start_page ?? startPage;
+        // The actual number of pages the plan required today
+        const derivedLoggedEndPage = Math.min(loggedStartPage + plannedPagesPerDay - 1, endPage);
+        const loggedEndPage = todayLog.endPage ?? todayLog.end_page ?? derivedLoggedEndPage;
+
+        const planTargetStart = Math.min(loggedStartPage, loggedEndPage);
+        const planTargetEnd = Math.max(loggedStartPage, loggedEndPage);
+        // The actual number of pages the plan required today
+        const plannedCount = planTargetEnd - planTargetStart + 1;
+
+        // ── Actual logged range ───────────────────────────────────────────────
+        // "completed" pages is what was stored; derive the actual end from it.
+        const actualEnd = completed > 0 ? (loggedStartPage + completed - 1) : planTargetEnd;
+        const displayEnd = Math.max(planTargetEnd, actualEnd);
+
+        // ── Auto-derive status from page coverage when status is ambiguous ────
+        // Guard against stale "pending" status that never got updated
+        let derivedStatus = rawStatus;
+        if (rawStatus === 'pending' || !rawStatus) {
+            if (completed === 0) derivedStatus = 'missed';
+            else if (completed >= plannedCount) derivedStatus = 'completed';
+            else derivedStatus = 'partial';
+        }
 
         return {
-            isCompleted: status === 'completed',
-            isCatchup: todayLog.isCatchup ?? missedPages > 0,
-            status,
-            startPage: startPageVal,
-            endPage: endPageVal,
-            quotaEnd: quotaEndVal,
+            isCompleted: derivedStatus === 'completed',
+            isCatchup: !!(todayLog.isCatchup != null ? todayLog.isCatchup : todayLog.is_catchup === 1) || missedPages > 0,
+            status: derivedStatus,
+            startPage: loggedStartPage,
+            endPage: displayEnd,
+            quotaEnd: planTargetEnd,  
             completedPages: completed,
-            startSurah: getSurahByPage(startPageVal, surahs) ?? '',
-            endSurah: getSurahByPage(endPageVal, surahs) ?? '',
+            startSurah: getSurahByPage(loggedStartPage, surahs) ?? '',
+            endSurah: getSurahByPage(displayEnd, surahs) ?? '',
             isVirtualTask: false,
             missedPages,
         };
@@ -395,8 +412,22 @@ export function calculateTodayTask(params: {
                 missedPages,
             };
         }
-        // True rest day
-        return null;
+        // True rest day - return the next logical task so users can log extra sessions
+        const quotaEnd = Math.min(displayStart + plannedPagesPerDay - 1, endPage);
+        return {
+            isCompleted: false,
+            isCatchup: false,
+            status: 'pending' as const,
+            startPage: displayStart,
+            endPage: quotaEnd,
+            quotaEnd,
+            completedPages: 0,
+            startSurah: getSurahByPage(displayStart, surahs) ?? '',
+            endSurah: getSurahByPage(quotaEnd, surahs) ?? '',
+            isVirtualTask: true,
+            isRestDayTask: true,
+            missedPages,
+        };
     }
 
     // ── Scheduled day ─────────────────────────────────────────────────────
