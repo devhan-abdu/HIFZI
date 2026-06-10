@@ -1,5 +1,6 @@
 import { useSession } from "@/src/hooks/useSession";
 import { useNotifications } from "@/src/hooks/useNotifications";
+import { useNotificationPermissions } from "@/src/hooks/useNotificationPermissions";
 import { supabase } from "@/src/lib/supabase";
 import { useState } from "react";
 import { View, Pressable, Modal } from "react-native";
@@ -19,6 +20,7 @@ export const Header = ({
   const insets = useSafeAreaInsets();
   const { user } = useSession();
   const { unreadCount } = useNotifications();
+  const { isFullyEnabled, togglePreference } = useNotificationPermissions();
   const { push } = useNavigate();
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -92,6 +94,27 @@ export const Header = ({
               <Ionicons name="map-outline" size={18} color="#276359" />
               <Text className="text-slate-900 text-sm ml-3">Journey</Text>
             </Pressable>
+            
+            <Pressable
+              onPress={() => {
+                togglePreference(!isFullyEnabled);
+              }}
+              className="flex-row items-center justify-between px-4 py-3.5 border-b border-slate-100 active:bg-slate-50"
+            >
+              <View className="flex-row items-center">
+                <Ionicons 
+                  name={isFullyEnabled ? "notifications" : "notifications-off-outline"} 
+                  size={18} 
+                  color={isFullyEnabled ? "#276359" : "#64748b"} 
+                />
+                <Text className="text-slate-900 text-sm ml-3">Reminders</Text>
+              </View>
+              {/* Custom simple toggle UI */}
+              <View className={`w-10 h-6 rounded-full p-1 justify-center ${isFullyEnabled ? 'bg-primary' : 'bg-slate-200'}`}>
+                <View className={`w-4 h-4 rounded-full bg-white shadow-sm transition-all ${isFullyEnabled ? 'ml-auto' : ''}`} />
+              </View>
+            </Pressable>
+
             <Pressable
               onPress={() => {
                 setMenuOpen(false);

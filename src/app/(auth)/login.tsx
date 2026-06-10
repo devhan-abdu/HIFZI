@@ -17,17 +17,19 @@ import { ProblemSlide } from "@/src/features/onboarding/slides/ProblemSlide";
 import { HifzSlide } from "@/src/features/onboarding/slides/HifzSlide";
 import { HeatmapSlide } from "@/src/features/onboarding/slides/HeatmapSlide";
 import { TrustSlide } from "@/src/features/onboarding/slides/TrustSlide";
+import { NotificationSlide } from "@/src/features/onboarding/slides/NotificationSlide";
 import { DotIndicator } from "@/src/features/onboarding/DotIndicator";
 
 const { width } = Dimensions.get("window");
 const HAS_SEEN_KEY = "@hifzi/hasSeenIntro";
-const SLIDE_COUNT = 5;
+const SLIDE_COUNT = 6;
 
 const SLIDES = [
   { key: "hook", component: HookSlide, dark: true },
   { key: "problem", component: ProblemSlide, dark: true },
   { key: "hifz", component: HifzSlide, dark: true },
   { key: "heatmap", component: HeatmapSlide, dark: true },
+  { key: "notifications", component: NotificationSlide, dark: true },
   { key: "trust", component: TrustSlide, dark: true },
 ];
 
@@ -98,9 +100,20 @@ export default function IntroScreen() {
           offset: width * index,
           index,
         })}
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           const SlideComponent = item.component;
-          return <SlideComponent />;
+          return (
+            <SlideComponent
+              onNext={() => {
+                if (index < SLIDE_COUNT - 1) {
+                  flatListRef.current?.scrollToIndex({
+                    index: index + 1,
+                    animated: true,
+                  });
+                }
+              }}
+            />
+          );
         }}
       />
 

@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Pressable,
-  TextInput,
-  View,
-  ActivityIndicator,
-} from "react-native";
+import { Pressable, TextInput, View, ActivityIndicator } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -39,12 +34,18 @@ import {
 import { SectionHeader } from "@/src/components/SectionHeader";
 import { useAlert } from "@/src/hooks/useAlert";
 import { Alert } from "@/src/components/common/Alert";
+import { useNotificationPermissions } from "@/src/hooks/useNotificationPermissions";
+import { NotificationPermissionModal } from "@/src/components/common/NotificationPermissionModal";
 
 export default function CreateWeeklyPlan() {
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [notificationModalLoading, setNotificationModalLoading] =
+    useState(false);
   const { user } = useSession();
   const { items } = useLoadSurahData();
   const { createPlan, updatePlan, isCreating } = useCreatePlan();
+  const { isFullyEnabled, togglePreference } = useNotificationPermissions();
 
   const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
 
@@ -87,7 +88,7 @@ export default function CreateWeeklyPlan() {
   const selectedEndSurah = useWatch({ control, name: "end_surah" });
   const selectedStartPage = useWatch({ control, name: "start_page" });
   const selectedEndPage = useWatch({ control, name: "end_page" });
-  const selectedEvalDay = useWatch({ control, name: 'evaluation_day' });
+  const selectedEvalDay = useWatch({ control, name: "evaluation_day" });
   const weekStart = useWatch({ control, name: "week_start_date" });
 
   React.useEffect(() => {
@@ -122,20 +123,25 @@ export default function CreateWeeklyPlan() {
   }, [selectedSurah]);
 
   React.useEffect(() => {
-    const currentDays = getValues('selectedDays') || [];
+    const currentDays = getValues("selectedDays") || [];
     if (currentDays.includes(selectedEvalDay)) {
-      setValue('selectedDays', currentDays.filter(d => d !== selectedEvalDay));
+      setValue(
+        "selectedDays",
+        currentDays.filter((d) => d !== selectedEvalDay),
+      );
     }
   }, [selectedEvalDay]);
 
   useEffect(() => {
     if (existingPlan) {
-      const parsedDays = typeof existingPlan.selectedDays === "string"
-        ? JSON.parse(existingPlan.selectedDays as any)
+      const parsedDays =
+        typeof existingPlan.selectedDays === "string" ?
+          JSON.parse(existingPlan.selectedDays as any)
         : (existingPlan.selectedDays ?? []);
 
       reset({
-        week_start_date: existingPlan.weekStartDate ?? new Date().toISOString().slice(0, 10),
+        week_start_date:
+          existingPlan.weekStartDate ?? new Date().toISOString().slice(0, 10),
         planned_pages_per_day: existingPlan.plannedPagesPerDay ?? 20,
         start_page: existingPlan.startPage ?? 1,
         end_page: existingPlan.endPage ?? 604,
@@ -146,8 +152,18 @@ export default function CreateWeeklyPlan() {
         preferred_time: existingPlan.preferredTime ?? "fajr",
         is_custom_time: existingPlan.isCustomTime ?? false,
         evaluation_day: existingPlan.evaluationDay ?? 5,
-        start_surah: items.find((s) => s.startingPage <= (existingPlan.startPage ?? 1) && s.endingPage >= (existingPlan.startPage ?? 1))?.number ?? 1,
-        end_surah: items.find((s) => s.startingPage <= (existingPlan.endPage ?? 604) && s.endingPage >= (existingPlan.endPage ?? 604))?.number ?? 114,
+        start_surah:
+          items.find(
+            (s) =>
+              s.startingPage <= (existingPlan.startPage ?? 1) &&
+              s.endingPage >= (existingPlan.startPage ?? 1),
+          )?.number ?? 1,
+        end_surah:
+          items.find(
+            (s) =>
+              s.startingPage <= (existingPlan.endPage ?? 604) &&
+              s.endingPage >= (existingPlan.endPage ?? 604),
+          )?.number ?? 114,
       });
     }
   }, [existingPlan, items]);
@@ -164,7 +180,7 @@ export default function CreateWeeklyPlan() {
       if (sessionNeeded > 1) {
         daysNeeded = Math.ceil(((sessionNeeded - 1) / weeklyFreq) * 7) + 1;
       }
-      
+
       const startDate = new Date(data.week_start_date);
       const endDate = new Date(startDate);
       endDate.setDate(startDate.getDate() + (daysNeeded - 1));
@@ -188,7 +204,7 @@ export default function CreateWeeklyPlan() {
         evaluationDay: data.evaluation_day,
       };
 
-      const isFundamentalChange = 
+      const isFundamentalChange =
         !existingPlan ||
         existingPlan.weekStartDate !== data.week_start_date ||
         existingPlan.startPage !== data.start_page ||
@@ -201,14 +217,25 @@ export default function CreateWeeklyPlan() {
       }
 
       showSuccess(
-        existingPlan && !isFundamentalChange ? "Plan Updated!" : "Plan Launched!",
-        existingPlan && !isFundamentalChange
-          ? "Your Muraja plan has been updated successfully."
-          : "Your Muraja journey has been created successfully.",
-        () => router.back(),
+        existingPlan && !isFundamentalChange ? "Plan Updated!" : (
+          "Plan Launched!"
+        ),
+        existingPlan && !isFundamentalChange ?
+          "Your Muraja plan has been updated successfully."
+        : "Your Muraja journey has been created successfully.",
+        () => {
+          if (!existingPlan && !isFullyEnabled) {
+            setShowNotificationModal(true);
+          } else {
+            router.replace("/(app)");
+          }
+        },
       );
     } catch (error: any) {
-      showError("Oops!", "We couldn't process your request right now. Please try again.");
+      showError(
+        "Oops!",
+        "We couldn't process your request right now. Please try again.",
+      );
     }
   };
 
@@ -237,7 +264,7 @@ export default function CreateWeeklyPlan() {
     <>
       <View className="h-16 px-4 flex-row items-center">
         <Pressable
-          onPress={() => router.replace('/(app)/muraja')}
+          onPress={() => router.replace("/(app)/muraja")}
           className="w-10 h-10 items-center justify-center rounded-full active:bg-slate-100"
         >
           <Ionicons name="arrow-back" size={24} color="#0f172a" />
@@ -284,7 +311,11 @@ export default function CreateWeeklyPlan() {
                         </Text>
                       </View>
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color="#0f172a" />
+                    <Ionicons
+                      name="chevron-forward"
+                      size={18}
+                      color="#0f172a"
+                    />
                   </Pressable>
                   <ErrorMessage error={errors.week_start_date} />
                   {showDatePicker && (
@@ -337,7 +368,11 @@ export default function CreateWeeklyPlan() {
               name="end_surah"
               render={({ field: { value, onChange } }) => (
                 <View>
-                  <SurahDropdown label="End Surah" surah={value} setSurah={onChange} />
+                  <SurahDropdown
+                    label="End Surah"
+                    surah={value}
+                    setSurah={onChange}
+                  />
                   <ErrorMessage error={errors.end_surah} />
                 </View>
               )}
@@ -389,11 +424,11 @@ export default function CreateWeeklyPlan() {
               name="preferred_time"
               control={control}
               render={({ field: { value, onChange } }) => (
-                <HabitTriggerSelector 
-                  value={value} 
-                  onChange={onChange} 
-                  isCustom={useWatch({ control, name: 'is_custom_time' })}
-                  setIsCustom={(val) => setValue('is_custom_time', val)}
+                <HabitTriggerSelector
+                  value={value}
+                  onChange={onChange}
+                  isCustom={useWatch({ control, name: "is_custom_time" })}
+                  setIsCustom={(val) => setValue("is_custom_time", val)}
                   error={errors.preferred_time?.message}
                 />
               )}
@@ -406,11 +441,11 @@ export default function CreateWeeklyPlan() {
                   <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-4 ml-1 ">
                     Weekly Commitment
                   </Text>
-                  <SelectDays 
-                    value={value ?? []} 
-                    onChange={onChange} 
+                  <SelectDays
+                    value={value ?? []}
+                    onChange={onChange}
                     mode="multi"
-                    disabledDay={useWatch({ control, name: 'evaluation_day' })}
+                    disabledDay={useWatch({ control, name: "evaluation_day" })}
                   />
                   <ErrorMessage error={errors.selectedDays} />
                 </View>
@@ -425,8 +460,8 @@ export default function CreateWeeklyPlan() {
                 name="evaluation_day"
                 control={control}
                 render={({ field: { value, onChange } }) => (
-                  <SelectDays 
-                    value={value ?? 4} 
+                  <SelectDays
+                    value={value ?? 4}
                     onChange={onChange}
                     mode="single"
                   />
@@ -434,7 +469,19 @@ export default function CreateWeeklyPlan() {
               />
               <ErrorMessage error={errors.evaluation_day} />
               <Text className="text-[10px] text-slate-400 mt-4 ml-1 italic leading-relaxed">
-                Your weekly progress will be evaluated every {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][useWatch({ control, name: 'evaluation_day' }) ?? 4]}.
+                Your weekly progress will be evaluated every{" "}
+                {
+                  [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                    "Sunday",
+                  ][useWatch({ control, name: "evaluation_day" }) ?? 4]
+                }
+                .
               </Text>
             </View>
           </View>
@@ -552,6 +599,24 @@ export default function CreateWeeklyPlan() {
       </Screen>
 
       <Alert {...alertConfig} onCancel={hideAlert} confirmText="OK" />
+      <NotificationPermissionModal
+        visible={showNotificationModal}
+        loading={notificationModalLoading}
+        onEnable={async () => {
+          setNotificationModalLoading(true);
+          try {
+            await togglePreference(true);
+            setShowNotificationModal(false);
+            router.replace("/(app)");
+          } finally {
+            setNotificationModalLoading(false);
+          }
+        }}
+        onSkip={() => {
+          setShowNotificationModal(false);
+          router.replace("/(app)");
+        }}
+      />
     </>
   );
 }

@@ -258,7 +258,9 @@ export const notificationService = {
     let title = "Great Work!";
     let message = `You've completed your ${data.habitType} session. Keep it up!`;
     let type: 'milestone' | 'warning' | 'xp' = 'milestone';
-    let eventKey = `consolidated:${data.habitType}:${this.toDateKey()}`;
+    // Use a millisecond timestamp as a nonce so eventKey is always unique and
+    // never silently dropped by the (userId, eventKey) unique constraint.
+    const nonce = Date.now();
 
     // Priority 1: Comeback Celebration!
     if (data.isComeback) {
@@ -269,19 +271,57 @@ export const notificationService = {
         `Every step back to the Quran is a victory. Welcome back, ${data.displayName}!`
       ];
       message = templates[Math.floor(Math.random() * templates.length)];
-      eventKey = `comeback_celebration:${data.habitType}:${this.toDateKey()}`;
+      const eventKey = `comeback_celebration:${data.habitType}:${this.toDateKey()}:${nonce}`;
+
+      const result = await notificationRepository.createNotification(userId, {
+        type,
+        title,
+        message,
+        eventKey
+      });
+      if (result) {
+        await notificationManager.sendLocal({
+          title: result.title,
+          body: result.body,
+          data: { userId, type, eventKey, title: result.title, message: result.body }
+        });
+      }
+      return;
     }
-    // Priority 2: Badges
-    else if (data.badges && data.badges.length > 0) {
-      const badge = data.badges[0];
-      title = "New Badge Earned!";
-      message = `Mubarak! You've earned the ${badge.badgeName} badge.`;
-      if (data.levelUp) message += ` and reached Level ${data.levelUp}!`;
-      else if (data.streak > 0 && data.streak % 5 === 0) message += ` on your ${data.streak}-day streak!`;
-      eventKey = `badge:${badge.badgeType}:${this.toDateKey()}`;
-    } 
+
+    // Priority 2: Badges — send a push for EACH badge individually so none are lost
+    if (data.badges && data.badges.length > 0) {
+      for (let i = 0; i < data.badges.length; i++) {
+        const badge = data.badges[i];
+        const badgeTitle = "New Badge Earned!";
+        let badgeMessage = `Mubarak! You've earned the ${badge.badgeName} badge.`;
+        // Only append extras to the first badge notification
+        if (i === 0) {
+          if (data.levelUp) badgeMessage += ` You also reached Level ${data.levelUp}!`;
+          else if (data.streak > 0 && data.streak % 5 === 0) badgeMessage += ` On your ${data.streak}-day streak!`;
+        }
+        // Each badge gets a unique eventKey via its own timestamp offset
+        const badgeEventKey = `badge:${badge.badgeType}:${this.toDateKey()}:${nonce + i}`;
+
+        const result = await notificationRepository.createNotification(userId, {
+          type: 'milestone',
+          title: badgeTitle,
+          message: badgeMessage,
+          eventKey: badgeEventKey
+        });
+        if (result) {
+          await notificationManager.sendLocal({
+            title: result.title,
+            body: result.body,
+            data: { userId, type: 'milestone', eventKey: badgeEventKey, title: result.title, message: result.body }
+          });
+        }
+      }
+      return;
+    }
+
     // Priority 3: Level Up
-    else if (data.levelUp) {
+    if (data.levelUp) {
       title = "Level Up!";
       const templates = [
         `Mubarak! You've reached Level ${data.levelUp}! Keep ascending.`,
@@ -290,10 +330,26 @@ export const notificationService = {
       ];
       message = templates[Math.floor(Math.random() * templates.length)];
       if (data.streak > 0 && data.streak % 5 === 0) message += ` - ${data.streak}-day streak!`;
-      eventKey = `levelup:${data.levelUp}:${this.toDateKey()}`;
+      const eventKey = `levelup:${data.levelUp}:${this.toDateKey()}:${nonce}`;
+
+      const result = await notificationRepository.createNotification(userId, {
+        type,
+        title,
+        message,
+        eventKey
+      });
+      if (result) {
+        await notificationManager.sendLocal({
+          title: result.title,
+          body: result.body,
+          data: { userId, type, eventKey, title: result.title, message: result.body }
+        });
+      }
+      return;
     }
+
     // Priority 4: Streak Milestone
-    else if (data.streak > 0 && data.streak % 5 === 0) {
+    if (data.streak > 0 && data.streak % 5 === 0) {
       title = "Streak Milestone";
       const templates = [
         `${data.displayName}! You're on a ${data.streak}-day streak! Keep going!`,
@@ -301,26 +357,25 @@ export const notificationService = {
         `Mashallah! A ${data.streak}-day streak. You're becoming a Muraja master.`
       ];
       message = templates[Math.floor(Math.random() * templates.length)];
-      eventKey = `milestone:${data.streak}:${this.toDateKey()}`;
-    } else {
-      // If none of the above, we don't send a notification (removing the "XP Earned" one)
+      const eventKey = `milestone:${data.streak}:${this.toDateKey()}:${nonce}`;
+
+      const result = await notificationRepository.createNotification(userId, {
+        type,
+        title,
+        message,
+        eventKey
+      });
+      if (result) {
+        await notificationManager.sendLocal({
+          title: result.title,
+          body: result.body,
+          data: { userId, type, eventKey, title: result.title, message: result.body }
+        });
+      }
       return;
     }
 
-    const result = await notificationRepository.createNotification(userId, {
-      type,
-      title,
-      message,
-      eventKey
-    });
-
-    if (result) {
-      await notificationManager.sendLocal({ 
-        title: result.title, 
-        body: result.body,
-        data: { userId, type, eventKey, title: result.title, message: result.body }
-      });
-    }
+    // None of the above conditions met — no notification sent
   },
 
   async refreshSchedules(userId: string) {
@@ -447,67 +502,73 @@ export const notificationService = {
   calculateStreaks(dates: string[], todayKey: string, selectedDays: number[] = [0,1,2,3,4,5,6]) {
     const uniqueSorted = Array.from(new Set(dates)).sort();
     const set = new Set(uniqueSorted);
-    
+
+    // ── Parse date string safely in LOCAL timezone (not UTC) ──────────────────
+    const parseLocal = (dateStr: string) => {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      return new Date(y, m - 1, d); // local midnight — no UTC shift
+    };
+
+    // ── Normalize day-of-week: JS getDay() = Sun=0…Sat=6
+    //    App selectedDays convention  = Mon=0…Sun=6
+    const toAppDay = (jsDay: number) => (jsDay + 6) % 7;
+
+    // ── Current streak: walk backwards from today ─────────────────────────────
     let current = 0;
-    let cursor = new Date(todayKey);
-    const cursorStr = this.toDateKey(cursor);
-    
-    // Safety check: if today is a working day and it's missed, does the streak break? 
-    // Usually we only break it if yesterday was missed.
-    // For a robust calculation backwards:
-    let isFirstDay = true;
-    while (true) {
-      const dayOfWeek = cursor.getDay();
-      const dateStr = this.toDateKey(cursor);
-      
-      if (set.has(dateStr)) {
-        current++;
-      } else {
-        if (selectedDays.includes(dayOfWeek)) {
-          // If it's today and we haven't done it yet, we don't break the streak immediately
-          if (isFirstDay && dateStr === todayKey) {
-            // Keep going, wait to see if yesterday was done
-          } else {
-            break; // Streak broken because a selected day was missed
-          }
-        }
-        // If it's not a selected day, we missed it but it doesn't break the streak.
-      }
-      isFirstDay = false;
+    const todayDate = parseLocal(todayKey);
+
+    // Start from yesterday if today has no log yet (grace: today is not yet over)
+    let cursor = new Date(todayDate);
+    if (!set.has(todayKey)) {
+      // Today is a planned day but not logged yet — check from yesterday
+      // (the streak may still be alive from yesterday)
       cursor.setDate(cursor.getDate() - 1);
-      
-      // Safety limit to prevent infinite loops (e.g. going back 5 years)
-      if (current === 0 && !isFirstDay && dateStr !== todayKey && !set.has(dateStr) && (new Date(todayKey).getTime() - cursor.getTime() > 10 * DAY_MS)) {
-        break; // If we go back 10 days and still 0, stop.
-      }
     }
 
-    // Longest streak calculation
+    for (let guard = 0; guard < 730; guard++) {
+      const appDay = toAppDay(cursor.getDay());
+      const dateStr = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`;
+
+      if (set.has(dateStr)) {
+        current++; // This day was logged — streak continues
+      } else {
+        if (selectedDays.includes(appDay)) {
+          break; // A required day was missed — streak is broken
+        }
+        // Rest/non-planned day — skip without breaking streak
+      }
+      cursor.setDate(cursor.getDate() - 1);
+
+      // Safety: if we've gone back 10 days with zero count, stop early
+      if (current === 0 && guard > 10) break;
+    }
+
+    // ── Longest streak: walk forward through all logged dates ─────────────────
     let longest = 0;
     let running = 0;
-    
-    // Re-evaluate longest streak accurately by walking forward from the oldest event
+
     if (uniqueSorted.length > 0) {
-      const start = new Date(uniqueSorted[0]);
-      const end = new Date(uniqueSorted[uniqueSorted.length - 1]);
-      let tempCursor = new Date(start);
-      
+      const start = parseLocal(uniqueSorted[0]);
+      const end = parseLocal(uniqueSorted[uniqueSorted.length - 1]);
+      const tempCursor = new Date(start);
+
       while (tempCursor <= end) {
-        const tempDayOfWeek = tempCursor.getDay();
-        const tempDateStr = this.toDateKey(tempCursor);
-        
+        const appDay = toAppDay(tempCursor.getDay());
+        const tempDateStr = `${tempCursor.getFullYear()}-${String(tempCursor.getMonth() + 1).padStart(2, '0')}-${String(tempCursor.getDate()).padStart(2, '0')}`;
+
         if (set.has(tempDateStr)) {
           running++;
           longest = Math.max(longest, running);
         } else {
-          if (selectedDays.includes(tempDayOfWeek)) {
-            running = 0; // Streak breaks only on missed selected days
+          if (selectedDays.includes(appDay)) {
+            running = 0; // Missed a required day — reset
           }
+          // Rest day — no reset
         }
         tempCursor.setDate(tempCursor.getDate() + 1);
       }
     }
-    
+
     return { current, longest };
   }
 };

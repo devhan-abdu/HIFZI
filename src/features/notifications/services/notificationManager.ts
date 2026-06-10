@@ -81,5 +81,13 @@ export const notificationManager = {
       await Notifications.cancelScheduledNotificationAsync(identifier);
     } catch (e) {
     }
+  },
+
+  async cancelAll() {
+    try {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+    } catch (e) {
+      console.error("Failed to cancel all notifications", e);
+    }
   }
 };

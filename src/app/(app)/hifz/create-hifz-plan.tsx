@@ -33,12 +33,17 @@ import { formatErrorMessage } from "@/src/utils/error-utils";
 import { useHifzPlan } from "@/src/features/hifz/hooks/useHifzPlan";
 import { HabitTriggerSelector } from "@/src/components/common/HabitTriggerSelector";
 import { SectionHeader } from "@/src/components/SectionHeader";
+import { useNotificationPermissions } from "@/src/hooks/useNotificationPermissions";
+import { NotificationPermissionModal } from "@/src/components/common/NotificationPermissionModal";
 
 export default function CreateHifzPlan() {
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [notificationModalLoading, setNotificationModalLoading] = useState(false);
   const { user } = useSession();
   const { hifz: existingPlan, isLoading } = useHifzPlan();
   const { savePlan, updatePlan, isSaving } = useSaveHifzPlanHifz();
+  const { isFullyEnabled, togglePreference } = useNotificationPermissions();
 
   const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
 
@@ -140,7 +145,13 @@ export default function CreateHifzPlan() {
         existingPlan && !isFundamentalChange 
           ? "Your Hifz plan has been updated successfully."
           : "Your new Hifz plan has been created successfully.",
-        () => router.back(),
+        () => {
+          if (!existingPlan && !isFullyEnabled) {
+            setShowNotificationModal(true);
+          } else {
+            router.replace("/(app)");
+          }
+        },
       );
     } catch (error: any) {
       showError("Error", formatErrorMessage(error));
@@ -408,6 +419,24 @@ export default function CreateHifzPlan() {
         </ScreenFooter>
       </Screen>
       <Alert {...alertConfig} onCancel={hideAlert} confirmText="OK" />
+      <NotificationPermissionModal
+        visible={showNotificationModal}
+        loading={notificationModalLoading}
+        onEnable={async () => {
+          setNotificationModalLoading(true);
+          try {
+            await togglePreference(true);
+            setShowNotificationModal(false);
+            router.replace("/(app)");
+          } finally {
+            setNotificationModalLoading(false);
+          }
+        }}
+        onSkip={() => {
+          setShowNotificationModal(false);
+          router.replace("/(app)");
+        }}
+      />
     </>
   );
 }
