@@ -2,10 +2,7 @@ import { supabase } from "@/src/lib/supabase";
 
 const BACKEND_BASE_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
-/**
- * QF API environment. Change to "production" to target apis.quran.foundation.
- * All service files read this — one place to flip.
- */
+
 export const QF_ENV: "prelive" | "production" = "prelive";
 
 export type QFOptions = {
@@ -61,7 +58,7 @@ export async function callQF(endpoint: string, options?: QFOptions) {
 
     if (!sessionToken) throw new Error("AUTH_REQUIRED");
 
-    const res = await fetch(`${BACKEND_BASE_URL}/qf-proxy-dev`, {
+    const res = await fetch(`${BACKEND_BASE_URL}/qf-proxy`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

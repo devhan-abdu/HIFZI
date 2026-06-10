@@ -52,7 +52,7 @@ export default function LoginButton() {
       if (response.type === "success") {
         setIsLoading(true);
         try {
-          const res = await fetch(`${BACKEND}/qf-login-dev`, {
+          const res = await fetch(`${BACKEND}/qf-login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
