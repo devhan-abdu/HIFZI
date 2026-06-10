@@ -27,8 +27,8 @@ export function DayByDay({ plan }: { plan: IHifzPlan }) {
           <View key={day.name} className="items-center">
             <View
               className={`w-9 h-9 rounded-full items-center justify-center mb-2 
-                ${day.isToday ? "border-2 border-primary border-dashed" : ""}
-                ${isCompleted ? (day.isToday ? "bg-primary/10" : "bg-primary") : ""}
+                ${day.isToday && !isCompleted && !isMissed ? "border-2 border-primary border-dashed" : ""}
+                ${isCompleted ? "bg-primary" : ""}
                 ${isMissed ? "bg-red-50" : ""}
                 ${!day.isToday && isMissed ? "border border-red-100" : ""}
                 ${isRest ? "bg-gray-50" : ""}
@@ -38,7 +38,7 @@ export function DayByDay({ plan }: { plan: IHifzPlan }) {
               `}
             >
               {isCompleted ? (
-                <Ionicons name="checkmark" size={16} color={day.isToday ? "#276359" : "white"} />
+                <Ionicons name="checkmark" size={16} color="white" />
               ) : isMissed ? (
                 <Ionicons name="close" size={14} color="#f87171" />
               ) : isRest ? (

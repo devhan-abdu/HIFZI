@@ -21,9 +21,23 @@ export function useSaveHifzPlanHifz() {
         }
     });
 
+    const updateMutation = useMutation({
+        mutationFn: async ({ planId, payload }: { planId: number; payload: Partial<IHifzPlan> }) => {
+            if (!user?.id) throw new Error("User not authenticated");
+            return await hifzService.updatePlan(planId, {
+                ...payload,
+                userId: user.id
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["hifz", user?.id] });
+        }
+    });
+
     return {
         savePlan: mutation.mutateAsync,
-        isSaving: mutation.isPending,
-        error: mutation.error
+        updatePlan: updateMutation.mutateAsync,
+        isSaving: mutation.isPending || updateMutation.isPending,
+        error: mutation.error || updateMutation.error
     };
 }

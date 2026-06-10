@@ -36,10 +36,13 @@ export interface IHifzPlan {
   hifzDailyLogs?: IHifzLog[]
 }
 export interface HifzQuestion {
- type: 'SEQUENCE' | 'BOUNDARY' | 'CHOICE';
+  type: 'SEQUENCE' | 'BOUNDARY' | 'CHOICE';
   question: string;
   answer: any;
   hint?: string;
+  page?: number;
+  crossesSurah?: boolean;
+  currentSoraid?: number;
 }
 
 export const HifzPlanSchema = Yup.object({

@@ -24,9 +24,7 @@ import { Switch } from "@/src/features/hifz/components/Switch";
 import { getTodayTask } from "@/src/features/hifz/utils/quran-logic";
 import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
 import { usePlanLifecycle } from "@/src/features/habits/hooks/usePlanLifecycle";
-import SurahDropdown, {
-  SurahPageDropdown,
-} from "@/src/features/muraja/components/SurahDropdown";
+
 
 export default function LogProgress() {
   const router = useRouter();
@@ -73,9 +71,12 @@ export default function LogProgress() {
   const isLocked =
     planState === "EVALUATION_DUE" || planState === "COMPLETION_DUE";
 
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayLog = plan?.hifzDailyLogs?.find((l) => l.date === todayStr);
+  const completedPages = todayLog ? (todayLog.actualPagesCompleted ?? 0) : 0;
+  const hasExistingProgress = completedPages > 0;
   const isRestDay =
     !hasReviewPrefill && (!logContext || logContext.isVirtualTask);
-  const hasExistingProgress = logContext && (logContext.completedPages ?? 0) > 0;
 
   const sessionMistakes = useReaderSessionStore((s) => s.mistakes);
   const sessionHesitations = useReaderSessionStore((s) => s.hesitations);
@@ -110,7 +111,7 @@ export default function LogProgress() {
     
     if (hasExistingProgress) {
         setStatus("completed");
-        setPages(Math.max(0, logContext.totalTarget - logContext.completedPages));
+        setPages(Math.max(0, logContext.totalTarget - completedPages));
     } else {
         setPages(logContext.totalTarget);
     }
@@ -207,12 +208,12 @@ export default function LogProgress() {
 
       const isMissed = status === "missed";
       const finalPages = isMissed ? 0 : (hasExistingProgress && sessionMode === "append" && !hasReviewPrefill
-        ? logContext.completedPages + pages 
+        ? completedPages + pages 
         : pages);
 
       const actualStartPage = hasReviewPrefill
         ? reviewStartPage
-        : (hasExistingProgress && sessionMode === "append" ? logContext.startPage : (logContext?.startPage ?? plan.startPage));
+        : (hasExistingProgress && sessionMode === "append" ? (todayLog?.actualStartPage ?? plan.startPage) : (logContext?.startPage ?? plan.startPage));
 
       const actualEndPage = hasReviewPrefill
         ? reviewStartPage + Math.max(0, finalPages - 1)
@@ -305,8 +306,8 @@ export default function LogProgress() {
             <View className="mb-8 p-4 bg-primary/5 border border-primary/10 rounded-2xl">
               <View className="flex-row items-center gap-3 mb-3">
                 <Ionicons name="information-circle" size={20} color="#276359" />
-                <Text className="text-primary text-sm font-medium">
-                  Today's Progress: {logContext.completedPages} pages logged
+                <Text className="text-primary text-sm ">
+                  Today's Progress: {completedPages} pages logged
                 </Text>
               </View>
               <View className="flex-row gap-2">
@@ -314,13 +315,13 @@ export default function LogProgress() {
                   onPress={() => setSessionMode("append")}
                   className={`flex-1 py-2 px-3 rounded-xl border ${sessionMode === "append" ? "bg-primary border-primary" : "bg-white border-slate-200"}`}
                 >
-                  <Text className={`text-center text-xs font-medium ${sessionMode === "append" ? "text-white" : "text-slate-600"}`}>Add (Continue)</Text>
+                  <Text className={`text-center text-xs  ${sessionMode === "append" ? "text-white" : "text-slate-600"}`}>Add (Continue)</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => setSessionMode("overwrite")}
                   className={`flex-1 py-2 px-3 rounded-xl border ${sessionMode === "overwrite" ? "bg-primary border-primary" : "bg-white border-slate-200"}`}
                 >
-                  <Text className={`text-center text-xs font-medium ${sessionMode === "overwrite" ? "text-white" : "text-slate-600"}`}>Overwrite (New)</Text>
+                  <Text className={`text-center text-xs  ${sessionMode === "overwrite" ? "text-white" : "text-slate-600"}`}>Overwrite (New)</Text>
                 </Pressable>
               </View>
             </View>

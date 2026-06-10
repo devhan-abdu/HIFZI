@@ -5,7 +5,10 @@ import { HifzQuestion } from "../types";
 import { generateHifzTest } from "../services/test";
 import { getAssetDb } from "@/src/lib/db/asset-client";
 
-export const  useHifzTest = (pages: number[]) => {
+export const  useHifzTest = (
+    pages: number[], 
+    pagePerformance?: Record<number, { score: number; attempts: number; lastTested: string }>
+) => {
     const db = useSQLiteContext()
     const [questions, setQuestions] = useState<HifzQuestion[]>([]);
     const [refreshKey, setRefreshKey] = useState(0);
@@ -25,7 +28,7 @@ export const  useHifzTest = (pages: number[]) => {
             try {
                 setLoading(true)
                 const assetDb = getAssetDb(db);
-                const data = await generateHifzTest(assetDb, pages)
+                const data = await generateHifzTest(assetDb, pages, pagePerformance)
                 setQuestions(data)
             } catch (e) {
                setError("Failed to generate test");

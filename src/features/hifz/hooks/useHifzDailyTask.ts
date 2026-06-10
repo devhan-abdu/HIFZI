@@ -42,7 +42,8 @@ export function useHifzDailyTask() {
     let isPlannedDay = hifz.selectedDays.includes(dayNumber);
     let isNextPlannedDay = false;
 
-    if (!isPlannedDay && hifz.selectedDays.length > 0) {
+    // If today is not a planned day and there is NO catchup needed, look for the next planned day task
+    if (!isPlannedDay && targetInfo.catchUpAmount === 0 && hifz.selectedDays.length > 0) {
       // Find the next planned day (from 1 to 7 days ahead)
       let daysToAdd = 1;
       let nextDay = (dayNumber + 1) % 7;
@@ -82,6 +83,7 @@ export function useHifzDailyTask() {
         isPlannedDay: false,
         isCatchup: false,
         isVirtualTask: true,
+        isNextPlannedDay: false,
       };
     }
 
@@ -89,7 +91,7 @@ export function useHifzDailyTask() {
       ...task,
       ...targetInfo,
       isCatchup: targetInfo.catchUpAmount > 0,
-      isVirtualTask: isNextPlannedDay ? false : !targetInfo.isPlannedDay,
+      isVirtualTask: isNextPlannedDay ? true : !targetInfo.isPlannedDay,
       isNextPlannedDay,
     };
   }, [hifz, surah, analytics]);
@@ -128,6 +130,21 @@ export function useHifzDailyTask() {
     enabled: !!hifz?.userId && !!reinforcementTask,
   });
 
+  const isRestDay = useMemo(() => {
+    if (!hifz) return false;
+    const dayNumber = (new Date().getDay() + 6) % 7;
+    const isPlannedToday = hifz.selectedDays.includes(dayNumber);
+    // It's a rest day if it's not planned today and there's no catchup for today
+    return !isPlannedToday && (!todayTask || !todayTask.isCatchup);
+  }, [hifz, todayTask]);
+
+  const hasTodayLog = useMemo(() => {
+    if (!hifz?.hifzDailyLogs) return false;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const log = hifz.hifzDailyLogs.find((l) => l.date === todayStr);
+    return !!log && (log.status === 'completed' || log.status === 'partial');
+  }, [hifz]);
+
   return {
     hifz,
     todayTask,
@@ -136,9 +153,11 @@ export function useHifzDailyTask() {
     srsSuggestions,
     dailyReviews,
     analytics,
+    hasTodayLog,
     isEvaluationDay: hifz
       ? (new Date().getDay() + 6) % 7 === (hifz.evaluationDay ?? 5)
       : false,
+    isRestDay,
     loading: isLoading || surahLoading,
     error,
     refetch,

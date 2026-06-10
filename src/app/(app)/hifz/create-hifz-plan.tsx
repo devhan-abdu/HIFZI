@@ -38,7 +38,7 @@ export default function CreateHifzPlan() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const { user } = useSession();
   const { hifz: existingPlan, isLoading } = useHifzPlan();
-  const { savePlan, isSaving } = useSaveHifzPlanHifz();
+  const { savePlan, updatePlan, isSaving } = useSaveHifzPlanHifz();
 
   const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
 
@@ -74,15 +74,17 @@ export default function CreateHifzPlan() {
     if (existingPlan) {
       reset({
         start_date: existingPlan.startDate,
-        selectedDays: existingPlan.selectedDays,
+        selectedDays: typeof existingPlan.selectedDays === "string" ? JSON.parse(existingPlan.selectedDays as any) : (existingPlan.selectedDays ?? []),
         pages_per_day: existingPlan.pagesPerDay,
-        start_surah: existingPlan.startSurah,
+        start_surah: items.find((s) => s.startingPage <= (existingPlan.startPage ?? 1) && s.endingPage >= (existingPlan.startPage ?? 1))?.number ?? existingPlan.startSurah,
         start_page: existingPlan.startPage,
         direction: existingPlan.direction,
         evaluation_day: existingPlan.evaluationDay ?? 6,
+        preferred_time: existingPlan.preferredTime ?? "fajr",
+        is_custom_time: existingPlan.isCustomTime ?? false,
       });
     }
-  }, [existingPlan, reset]);
+  }, [existingPlan, items]);
 
   useEffect(() => {
     if (startSurah && items.length > 0) {
@@ -91,14 +93,14 @@ export default function CreateHifzPlan() {
         setValue("start_page", found.startingPage);
       }
     }
-  }, [startSurah, items, setValue]);
+  }, [startSurah, items]);
 
   useEffect(() => {
     const currentDays = getValues('selectedDays') || [];
     if (currentDays.includes(selectedEvalDay)) {
       setValue('selectedDays', currentDays.filter((d: number) => d !== selectedEvalDay));
     }
-  }, [selectedEvalDay, setValue, getValues]);
+  }, [selectedEvalDay]);
 
   const onSubmit = async (data: HifzPlanSchemaFormType) => {
     if (!user?.id) return;
@@ -121,10 +123,23 @@ export default function CreateHifzPlan() {
         daysPerWeek: data.selectedDays.length,
       };
       
-      await savePlan(planData);
+      const isFundamentalChange = 
+        !existingPlan ||
+        existingPlan.startDate !== data.start_date ||
+        existingPlan.startPage !== data.start_page ||
+        existingPlan.totalPages !== stats.totalPages;
+
+      if (isFundamentalChange) {
+        await savePlan(planData);
+      } else {
+        await updatePlan({ planId: existingPlan.id!, payload: planData });
+      }
+
       showSuccess(
-        "Success",
-        existingPlan ? "Plan updated!" : "Journey started!",
+        existingPlan && !isFundamentalChange ? "Plan Updated!" : "Journey started!",
+        existingPlan && !isFundamentalChange 
+          ? "Your Hifz plan has been updated successfully."
+          : "Your new Hifz plan has been created successfully.",
         () => router.back(),
       );
     } catch (error: any) {

@@ -5,7 +5,15 @@ export const getTargetPage = (
   dailyRate: number,
   dayNumber: number
 ) => {
-  if (dailyRate <= 0) return 0;
+  if (dailyRate <= 0) {
+    return {
+      totalTarget: 0,
+      baseTarget: 0,
+      catchUpAmount: 0,
+      isPlannedDay: false,
+      hasBacklog: false
+    };
+  }
 
   const isPlannedDay = selectedDays.includes(dayNumber);
   const backlog = Math.max(0, plannedTotal - completedTotal);

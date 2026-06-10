@@ -44,7 +44,8 @@ export default function CreateWeeklyPlan() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const { user } = useSession();
   const { items } = useLoadSurahData();
-  const { createPlan, isCreating } = useCreatePlan();
+  const { createPlan, updatePlan, isCreating } = useCreatePlan();
+
   const { alertConfig, showSuccess, showError, hideAlert } = useAlert();
 
   const { data: existingPlan } = useQuery({
@@ -145,9 +146,11 @@ export default function CreateWeeklyPlan() {
         preferred_time: existingPlan.preferredTime ?? "fajr",
         is_custom_time: existingPlan.isCustomTime ?? false,
         evaluation_day: existingPlan.evaluationDay ?? 5,
+        start_surah: items.find((s) => s.startingPage <= (existingPlan.startPage ?? 1) && s.endingPage >= (existingPlan.startPage ?? 1))?.number ?? 1,
+        end_surah: items.find((s) => s.startingPage <= (existingPlan.endPage ?? 604) && s.endingPage >= (existingPlan.endPage ?? 604))?.number ?? 114,
       });
     }
-  }, [existingPlan]);
+  }, [existingPlan, items]);
 
   const onSubmit = async (data: WeeklyMurajaFormType) => {
     if (!user?.id) return;
@@ -185,18 +188,27 @@ export default function CreateWeeklyPlan() {
         evaluationDay: data.evaluation_day,
       };
 
-     
-      await createPlan(planPayload);
+      const isFundamentalChange = 
+        !existingPlan ||
+        existingPlan.weekStartDate !== data.week_start_date ||
+        existingPlan.startPage !== data.start_page ||
+        existingPlan.endPage !== data.end_page;
+
+      if (isFundamentalChange) {
+        await createPlan(planPayload);
+      } else {
+        await updatePlan({ planId: existingPlan.id, payload: planPayload });
+      }
 
       showSuccess(
-        existingPlan ? "Plan Updated!" : "Plan Launched!",
-        existingPlan
+        existingPlan && !isFundamentalChange ? "Plan Updated!" : "Plan Launched!",
+        existingPlan && !isFundamentalChange
           ? "Your Muraja plan has been updated successfully."
           : "Your Muraja journey has been created successfully.",
         () => router.back(),
       );
     } catch (error: any) {
-      showError("Oops!", "We couldn't create your plan right now. Please  try again.");
+      showError("Oops!", "We couldn't process your request right now. Please try again.");
     }
   };
 
