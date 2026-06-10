@@ -1,4 +1,4 @@
-import { eq, and, sql, max, desc, gte, lte, inArray } from 'drizzle-orm';
+import { eq, and, sql, desc, isNull, asc, gte, lte } from 'drizzle-orm';
 import { db } from '@/src/lib/db/local-client';
 import { weeklyMurajaPlans, dailyMurajaLogs } from '../database/murajaSchema';
 import { activityPlans } from '../../habits/database/habitSchema';
@@ -89,6 +89,52 @@ export const murajaService = {
     return lastId;
   },
 
+  async updatePlan(planId: number, planData: Partial<IWeeklyMurajaPLan>) {
+    await db.transaction(async (tx) => {
+      await tx.update(weeklyMurajaPlans)
+        .set({
+          plannedPagesPerDay: planData.planned_pages_per_day,
+          selectedDays: planData.selected_days,
+          weekEndDate: planData.week_end_date,
+          estimatedTimeMin: planData.estimated_time_min,
+          place: planData.place ?? null,
+          note: planData.note ?? null,
+          preferredTime: planData.preferred_time,
+          isCustomTime: planData.is_custom_time ?? false,
+          evaluationDay: planData.evaluationDay ?? 5,
+        })
+        .where(eq(weeklyMurajaPlans.id, planId));
+
+      await upsertActivityPlan(tx as any, {
+        userId: planData.user_id as string,
+        activityType: "MURAJA",
+        localRefId: planId,
+        endDate: planData.week_end_date,
+        evaluationDay: planData.evaluationDay ?? 5,
+        metadata: JSON.stringify({
+          planned_pages_per_day: planData.planned_pages_per_day,
+          start_page: planData.start_page,
+          end_page: planData.end_page,
+        })
+      });
+    });
+
+    if (planData.preferred_time) {
+      void habitStackingService.scheduleReminders({
+        id: planId,
+        type: 'muraja',
+        preferredTime: planData.preferred_time,
+        isCustomTime: planData.is_custom_time ?? false,
+        selectedDays: JSON.parse(planData.selected_days as string),
+      });
+    }
+
+    if (planData.user_id) {
+      void this.syncPending(planData.user_id);
+    }
+    return planId;
+  },
+
   async getDashboardState(userId: string) {
     let plan = await db.query.weeklyMurajaPlans.findFirst({
       where: and(eq(weeklyMurajaPlans.userId, userId), eq(weeklyMurajaPlans.isActive, true)),
@@ -129,6 +175,16 @@ export const murajaService = {
       quality_score: l.qualityScore,
     });
 
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const extraSessionsLogs = await db.query.dailyMurajaLogs.findMany({
+      where: and(
+        isNull(dailyMurajaLogs.planId),
+        eq(dailyMurajaLogs.date, todayStr),
+        eq(dailyMurajaLogs.status, 'extra')
+      ),
+      orderBy: [asc(dailyMurajaLogs.id)],
+    });
+
     return {
       ...plan,
       preferred_time: plan.preferredTime ?? undefined,
@@ -137,6 +193,7 @@ export const murajaService = {
       muraja_current_streak: stats?.murajaCurrentStreak ?? 0,
       daily_logs: logs.map(mapLog),
       all_logs: logs.map(mapLog),
+      today_extra_sessions: extraSessionsLogs.map(mapLog),
     };
   },
 
@@ -400,10 +457,89 @@ export const murajaService = {
     return { localLogId, changed, created, previousStatus, currentStatus, rewards };
   },
 
+  async logExtraSession(
+    userId: string,
+    date: string,
+    startPage: number,
+    endPage: number,
+    completedPages: number,
+    actualTimeMin: number,
+    mistakesCount: number = 0,
+    hesitationCount: number = 0,
+    qualityScore?: number | null
+  ) {
+    let localLogId: number | null = null;
+    
+    await db.transaction(async (tx) => {
+      // 1. Save to daily_muraja_logs as an extra session (planId = null)
+      const [newLog] = await tx.insert(dailyMurajaLogs).values({
+        date,
+        planId: null, // explicit null
+        startPage,
+        completedPages,
+        syncStatus: 0,
+        isCatchup: false,
+        actualTimeMin,
+        status: 'extra',
+        mistakesCount,
+        hesitationCount,
+        qualityScore: qualityScore ?? null,
+        remoteId: null,
+      }).returning({ id: dailyMurajaLogs.id });
+      
+      localLogId = newLog.id;
+
+      // 2. Save to activity logs
+      await upsertHabitProgressLog(tx as any, {
+        userId,
+        date,
+        activityType: "MURAJA",
+        minutesSpent: actualTimeMin,
+        unitsCompleted: Math.max(0, Math.round(completedPages)),
+        note: null,
+        planId: null,
+        localRefId: localLogId,
+        eventType: "EXTRA_SESSION",
+        metadata: JSON.stringify({
+          startPage,
+          endPage,
+          qualityScore
+        })
+      });
+
+      // 3. Save to page performance
+      const finalQualityScore = qualityScore ?? PerformanceService.deriveQualityScore(mistakesCount, hesitationCount);
+      const quality: 'perfect' | 'medium' | 'low' = finalQualityScore >= 5 ? 'perfect' : finalQualityScore <= 2 ? 'low' : 'medium';
+      
+      await PageMasteryService.syncPageActivityLogs(
+        tx,
+        userId,
+        'muraja',
+        localLogId,
+        date,
+        Array.from({ length: completedPages }, (_, i) => startPage + i),
+        quality,
+        mistakesCount,
+        hesitationCount
+      );
+
+      // 4. Update overall stats
+      await PerformanceService.recomputeAllPerformance(tx, userId);
+    });
+    
+    void this.syncPending(userId);
+    return localLogId;
+  },
+
   async syncPending(userId: string) {
     const { sync } = await import("@/src/services/sync");
     await sync.push("muraja_plans");
     await sync.push("muraja_logs");
+    await sync.push("user_stats");
+    await sync.push("page_performance");
+    await sync.push("page_activity_logs");
+    await sync.push("habit_events");
+    await sync.push("notifications");
   },
 
   async getReviewStats(userId: string, planId?: number) {

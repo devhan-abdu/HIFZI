@@ -98,8 +98,12 @@ export const habitAnalyticsService = {
       .orderBy(asc(activityLogs.date));
 
     const dates = logs.map(l => l.date);
-    const currentStreak = this.computeCurrentStreak(dates);
-    const longestStreak = this.computeLongestStreak(dates);
+
+    // Fetch plannedDays so rest days don't break the streak
+    const { plannedDays } = await this.calculateDailyGoalAndDays(userId);
+
+    const currentStreak = this.computeCurrentStreak(dates, plannedDays);
+    const longestStreak = this.computeLongestStreak(dates, plannedDays);
 
     // Update userStats as a cache
     await db.insert(userStats)

@@ -84,6 +84,51 @@ export const hifzService = {
     return localId;
   },
 
+  async updatePlan(planId: number, planData: Partial<IHifzPlan>) {
+    await db.transaction(async (tx) => {
+      await tx.update(hifzPlans)
+        .set({
+          pagesPerDay: planData.pagesPerDay,
+          selectedDays: planData.selectedDays ? JSON.stringify(planData.selectedDays) : undefined,
+          daysPerWeek: planData.daysPerWeek,
+          estimatedEndDate: planData.estimatedEndDate,
+          preferredTime: planData.preferredTime,
+          isCustomTime: planData.isCustomTime ?? false,
+          isReinforcementEnabled: planData.isReinforcementEnabled ?? true,
+          evaluationDay: planData.evaluationDay ?? 5,
+        })
+        .where(eq(hifzPlans.id, planId));
+
+      await upsertActivityPlan(tx as any, {
+        userId: planData.userId as string,
+        activityType: "HIFZ",
+        localRefId: planId,
+        endDate: planData.estimatedEndDate,
+        evaluationDay: planData.evaluationDay ?? 5,
+        metadata: JSON.stringify({
+          pagesPerDay: planData.pagesPerDay,
+          startPage: planData.startPage,
+          totalPages: planData.totalPages,
+        })
+      });
+    });
+
+    if (planData.preferredTime) {
+      void habitStackingService.scheduleReminders({
+        id: planId,
+        type: 'hifz',
+        preferredTime: planData.preferredTime,
+        isCustomTime: planData.isCustomTime ?? false,
+        selectedDays: planData.selectedDays ?? [],
+      });
+    }
+
+    if (planData.userId) {
+      void this.syncPending(planData.userId);
+    }
+    return planId;
+  },
+
   async getPlan(userId: string, planId?: number): Promise<IHifzPlan | null> {
     if (!userId) return null;
 
@@ -339,6 +384,11 @@ export const hifzService = {
     const { sync } = await import("@/src/services/sync");
     await sync.push("hifz_plans");
     await sync.push("hifz_logs");
+    await sync.push("user_stats");
+    await sync.push("page_performance");
+    await sync.push("page_activity_logs");
+    await sync.push("habit_events");
+    await sync.push("notifications");
   },
 
   async completePlan(userId: string, planId: number) {

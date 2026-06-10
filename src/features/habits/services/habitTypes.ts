@@ -7,7 +7,8 @@ export type ActivityEventType =
   | "MURAJA_COMPLETED"
   | "NORMAL_READING_COMPLETED"
   | "TASK_UNDONE"
-  | "TASK_MISSED";
+  | "TASK_MISSED"
+  | "EXTRA_SESSION";
 
 export type HabitLogMetadata = {
   eventType?: ActivityEventType;
