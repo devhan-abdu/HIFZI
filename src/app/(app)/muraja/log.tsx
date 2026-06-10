@@ -395,7 +395,7 @@ export default function LogPage() {
             <View className="flex-row justify-between items-center mb-4">
               <View className="bg-white/10 px-2.5 py-1 rounded-lg border border-white/10">
                 <Text className="text-white text-[10px] uppercase tracking-[2px]">
-                  {isRestDay ? "Extra Session" : "Study Target"}
+                  {isRestDay ? "Next Plan" : "Study Target"}
                 </Text>
               </View>
               <Text className="text-white/60 text-[10px] uppercase tracking-widest">
@@ -411,7 +411,9 @@ export default function LogPage() {
                     : `${getSurahNameByNumber(startSurah)} – ${getSurahNameByNumber(effectiveEndSurah)}`}
                 </Text>
                 <Text className="text-white/50 text-xs mt-1">
-                  {pages > 0 ? `Pages ${startPage}–${effectiveEndPage}` : `Page ${startPage}`}
+                  {isRestDay
+                    ? `Next session: ${pages > 0 ? `Pages ${startPage}–${effectiveEndPage}` : `Page ${startPage}`}`
+                    : pages > 0 ? `Pages ${startPage}–${effectiveEndPage}` : `Page ${startPage}`}
                 </Text>
               </View>
               <View className="items-end">

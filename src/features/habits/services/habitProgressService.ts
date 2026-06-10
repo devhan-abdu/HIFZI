@@ -1,6 +1,7 @@
 import { db as drizzleDb } from "@/src/lib/db/local-client";
 import { activityLogs, activityPlans, weeklySummarySeen, adaptiveGuidanceCache } from "../database/habitSchema";
 import { eq, and, sql } from "drizzle-orm";
+import { ne, desc } from "drizzle-orm";
 import { 
   ActivityType, 
   HabitType, 
@@ -107,13 +108,51 @@ export const habitProgressService = {
   ) {
     const tx = db || drizzleDb;
     
-    await tx.update(activityPlans)
-      .set({ status: 'paused', updatedAt: sql`CURRENT_TIMESTAMP` })
-      .where(and(
-        eq(activityPlans.userId, payload.userId),
-        eq(activityPlans.activityType, payload.activityType),
-        eq(activityPlans.status, 'active')
-      ));
+   const existing = await tx.query.activityPlans.findFirst({
+  where: and(
+    eq(activityPlans.userId, payload.userId),
+    eq(activityPlans.activityType, payload.activityType),
+    eq(activityPlans.localRefId, payload.localRefId ?? sql`null`)
+  ),
+  orderBy: [desc(activityPlans.createdAt)],
+});
+
+     // Pause all other active plans of this type
+     await tx.update(activityPlans)
+       .set({ status: 'paused', updatedAt: sql`CURRENT_TIMESTAMP` })
+       .where(existing && payload.localRefId 
+         ? and(
+         eq(activityPlans.userId, payload.userId),
+         eq(activityPlans.activityType, payload.activityType),
+         eq(activityPlans.status, 'active'),
+           ne(activityPlans.id, existing.id)
+         )
+         : and(
+           eq(activityPlans.userId, payload.userId),
+           eq(activityPlans.activityType, payload.activityType),
+           eq(activityPlans.status, 'active')
+         )
+       );
+
+    // If existing plan found for this localRefId, update it instead of creating new
+    if (existing) {
+       await tx.update(activityPlans)
+         .set({
+           status: payload.status ?? "active",
+           title: payload.title ?? null,
+           startDate: payload.startDate ?? null,
+           endDate: payload.endDate ?? null,
+           metadata: payload.metadata ?? null,
+           evaluationDay: payload.evaluationDay ?? 5,
+           isSynced: 0,
+           updatedAt: sql`CURRENT_TIMESTAMP`
+         })
+         .where(eq(activityPlans.id, existing.id));
+     
+       return existing.id;
+     }
+
+    // Create new activity plan record for a new plan
 
     const [result] = await tx.insert(activityPlans).values({
       userId: payload.userId,

@@ -40,6 +40,19 @@ export const HifzActionCard = ({
   
   const todaysLog = hifz.hifzDailyLogs?.find((log) => log.date === todayStr);
   const currentStatus = todaysLog?.status || "pending";
+  const completedPages = todaysLog?.actualPagesCompleted ?? 0;
+  const loggedStart = todaysLog?.actualStartPage ?? task.startPage;
+  const loggedEnd = todaysLog?.actualEndPage ?? task.endPage;
+  const planTargetEnd = task.endPage;
+  const planTargetStart = task.startPage;
+  const plannedCount = task.totalTarget ?? (planTargetEnd - planTargetStart + 1);
+
+  // Derive subtitle dynamically from actual log data (mirrors MurajaActionCard)
+  const derivedSubTitle = currentStatus === 'partial'
+    ? `${completedPages} / ${plannedCount} pages · ${planTargetStart}–${planTargetEnd}`
+    : currentStatus === 'completed' && completedPages > 0
+    ? `${completedPages} pages done · ${loggedStart}–${loggedEnd}`
+    : subTitle ?? `${task.isVirtualTask ? 'Next Plan · ' : ''}Pages ${planTargetStart}–${planTargetEnd}`;
 
   const isLoading = isAddingHifz;
 
@@ -99,7 +112,7 @@ export const HifzActionCard = ({
       <ActionTaskCard
         typeLabel={typeLabel || "Hifz"}
         title={title || task.displaySurah || ""}
-        subTitle={subTitle || `${task.isVirtualTask ? "Next Suggested · " : ""}Pages ${task.startPage} – ${task.endPage}`}
+        subTitle={derivedSubTitle}
         isCatchup={task.isCatchup}
         status={currentStatus}
         isLoading={isLoading}

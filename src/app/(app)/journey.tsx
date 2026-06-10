@@ -38,12 +38,9 @@ export default function JourneyScreen() {
     refetch,
   } = useJourney();
 
-  // Real badges — same source as dashboard AchievementSection
   const { data: badges = [] } = useUserBadges();
 
-  // Offline-first: re-read local SQLite every time user navigates to this screen.
-  // This ensures plan changes (pause/resume/edit) made offline are immediately
-  // reflected here without waiting for a network sync.
+  
   useFocusEffect(
     useCallback(() => {
       refetch();
@@ -53,7 +50,6 @@ export default function JourneyScreen() {
     refetch();
   }, [refetch]));
 
-  // Active plan = first plan sorted as active (journeyService sorts active first)
   const activePlan = data?.plans.find((p) => p.status === "active") ?? null;
 
   return (
@@ -89,7 +85,6 @@ export default function JourneyScreen() {
               </Text>
             </View>
 
-          /* ── No plans yet ── */
           ) : !data ? (
             <View className="mx-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 items-center">
               <Text className="text-slate-900 text-base text-center">
@@ -114,17 +109,14 @@ export default function JourneyScreen() {
               </Button>
             </View>
 
-          /* ── Main content ── */
           ) : (
             <View className="px-4">
 
-              {/* ── Hero: active plan or aggregate overview ── */}
               <JourneyActivePlanHero
                 activePlan={activePlan}
                 overview={data.overview}
               />
 
-              {/* ── Stats: streak, sessions, pages, tests ── */}
               <View className="mt-8">
                 <JourneyStatsSection
                   stats={data.stats}
@@ -132,7 +124,6 @@ export default function JourneyScreen() {
                 />
               </View>
 
-              {/* ── All plans ── */}
               <SectionTitle>All plans</SectionTitle>
               <JourneyPlansSection
                 plans={data.plans}

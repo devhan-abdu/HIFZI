@@ -1,3 +1,4 @@
+import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { Text } from "@/src/components/common/ui/Text";
@@ -35,7 +36,11 @@ type Cardprops = {
     };
     analytics: { longestStreak: number; currentStreak?: number };
   };
-  userStats: { totalXp: number; level: number; hifzCurrentStreak: number } | null;
+  userStats: {
+    totalXp: number;
+    level: number;
+    hifzCurrentStreak: number;
+  } | null;
 };
 
 function cleanSurahName(name?: string) {
@@ -53,14 +58,20 @@ function PageOfSurah({
 }) {
   if (pageInSurah == null && !surahName && fallbackLabel) {
     return (
-      <Text className="text-white text-2xl tracking-tight leading-8" numberOfLines={2}>
+      <Text
+        className="text-white text-2xl tracking-tight leading-8"
+        numberOfLines={2}
+      >
         {fallbackLabel}
       </Text>
     );
   }
 
   return (
-    <Text className="text-white text-2xl tracking-tight leading-8" numberOfLines={2}>
+    <Text
+      className="text-white text-2xl tracking-tight leading-8"
+      numberOfLines={2}
+    >
       {pageInSurah ?? "—"} of {cleanSurahName(surahName)}
     </Text>
   );
@@ -103,7 +114,10 @@ function PlanSection({
   showBorder?: boolean;
 }) {
   return (
-    <View className={`flex-1 ${showBorder ? "border-r border-white/10 pr-4 mr-4" : ""}`}>
+    /* FIXED: Using w-full when standalone, and flex-1 only when dual-plan border properties exist */
+    <View
+      className={`${showBorder ? "flex-1 border-r border-white/10 pr-4 mr-4" : "w-full"}`}
+    >
       <View className="flex-row items-center mb-3">
         <Ionicons name={icon} size={14} color="rgba(255,255,255,0.7)" />
         <Text className="text-white/50 text-[9px] uppercase tracking-widest ml-2">
@@ -117,22 +131,25 @@ function PlanSection({
         fallbackLabel={fallbackLabel}
       />
 
-      {planRangeLabel ? (
-        <Text className="text-white/55 text-[11px] mt-2 tracking-wide" numberOfLines={2}>
+      {planRangeLabel ?
+        <Text
+          className="text-white/55 text-[11px] mt-2 tracking-wide"
+          numberOfLines={2}
+        >
           {planRangeLabel}
         </Text>
-      ) : null}
+      : null}
 
       <View className="flex-row justify-between items-end pt-5">
         <FooterStat label={primaryStat.label} value={primaryStat.value} />
         <View className="w-4" />
         <FooterStat label={secondaryStat.label} value={secondaryStat.value} />
-        {tertiaryStat ? (
+        {tertiaryStat ?
           <>
             <View className="w-4" />
             <FooterStat label={tertiaryStat.label} value={tertiaryStat.value} />
           </>
-        ) : null}
+        : null}
       </View>
     </View>
   );
@@ -151,12 +168,13 @@ export default function Card({
   const dualPlan = hasHifz && hasMuraja;
   const singlePlan = hasHifz !== hasMuraja;
 
-  const murajaProgress = murajaHero?.overAllProgress
-    ? Math.round(Number(murajaHero.overAllProgress))
+  const murajaProgress =
+    murajaHero?.overAllProgress ?
+      Math.round(Number(murajaHero.overAllProgress))
     : 0;
 
   return (
-    <View className="bg-primary rounded-[40px] p-7 shadow-2xl shadow-primary/40 overflow-hidden relative">
+    <View className="bg-primary rounded-[40px] p-7 shadow-2xl shadow-primary/40 overflow-hidden relative w-full">
       <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
 
       <View className="flex-row justify-between items-end mb-6">
@@ -172,33 +190,32 @@ export default function Card({
             )}
           </View>
           <Text className="text-white text-3xl tracking-tighter">
-            {dualPlan ? (
+            {dualPlan ?
               <>
                 Hifz <Text className="text-white/50">&</Text> Muraja
               </>
-            ) : hasHifz ? (
+            : hasHifz ?
               "Hifz Journey"
-            ) : (
-              "Muraja Review"
-            )}
+            : "Muraja Review"}
           </Text>
 
-          {userStats && (() => {
-            const currentRank = getRankForLevel(userStats.level);
-            return (
-              <View className="mt-2 w-44">
-                <Text className="text-white/80 text-[10px] mb-1 tracking-wide">
-                  {currentRank.title} {currentRank.titleAr}
-                </Text>
-                <View className="h-1 bg-white/10 rounded-full overflow-hidden">
-                  <View
-                    className="h-full bg-white"
-                    style={{ width: `${(userStats.totalXp % 1000) / 10}%` }}
-                  />
+          {userStats &&
+            (() => {
+              const currentRank = getRankForLevel(userStats.level);
+              return (
+                <View className="mt-2 w-44">
+                  <Text className="text-white/80 text-[10px] mb-1 tracking-wide">
+                    {currentRank.title} {currentRank.titleAr}
+                  </Text>
+                  <View className="h-1 bg-white/10 rounded-full overflow-hidden">
+                    <View
+                      className="h-full bg-white"
+                      style={{ width: `${(userStats.totalXp % 1000) / 10}%` }}
+                    />
+                  </View>
                 </View>
-              </View>
-            );
-          })()}
+              );
+            })()}
         </View>
 
         {singlePlan && hasHifz && (
@@ -225,8 +242,9 @@ export default function Card({
 
       <View className="w-full h-[2px] bg-white/10 rounded-full mb-6" />
 
-      <View className={dualPlan ? "flex-row" : ""}>
+      <View className={dualPlan ? "flex-row w-full " : "flex-col w-full"}>
         {hasHifz && (
+          <View>
           <PlanSection
             icon="book-outline"
             label={dualPlan ? "Current Hifz" : "Hifz"}
@@ -242,22 +260,24 @@ export default function Card({
               value: `${hifzAnalytics?.todayTarget ?? 0} p/d`,
             }}
             tertiaryStat={
-              singlePlan
-                ? {
-                    label: "Streak",
-                    value: `${
-                      habitProgress.analytics.currentStreak ??
-                      userStats?.hifzCurrentStreak ??
-                      0
-                    } d`,
-                  }
-                : undefined
+              singlePlan ?
+                {
+                  label: "Streak",
+                  value: `${
+                    habitProgress.analytics.currentStreak ??
+                    userStats?.hifzCurrentStreak ??
+                    0
+                  } d`,
+                }
+              : undefined
             }
             showBorder={dualPlan}
-          />
+            />
+            </View>
         )}
 
         {hasMuraja && murajaHero && (
+          <View className = "flex-1">
           <PlanSection
             icon="repeat-outline"
             label={dualPlan ? "Current Muraja" : "Muraja"}
@@ -267,22 +287,25 @@ export default function Card({
             fallbackLabel={cleanSurahName(murajaHero.startSurah)}
             primaryStat={{
               label: dualPlan ? "Target End" : "Days/wk",
-              value: dualPlan
-                ? murajaHero.targetEndDate ?? "—"
+              value:
+                dualPlan ?
+                  (murajaHero.targetEndDate ?? "—")
                 : `${murajaHero.totalDays ?? 0}`,
             }}
             secondaryStat={{
               label: dualPlan ? "Rate" : "Daily goal",
-              value: dualPlan
-                ? `${murajaHero.planned_pages_per_day ?? 0} p/d`
+              value:
+                dualPlan ?
+                  `${murajaHero.planned_pages_per_day ?? 0} p/d`
                 : `${murajaHero.planned_pages_per_day ?? 0} pgs`,
             }}
             tertiaryStat={
-              singlePlan
-                ? { label: "Progress", value: `${murajaProgress}%` }
-                : undefined
+              singlePlan ?
+                { label: "Progress", value: `${murajaProgress}%` }
+              : undefined
             }
-          />
+            />
+            </View>
         )}
       </View>
     </View>

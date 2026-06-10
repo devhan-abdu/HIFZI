@@ -41,11 +41,11 @@ export function JourneyPlansSection({
 
   return (
     <View className="gap-3">
-      {plans.map((plan) => {
+      {plans.map((plan, idx) => {
         const badge = STATUS_STYLES[plan.status];
         return (
           <View
-            key={`${plan.type}-${plan.id}`}
+            key={`${plan.type}-${plan.activityPlanId}-${plan.id}-${idx}`}
             className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm"
           >
             <View className="flex-row items-start mb-3">
@@ -60,10 +60,14 @@ export function JourneyPlansSection({
                 <Text className="text-[10px] uppercase tracking-widest text-slate-400">
                   {plan.type === "HIFZ" ? "Hifz" : "Muraja"}
                 </Text>
-                <Text className="text-slate-900 text-base mt-0.5">{plan.name}</Text>
-                {plan.juzLabel ? (
-                  <Text className="text-slate-500 text-xs mt-0.5">{plan.juzLabel}</Text>
-                ) : null}
+                <Text className="text-slate-900 text-base mt-0.5">
+                  {plan.name}
+                </Text>
+                {plan.juzLabel ?
+                  <Text className="text-slate-500 text-xs mt-0.5">
+                    {plan.juzLabel}
+                  </Text>
+                : null}
               </View>
               <View className={`px-2 py-0.5 rounded-full ${badge.bg}`}>
                 <Text className={`text-[10px] uppercase ${badge.text}`}>
@@ -81,7 +85,8 @@ export function JourneyPlansSection({
 
             <View className="flex-row justify-between items-center">
               <Text className="text-slate-600 text-xs">
-                {plan.pagesDone} / {plan.pagesTotal} pages · {plan.progressPercent}%
+                {plan.pagesDone} / {plan.pagesTotal} pages ·{" "}
+                {plan.progressPercent}%
               </Text>
               <Text className="text-slate-400 text-xs">
                 {formatDate(plan.startDate)}
@@ -92,7 +97,7 @@ export function JourneyPlansSection({
         );
       })}
 
-      {hasMore ? (
+      {hasMore ?
         <Pressable
           onPress={onLoadMore}
           className="flex-row items-center justify-center py-3 border border-slate-200 rounded-xl bg-white"
@@ -102,7 +107,7 @@ export function JourneyPlansSection({
           </Text>
           <Ionicons name="chevron-down" size={16} color="#276359" />
         </Pressable>
-      ) : null}
+      : null}
     </View>
   );
 }

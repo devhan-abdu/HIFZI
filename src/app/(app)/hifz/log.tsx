@@ -334,9 +334,9 @@ export default function LogProgress() {
                   {hasReviewPrefill
                     ? "Revision Session"
                     : logContext?.isNextPlannedDay
-                      ? "Next Planned Target"
+                      ? "Next Plan"
                       : isRestDay
-                        ? "Extra Session"
+                        ? "Next Plan"
                         : logContext?.isPlannedDay
                           ? "Study Target"
                           : "Extra"}
@@ -353,7 +353,9 @@ export default function LogProgress() {
                   {heroSurahLabel}
                 </Text>
                 <Text className="text-white/50 text-xs mt-1">
-                  Range: {heroRangeLabel}
+                  {isRestDay && logContext
+                    ? `Next session: ${heroRangeLabel}`
+                    : `Range: ${heroRangeLabel}`}
                 </Text>
               </View>
               <View className="items-end">

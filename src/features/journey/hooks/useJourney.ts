@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useSession } from "@/src/hooks/useSession";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import {
@@ -26,8 +26,7 @@ export function useJourney() {
       return journeyService.getOverview(userId, surah);
     },
     enabled: !!userId && surah.length > 0,
-    // Always read from local SQLite — staleTime:0 ensures plan
-    // changes (pause/resume/edit) are reflected on next focus/refetch
+    
     staleTime: 0,
   });
 
@@ -83,22 +82,28 @@ export function useJourney() {
   const hasMorePlans = totalPlans > visiblePlanCount;
   const hasMoreSessions = loadedSessions.length < totalSessions;
 
-  const loadMoreSessions = () => {
+  const loadMoreSessions = useCallback(() => {
     setSessionOffset((o) => o + SESSION_PAGE_SIZE);
-  };
+  }, []);
+
+  const refetch = useCallback(() => {
+    setSessionOffset(0);
+    setLoadedSessions([]);
+    overviewQuery.refetch();
+    sessionsQuery.refetch();
+  }, [overviewQuery, sessionsQuery]);
+
+  const loadMorePlans = useCallback(() => {
+    setVisiblePlanCount((c) => c + PLAN_PAGE_SIZE);
+  }, []);
 
   return {
     data,
     loading: overviewQuery.isLoading || surahLoading,
     sessionsLoading: sessionsQuery.isLoading && sessionOffset > 0,
     error: overviewQuery.isError || sessionsQuery.isError,
-    refetch: () => {
-      setSessionOffset(0);
-      setLoadedSessions([]);
-      overviewQuery.refetch();
-      sessionsQuery.refetch();
-    },
-    loadMorePlans: () => setVisiblePlanCount((c) => c + PLAN_PAGE_SIZE),
+    refetch,
+    loadMorePlans,
     hasMorePlans,
     loadMoreSessions,
     hasMoreSessions,

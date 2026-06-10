@@ -1,4 +1,11 @@
-import { View, Pressable, ScrollView, StatusBar, Dimensions } from "react-native";
+import {
+  View,
+  Pressable,
+  ScrollView,
+  StatusBar,
+  Dimensions,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Text } from "@/src/components/common/ui/Text";
 import { router } from "expo-router";
 import { useState, useCallback } from "react";
@@ -8,17 +15,20 @@ import Animated, {
   withSpring,
   withTiming,
   interpolateColor,
+  interpolate,
+  FadeIn,
+  SlideInUp,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const { height } = Dimensions.get("window");
+const { height, width } = Dimensions.get("window");
 
-const PRIMARY = "#276359";
-const SLATE_DISABLED = "#F1F5F9"; // Lighter than before for a cleaner disabled state
-const SLATE_TEXT = "#94A3B8";
-const CARD_BORDER = "#E2E8F0";
-const ICON_BADGE_BG = "#F7FAF8";
+const PRIMARY = "#1e5a54";
+const PRIMARY_LIGHT = "#2a7f77";
+const BG_DARK = "#333535";
+const CARD_BG = "#F8FAFC"; // Light background for contrast
+const BORDER_COLOR = "#E2E8F0";
 
 type JourneyOption = "hifz" | "muraja";
 
@@ -35,7 +45,8 @@ const OPTIONS: {
     iconName: "book-outline",
     title: "I'm memorizing new pages",
     subtitle: "Start your Hifz plan",
-    description: "Build a structured, page-by-page memorization plan tailored to your pace.",
+    description:
+      "Build a structured, page-by-page memorization plan tailored to your pace.",
     route: "/(app)/hifz/create-hifz-plan",
   },
   {
@@ -43,7 +54,8 @@ const OPTIONS: {
     iconName: "refresh-outline",
     title: "I have Hifz to maintain",
     subtitle: "Set up Muraja schedule",
-    description: "Keep what you've memorized strong with an automated revision system.",
+    description:
+      "Keep what you've memorized strong with an automated revision system.",
     route: "/(app)/muraja/create-muraja-plan",
   },
 ];
@@ -67,14 +79,22 @@ function OptionCard({
     borderColor: interpolateColor(
       selectionProgress.value,
       [0, 1],
-      [CARD_BORDER, PRIMARY]
+      [BORDER_COLOR, PRIMARY]
     ),
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
+    shadowColor: interpolateColor(
+      selectionProgress.value,
+      [0, 1],
+      ["rgba(0,0,0,0)", "rgba(30,90,84,0.2)"]
+    ),
+    shadowOpacity: 0.6,
+    shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    elevation: selected ? 8 : 2,
+    backgroundColor: interpolateColor(
+      selectionProgress.value,
+      [0, 1],
+      ["#FFFFFF", "#F0Fdfa"] // white to light teal
+    ),
   }));
 
   const checkStyle = useAnimatedStyle(() => ({
@@ -91,13 +111,17 @@ function OptionCard({
     borderColor: interpolateColor(
       selectionProgress.value,
       [0, 1],
-      [CARD_BORDER, "rgba(39,99,89,0.22)"]
+      [BORDER_COLOR, PRIMARY]
     ),
-    backgroundColor: ICON_BADGE_BG,
+    backgroundColor: interpolateColor(
+      selectionProgress.value,
+      [0, 1],
+      ["#F1F5F9", "rgba(30,90,84,0.1)"]
+    ),
   }));
 
   const handlePressIn = useCallback(() => {
-    scale.value = withSpring(0.97, { damping: 15, stiffness: 300 });
+    scale.value = withSpring(0.96, { damping: 15, stiffness: 300 });
   }, [scale]);
 
   const handlePressOut = useCallback(() => {
@@ -109,20 +133,24 @@ function OptionCard({
     <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut}>
       <Animated.View
         style={[animatedStyle]}
-        className="w-full rounded-2xl border-2 p-5"
+        className="w-full rounded-xl border p-5" // Fully rounded for the option card itself
       >
         <View className="flex-row items-center">
           {/* Icon */}
           <Animated.View
             style={[badgeStyle]}
-            className="mr-3.5 h-12 w-12 items-center justify-center rounded-full border"
+            className="mr-4 h-14 w-14 items-center justify-center rounded-full border" // Fully rounded icon container
           >
-            <Ionicons name={option.iconName} size={22} color={PRIMARY} />
+            <Ionicons
+              name={option.iconName}
+              size={26}
+              color={selected ? PRIMARY : "#64748b"}
+            />
           </Animated.View>
 
           {/* Text */}
           <View className="flex-1 justify-center">
-            <Text className="text-base  text-slate-800 mb-0.5">
+            <Text className={`text-base mb-1 ${selected ? "text-primary" : "text-slate-900"}`}>
               {option.title}
             </Text>
             <Text className="text-xs text-slate-500">
@@ -133,23 +161,40 @@ function OptionCard({
           {/* Icons container */}
           <View className="w-7 h-7 items-center justify-center ml-2">
             <Animated.View style={[chevronStyle]} className="absolute">
-              <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color="#94a3b8"
+              />
             </Animated.View>
-            
+
             <Animated.View
               style={[checkStyle]}
-              className="absolute w-6 h-6 rounded-full bg-primary items-center justify-center"
+              className="absolute w-6 h-6 rounded-full items-center justify-center"
             >
-              <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+              <LinearGradient
+                colors={[PRIMARY_LIGHT, PRIMARY]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="w-full h-full rounded-full items-center justify-center"
+              >
+                <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+              </LinearGradient>
             </Animated.View>
           </View>
         </View>
 
         {/* Description — only when selected */}
         {selected && (
-          <Text className="mt-3 border-t border-slate-100 pt-3 text-[13px] leading-5 text-slate-500">
-            {option.description}
-          </Text>
+          <Animated.View
+            entering={FadeIn.duration(300)}
+            className="mt-4 border-t pt-4"
+            style={{ borderTopColor: "rgba(30,90,84,0.1)" }}
+          >
+            <Text className="text-[13px] leading-5 text-slate-600">
+              {option.description}
+            </Text>
+          </Animated.View>
         )}
       </Animated.View>
     </Pressable>
@@ -164,24 +209,12 @@ export default function OnboardingBridge() {
   buttonProgress.value = withTiming(selected ? 1 : 0, { duration: 300 });
 
   const buttonStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(
-      buttonProgress.value,
-      [0, 1],
-      [SLATE_DISABLED, PRIMARY]
-    ),
-  }));
-
-  const buttonTextStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(
-      buttonProgress.value,
-      [0, 1],
-      [SLATE_TEXT, "#FFFFFF"]
-    ),
+    opacity: interpolate(buttonProgress.value, [0, 1], [0.5, 1]),
   }));
 
   const iconStyle = useAnimatedStyle(() => ({
     opacity: buttonProgress.value,
-    transform: [{ translateX: withSpring(selected ? 0 : -10) }]
+    transform: [{ translateX: withSpring(selected ? 0 : -10) }],
   }));
 
   const handleContinue = useCallback(() => {
@@ -191,86 +224,110 @@ export default function OnboardingBridge() {
   }, [selected]);
 
   return (
-    <View className="flex-1 bg-primary">
-      <StatusBar barStyle="light-content" backgroundColor="#276359" />
-      
-      {/* Green Hero Area */}
-      <View 
-        className="px-6 flex-none justify-center overflow-hidden" 
-        style={{ height: height * 0.42, paddingTop: insets.top }}
-      >
-        {/* Decorative elements */}
-        <View className="absolute -top-10 -right-16 w-72 h-72 rounded-full bg-white/5" />
-        <View className="absolute top-24 -right-8 w-40 h-40 rounded-full bg-white/10" />
+    <View className="flex-1" style={{ backgroundColor: BG_DARK }}>
+      <StatusBar barStyle="light-content" backgroundColor={BG_DARK} />
 
-        <View className="mb-8">
-          <Text className="text-white/70 text-xs uppercase tracking-[3px] mb-3 ">
-            Your Quran Journey
+      <View
+        className="px-6  pb-4 flex-none justify-center overflow-hidden relative"
+        style={{ height: height * 0.35, paddingTop: insets.top + 40  }} // Added more padding to hero
+      >
+        {/* Gradient Background */}
+        <LinearGradient
+          colors={[PRIMARY, BG_DARK]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          className="absolute inset-0"
+        />
+
+        {/* Decorative elements */}
+        <View className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white opacity-5" />
+        <View className="absolute top-32 -right-10 w-48 h-48 rounded-full bg-white opacity-5" />
+
+        <Animated.View entering={SlideInUp.duration(600)} className="mb-2 z-10 mt-6">
+          <Text className="text-white/60 text-xs uppercase tracking-[2px] mb-4">
+            Welcome Back
           </Text>
-          <Text className="text-white text-[40px]  leading-[44px] tracking-tight">
-            Where are{"\n"}you today?
+          <Text className="text-white text-4xl leading-tight mb-3">
+            Choose Your{"\n"}Path
           </Text>
-          <Text className="text-white/70 text-sm mt-3 leading-6">
-            Let&apos;s build the right plan for you
+          <Text className="text-white opacity-80 text-sm leading-6 mt-2 max-w-xs">
+            Select what you'd like to focus on in your Quran journey
           </Text>
-        </View>
+        </Animated.View>
       </View>
 
-      {/* White Rounded Card Sheet */}
-      <View className="flex-1 bg-white rounded-t-[32px] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] z-10" style={{ marginTop: -24 }}>
-        {/* Drag handle bar */}
-        <View className="w-12 h-1.5 bg-slate-200 rounded-full self-center mt-3 mb-6" />
-
+      {/* Card Sheet */}
+      <View
+        className="flex-1 rounded-t-3xl overflow-hidden"
+        style={{ backgroundColor: CARD_BG, marginTop: 8 }}
+      >
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
-            paddingHorizontal: 24,
-            paddingBottom: insets.bottom + 24,
+            paddingHorizontal: 20,
+            paddingTop: 32,
+            paddingBottom: insets.bottom + 32,
           }}
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          <Text className="text-[11px] uppercase tracking-[2px] text-slate-400  mb-5 px-1">
-            Choose Your Path
+          {/* Section Label */}
+          <Text className="text-slate-400 text-xs uppercase tracking-widest mb-6 px-1">
+            Choose One to Get Started
           </Text>
 
           {/* Option cards */}
-          <View className="gap-y-3.5 mb-2">
-            {OPTIONS.map((option) => (
-              <OptionCard
+          <View className="gap-y-4 mb-4">
+            {OPTIONS.map((option, index) => (
+              <Animated.View
                 key={option.type}
-                option={option}
-                selected={selected === option.type}
-                onPress={() => setSelected(option.type)}
-              />
+                entering={SlideInUp.delay(index * 100).duration(500)}
+              >
+                <OptionCard
+                  option={option}
+                  selected={selected === option.type}
+                  onPress={() => setSelected(option.type)}
+                />
+              </Animated.View>
             ))}
           </View>
 
-          <View className="mt-auto pt-6">
-            <Text className="text-[13px] text-slate-400 text-center mb-4">
-              You can change this anytime
+          <View className="mt-auto pt-8">
+            <Text className="text-slate-400 text-xs text-center mb-5 px-2">
+              You can update this anytime in your settings
             </Text>
 
-            {/* CTA Button */}
             <Pressable
               onPress={handleContinue}
               disabled={!selected}
-              className="active:opacity-90"
+              className="active:opacity-75"
             >
-              <Animated.View
-                style={[buttonStyle]}
-                className="w-full h-14 rounded-2xl items-center justify-center flex-row shadow-sm"
-              >
-                <Animated.Text
-                  style={[buttonTextStyle, { fontFamily: "Rosemary" }]}
-                  className="text-base  tracking-wide"
+              <Animated.View style={[buttonStyle]}>
+                <LinearGradient
+                  colors={
+                    selected
+                      ? [PRIMARY_LIGHT, PRIMARY]
+                      : ["#E2E8F0", "#E2E8F0"]
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  className="w-full h-14 rounded-[60px] items-center justify-center flex-row"
                 >
-                  Continue
-                </Animated.Text>
-                
-                <Animated.View style={[iconStyle]} className="ml-1 mt-0.5">
-                  <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-                </Animated.View>
+                  <Animated.Text
+                    style={{ color: selected ? "#FFFFFF" : "#94A3B8" }}
+                    className="text-base font-semibold "
+                  >
+                    Continue
+                  </Animated.Text>
+
+                  <Animated.View style={[iconStyle]} className="ml-2">
+                    <Ionicons
+                      name="arrow-forward"
+                      size={18}
+                      color={selected ? "#FFFFFF" : "#94A3B8"}
+                    />
+                  </Animated.View>
+                </LinearGradient>
               </Animated.View>
             </Pressable>
           </View>

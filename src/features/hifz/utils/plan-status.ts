@@ -96,6 +96,11 @@ export const hifzStatus = (
         remainingPages
       );
 
+    const derivedEndPage = plan.direction === 'forward'
+      ? Math.min(604, plan.startPage + plan.totalPages - 1)
+      : Math.max(1, plan.startPage - plan.totalPages + 1);
+    const derivedEndSurah = getSurah(derivedEndPage, surah);
+
     return {
     progress,
     accuracy,
@@ -117,11 +122,9 @@ export const hifzStatus = (
     plannedPages,
 
     startSurah: getSurahNameByNumber(plan.startSurah, surah),
-    endSurah: plan.direction === "forward" ? "An-Nas" : "Al-Fatihah",
+    endSurah: derivedEndSurah?.englishName ?? getSurahNameByNumber(plan.startSurah, surah),
     startPage: plan.startPage,
-    endPage: plan.direction === 'forward' 
-      ? plan.startPage + plan.totalPages - 1 
-      : plan.startPage - plan.totalPages + 1,
+    endPage: derivedEndPage,
 
     targetEndDate: finishDate,
     daysNeeded,

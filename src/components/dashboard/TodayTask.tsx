@@ -74,7 +74,7 @@ export const TodayTasksSection = ({
           hifz={hifzPlan!} 
           task={hifzState.task} 
           title={hifzState.task.displaySurah}
-          subTitle={`Target: ${hifzState.task.totalTarget} pages • Juz ${hifzState.task.juz}`}
+          subTitle={`Target: ${hifzState.task.totalTarget} pages · Pages ${hifzState.task.startPage}–${hifzState.task.endPage}`}
           onDetails={onLogHifz}
         />
       ) : hifzState.type === 'REST_DAY' ? (

@@ -5,7 +5,7 @@ import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { View } from "react-native";
 import { useAppActiveRefresh } from "@/src/hooks/useAppActiveRefresh";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useCallback, useRef, useMemo } from "react";
 import { Redirect } from "expo-router";
 import { useNavigate } from "@/src/hooks/useNavigate";
 import Card from "@/src/components/dashboard/Card";
@@ -13,7 +13,6 @@ import StatCard from "@/src/features/hifz/components/StatCard";
 import { DashboardSkeleton } from "@/src/components/dashboard/Skeleton";
 import { Header } from "@/src/components/navigation/Header";
 import { hifzStatus } from "@/src/features/hifz/utils/plan-status";
-import { useMemo } from "react";
 import { Text } from "@/src/components/common/ui/Text";
 import { HabitProgressRing } from "@/src/features/habits/components/HabitProgressRing";
 import { HeatmapOfHeart } from "@/src/features/quran/components/HeatmapOfHeart";
@@ -28,9 +27,6 @@ import { useSyncStore } from "@/src/services/sync/syncStore";
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
-  useAppActiveRefresh(useCallback(() => {
-    queryClient.invalidateQueries();
-  }, [queryClient]));
 
   const { push } = useNavigate();
   const { items: surah } = useLoadSurahData();
@@ -47,9 +43,7 @@ export default function Dashboard() {
   const { data: badges = [] } = useUserBadges();
   const { data: userStats } = useUserStats();
 
-  // Only true after the first remote pull has completed — prevents premature onboarding redirect
   const hasSyncedOnce = useSyncStore((s) => s.hasSyncedOnce);
-
   const surahReady = surah.length > 0;
 
   const hifzAnalytics = useMemo(() => {
@@ -58,11 +52,13 @@ export default function Dashboard() {
     if (!status) return null;
     const stripSurah = (name?: string) =>
       name?.replace(/^Surat\s+/i, "").trim() ?? "";
-
     return {
       ...status,
       daysPerWeek: hifzPlan.selectedDays?.length ?? 0,
-      planRangeLabel: [stripSurah(status.startSurah), stripSurah(status.endSurah)]
+      planRangeLabel: [
+        stripSurah(status.startSurah),
+        stripSurah(status.endSurah),
+      ]
         .filter(Boolean)
         .join(" – "),
     };
@@ -70,10 +66,8 @@ export default function Dashboard() {
 
   const murajaHero = useMemo(() => {
     if (!murajaPlan) return null;
-
     const stripSurah = (name?: string) =>
       name?.replace(/^Surat\s+/i, "").trim() ?? "";
-
     return {
       id: murajaPlan.id,
       planned_pages_per_day: murajaPlan.planned_pages_per_day,
@@ -82,48 +76,53 @@ export default function Dashboard() {
       currentSurah: murajaStats?.currentSurah,
       pageInSurah: murajaStats?.pageInSurah,
       startSurah: murajaPlan.startSurah,
-      planRangeLabel: [stripSurah(murajaPlan.startSurah), stripSurah(murajaPlan.endSurah)]
+      planRangeLabel: [
+        stripSurah(murajaPlan.startSurah),
+        stripSurah(murajaPlan.endSurah),
+      ]
         .filter(Boolean)
         .join(" – "),
       overAllProgress: murajaStats?.overAllProgress,
     };
   }, [murajaPlan, murajaStats]);
 
+  const lastHifzAnalytics = useRef(hifzAnalytics);
+  if (hifzAnalytics) lastHifzAnalytics.current = hifzAnalytics;
+
+  const lastMurajaHero = useRef(murajaHero);
+  if (murajaHero) lastMurajaHero.current = murajaHero;
+
   const dynamicGoalPages = useMemo(() => {
     let goal = 0;
-
-    // Muraja: count this plan's pages only if a task is actually due today (scheduled or catch-up)
     if (murajaPlan && murajaTodayTask) {
       const start = murajaTodayTask.startPage;
       const end = murajaTodayTask.quotaEnd ?? murajaTodayTask.endPage;
       goal += Math.max(0, end - start + 1);
     }
-
-    // Hifz: count this plan's pages only if a task is actually due today
     if (hifzPlan && hifzTodayTask) {
       goal += hifzTodayTask.totalTarget ?? 0;
     }
-
-    // True global rest day — show ring as "full" relative to whatever was done
-    // so it doesn't demand 24 pages when nothing was planned
     if (goal === 0) {
       const completed = habitProgress.todayStats.completedPages;
       return Math.max(1, completed);
     }
-
     return goal;
-  }, [murajaPlan, murajaTodayTask, hifzPlan, hifzTodayTask, habitProgress.todayStats.completedPages]);
+  }, [
+    murajaPlan,
+    murajaTodayTask,
+    hifzPlan,
+    hifzTodayTask,
+    habitProgress.todayStats.completedPages,
+  ]);
 
-  // Only block on plans — surah data loads independently and each section handles its own state
-  const isLoading = loadingHifz || loadingMuraja;
-  if (isLoading) return <DashboardSkeleton />;
+  const isFirstLoad =
+    (loadingHifz && !hifzPlan) || (loadingMuraja && !murajaPlan);
+  if (isFirstLoad) return <DashboardSkeleton />;
 
-  // Only redirect if sync has completed AND still no plans — prevents new-device false redirect
   if (hasSyncedOnce && !hifzPlan && !murajaPlan) {
     return <Redirect href="/onboarding" />;
   }
 
-  // Still waiting for first sync on a new device — show skeleton, not onboarding
   if (!hifzPlan && !murajaPlan) {
     return <DashboardSkeleton />;
   }
@@ -135,9 +134,9 @@ export default function Dashboard() {
         <ScreenContent>
           <View className="mb-8">
             <Card
-              hifzAnalytics={hifzAnalytics ?? null}
+              hifzAnalytics={hifzAnalytics ?? lastHifzAnalytics.current}
+              murajaHero={murajaHero ?? lastMurajaHero.current}
               habitProgress={habitProgress}
-              murajaHero={murajaHero}
               userStats={userStats ?? null}
             />
           </View>
@@ -175,10 +174,7 @@ export default function Dashboard() {
             <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
               Insights
             </Text>
-            <Text className="text-2xl text-slate-900 mb-6">
-              Plan Analytics
-            </Text>
-
+            <Text className="text-2xl text-slate-900 mb-6">Plan Analytics</Text>
             <View className="flex-row flex-wrap justify-between">
               <StatCard
                 category="Hifz"

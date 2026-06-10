@@ -7,6 +7,9 @@ import { Pressable, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+// Screens with a dark/primary background at the top need light status bar icons
+const PRIMARY_BG_SCREENS = ["/hifz/log", "/muraja/log", "/hifz/create-hifz-plan", "/muraja/create-muraja-plan"];
+
 const ACTIVE_COLOR = "#276359";
 const INACTIVE_COLOR = "#94a3b8";
 
@@ -32,9 +35,12 @@ export default function AppLayout() {
     return <Redirect href="./(auth)" />;
   }
 
+  // Smart status bar: use light icons on dark-header screens
+  const needsLightStatusBar = PRIMARY_BG_SCREENS.some((p) => pathname.includes(p));
+
   return (
     <View className="flex-1">
-      <StatusBar style="dark" />
+      <StatusBar style={needsLightStatusBar ? "light" : "dark"} backgroundColor="transparent" translucent />
       <NotificationBootstrap />
 
       <Tabs
@@ -44,20 +50,22 @@ export default function AppLayout() {
           tabBarStyle: hideTabs
             ? { display: "none" }
             : {
-                backgroundColor: "#ffffff",
-                borderRadius: 32,
+                backgroundColor: "rgba(255, 255, 255, 0.96)",
+                borderRadius: 36,
                 marginHorizontal: 16,
-                height: 64,
+                height: 68,
                 paddingBottom: 8,
                 paddingTop: 8,
                 position: "absolute",
                 borderTopWidth: 0,
-                elevation: 12,
-                shadowColor: "#276359",
-                shadowOpacity: 0.12,
-                shadowRadius: 16,
-                shadowOffset: { width: 0, height: 4 },
-                bottom: Math.max(insets.bottom, 10) + 6,
+                // Telegram-style overlay: high elevation + strong shadow
+                elevation: 32,
+                zIndex: 100,
+                shadowColor: "#1a3a36",
+                shadowOpacity: 0.18,
+                shadowRadius: 24,
+                shadowOffset: { width: 0, height: -2 },
+                bottom: Math.max(insets.bottom, 8) + 8,
               },
           tabBarLabelStyle: {
             fontSize: 10,
@@ -192,12 +200,13 @@ export default function AppLayout() {
           onPress={() => router.push("/(app)/ai-chat" as never)}
           className="absolute right-5 bg-primary rounded-full w-14 h-14 items-center justify-center"
           style={{
-            bottom: 64 + Math.max(insets.bottom, 10) + 96, // Elevated to sit perfectly above sticky screen footers
+            bottom: 68 + Math.max(insets.bottom, 8) + 80,
+            zIndex: 200, // Always above tab bar
             shadowColor: "#276359",
             shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 0.3,
-            shadowRadius: 12,
-            elevation: 10, // Drop shadow for Android
+            shadowOpacity: 0.35,
+            shadowRadius: 14,
+            elevation: 40,
           }}
         >
           <Ionicons name="chatbubbles" size={24} color="#fff" />
