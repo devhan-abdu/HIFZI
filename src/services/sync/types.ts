@@ -6,6 +6,9 @@ export type SyncTableName =
   | "activity_logs"
   | "notifications"
   | "habit_events"
+  | "user_stats"
+  | "page_performance"
+  | "page_activity_logs"
   | "all";
 
 export interface SyncErrorDetail {

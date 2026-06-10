@@ -110,6 +110,12 @@ export async function pullMurajaLogs(
       where: eq(dailyMurajaLogs.id, localId),
     });
 
+    const localPlan = await db.query.weeklyMurajaPlans.findFirst({
+      where: eq(weeklyMurajaPlans.remoteId, String(row.plan_id ?? "")),
+    });
+    const planId: number | undefined = localPlan?.id ?? local?.planId ?? undefined;
+    if (!planId) continue;
+
     if (!local) {
       const localByDate = await db.query.dailyMurajaLogs.findFirst({
         where: and(
@@ -123,12 +129,6 @@ export async function pullMurajaLogs(
     }
 
     if (local && local.syncStatus === 0) continue;
-
-    const localPlan = await db.query.weeklyMurajaPlans.findFirst({
-      where: eq(weeklyMurajaPlans.remoteId, String(row.plan_id ?? "")),
-    });
-    const planId = localPlan?.id ?? local?.planId;
-    if (!planId) continue;
 
     const values = {
       planId,

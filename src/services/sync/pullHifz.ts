@@ -112,6 +112,12 @@ export async function pullHifzLogs(
       where: eq(hifzLogs.id, localId),
     });
 
+    const localPlan = await db.query.hifzPlans.findFirst({
+      where: eq(hifzPlans.remoteId, String(row.hifz_plan_id ?? "")),
+    });
+    const hifzPlanId: number = localPlan?.id ?? local?.hifzPlanId ?? 0;
+    if (!hifzPlanId) continue;
+
     if (!local) {
       const localByDate = await db.query.hifzLogs.findFirst({
         where: and(
@@ -129,12 +135,6 @@ export async function pullHifzLogs(
 
     const remoteAt = remoteUpdatedAt(row);
     if (local && compareUpdatedAt(remoteAt, local.updatedAt) <= 0) continue;
-
-    const localPlan = await db.query.hifzPlans.findFirst({
-      where: eq(hifzPlans.remoteId, String(row.hifz_plan_id ?? "")),
-    });
-    const hifzPlanId = localPlan?.id ?? local?.hifzPlanId ?? 0;
-    if (!hifzPlanId) continue;
 
     const values = {
       userId,

@@ -6,6 +6,11 @@ import { pushHifzLogs, pushHifzPlans } from "./pushHifz";
 import { pushMurajaLogs, pushMurajaPlans } from "./pushMuraja";
 import { pullHifzLogs, pullHifzPlans } from "./pullHifz";
 import { pullMurajaLogs, pullMurajaPlans } from "./pullMuraja";
+import { pushUserStats, pushPagePerformance } from "./pushUser";
+import { pullUserStats, pullPagePerformance } from "./pullUser";
+import { pushPageActivityLogs } from "./pushHabits";
+import { pullHabitLogs, pullHabitEvents, pullPageActivityLogs } from "./pullHabits";
+import { pullNotifications } from "./pullNotifications";
 import { syncMeta } from "./syncMeta";
 import { useSyncStore } from "./syncStore";
 import type { RemoteSyncRow, SyncTableName } from "./types";
@@ -21,7 +26,6 @@ const SYNC_TABLES_REALTIME = [
 class SyncEngine {
   private userId: string | null = null;
   private channel: RealtimeChannel | null = null;
-  private foregroundInterval: ReturnType<typeof setInterval> | null = null;
   private syncInFlight: Promise<void> | null = null;
   private habitRepo = new HabitRepository();
 
@@ -49,11 +53,9 @@ class SyncEngine {
     this.userId = userId;
     await this.runSyncCycle({ pullFirst: true });
     await this.subscribeRealtime(userId);
-    this.startForegroundInterval();
   }
 
   async onLogout(): Promise<void> {
-    this.stopForegroundInterval();
     await this.unsubscribeRealtime();
     await syncMeta.clearTimestamps();
     this.userId = null;
@@ -126,26 +128,13 @@ class SyncEngine {
     }
   }
 
-  private startForegroundInterval() {
-    this.stopForegroundInterval();
-    this.foregroundInterval = setInterval(() => {
-      void this.runSyncCycle({ full: true });
-    }, 5 * 60 * 1000);
-  }
-
-  private stopForegroundInterval() {
-    if (this.foregroundInterval) {
-      clearInterval(this.foregroundInterval);
-      this.foregroundInterval = null;
-    }
-  }
-
   onAppForeground() {
-    void this.runSyncCycle({ full: true });
+    // Only pull incremental changes when returning to the app
+    void this.runSyncCycle({ full: false });
   }
 
   onNetworkReconnect() {
-    void this.runSyncCycle({ full: true });
+    void this.runSyncCycle({ full: false });
   }
 
   private async runSyncCycle(options: {
@@ -186,6 +175,12 @@ class SyncEngine {
               (await pullHifzLogs(userId, sincePull)) ||
               (await pullMurajaPlans(userId, sincePull)) ||
               (await pullMurajaLogs(userId, sincePull)) ||
+              (await pullUserStats(userId, sincePull)) ||
+              (await pullPagePerformance(userId, sincePull)) ||
+              (await pullHabitLogs(userId, sincePull)) ||
+              (await pullHabitEvents(userId, sincePull)) ||
+              (await pullPageActivityLogs(userId, sincePull)) ||
+              (await pullNotifications(userId, sincePull)) ||
               remoteChanged;
           } else if (options.pullOnly === "hifz_plans") {
             remoteChanged = await pullHifzPlans(userId, sincePull);
@@ -195,6 +190,18 @@ class SyncEngine {
             remoteChanged = await pullMurajaPlans(userId, sincePull);
           } else if (options.pullOnly === "muraja_logs") {
             remoteChanged = await pullMurajaLogs(userId, sincePull);
+          } else if (options.pullOnly === "user_stats") {
+            remoteChanged = await pullUserStats(userId, sincePull);
+          } else if (options.pullOnly === "page_performance") {
+            remoteChanged = await pullPagePerformance(userId, sincePull);
+          } else if (options.pullOnly === "activity_logs") {
+            remoteChanged = await pullHabitLogs(userId, sincePull);
+          } else if (options.pullOnly === "habit_events") {
+            remoteChanged = await pullHabitEvents(userId, sincePull);
+          } else if (options.pullOnly === "page_activity_logs") {
+            remoteChanged = await pullPageActivityLogs(userId, sincePull);
+          } else if (options.pullOnly === "notifications") {
+            remoteChanged = await pullNotifications(userId, sincePull);
           }
 
           const now = new Date().toISOString();
@@ -212,6 +219,9 @@ class SyncEngine {
             await pushHifzLogs(userId);
             await pushMurajaPlans(userId);
             await pushMurajaLogs(userId);
+            await pushUserStats(userId);
+            await pushPagePerformance(userId);
+            await pushPageActivityLogs(userId);
             await this.habitRepo.syncPendingLogs(userId);
             await notificationService.syncWithRemote(userId);
           } else if (options.pushOnly === "hifz_plans") {
@@ -222,9 +232,15 @@ class SyncEngine {
             await pushMurajaPlans(userId);
           } else if (options.pushOnly === "muraja_logs") {
             await pushMurajaLogs(userId);
+          } else if (options.pushOnly === "user_stats") {
+            await pushUserStats(userId);
+          } else if (options.pushOnly === "page_performance") {
+            await pushPagePerformance(userId);
           } else if (options.pushOnly === "activity_logs") {
             await this.habitRepo.syncPendingLogs(userId);
-          } else if (options.pushOnly === "notifications") {
+          } else if (options.pushOnly === "page_activity_logs") {
+            await pushPageActivityLogs(userId);
+          } else if (options.pushOnly === "notifications" || options.pushOnly === "habit_events") {
             await notificationService.syncWithRemote(userId);
           }
 
