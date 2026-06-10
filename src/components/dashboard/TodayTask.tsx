@@ -10,8 +10,7 @@ import { router } from "expo-router";
 import { useNavigate } from "@/src/hooks/useNavigate";
 import { PlanEndCard } from "@/src/features/habits/components/PlanEndCard";
 
-import { usePlanLifecycle } from "@/src/features/habits/hooks/usePlanLifecycle";
-import { useWeeklyEvaluationTrigger } from "@/src/features/habits/hooks/useWeeklyEvaluationTrigger";
+import { useDashboardState } from "@/src/features/habits/hooks/useDashboardState";
 
 export const TodayTasksSection = ({ 
   onLogHifz, 
@@ -21,72 +20,81 @@ export const TodayTasksSection = ({
   onLogMuraja: () => void;
 }) => {
   const {
-    todayTask: todayPlan,
+    todayTask: murajaTask,
     loading: murajaLoading,
-    weeklyPlan,
+    weeklyPlan: murajaPlan,
+    isRestDay: murajaRestDay,
+    refetch: refetchMuraja,
   } = useWeeklyMuraja();
+
   const {
-    hifz,
-    todayTask: hifzTodayTask,
+    hifz: hifzPlan,
+    todayTask: hifzTask,
     loading: hifzLoading,
+    isRestDay: hifzRestDay,
+    hasTodayLog: hifzHasTodayLog,
+    refetch: refetchHifz,
   } = useHifzDailyTask();
 
-  const { getPlanState } = usePlanLifecycle();
-  const { duePlans } = useWeeklyEvaluationTrigger();
+  const { state: hifzState, isLoading: hifzStateLoading } = useDashboardState(
+    'HIFZ', 
+    hifzPlan, 
+    hifzTask, 
+    !!hifzRestDay, 
+    hifzLoading, 
+    refetchHifz,
+    hifzHasTodayLog
+  );
 
-  const hifzEvalDue = duePlans.some((p) => p.activityType === "HIFZ");
-  const murajaEvalDue = duePlans.some((p) => p.activityType === "MURAJA");
+  const { state: murajaState, isLoading: murajaStateLoading } = useDashboardState(
+    'MURAJA', 
+    murajaPlan, 
+    murajaTask, 
+    !!murajaRestDay, 
+    murajaLoading, 
+    refetchMuraja
+  );
 
-  const hifzState = hifzEvalDue
-    ? "EVALUATION_DUE"
-    : getPlanState(hifz?.id, "HIFZ");
-  const murajaState = murajaEvalDue
-    ? "EVALUATION_DUE"
-    : getPlanState(weeklyPlan?.id, "MURAJA");
-
-
-  if (murajaLoading || hifzLoading) {
+  if (murajaStateLoading || hifzStateLoading) {
     return [1, 2].map((index) => <CardSkeleton key={index} />);
   }
 
-  const hasMurajaTask = !!todayPlan;
-  const hasAnyPlan = !!(hifz || weeklyPlan);
-
+  const hasAnyPlan = !!(hifzPlan || murajaPlan);
   if (!hasAnyPlan) return null;
 
   return (
     <View className="gap-y-4">
       {/* Hifz Slot */}
-      {hifzState === 'EVALUATION_DUE' ? (
+      {hifzState.type === 'EVALUATION_DUE' ? (
           <EvaluationRequiredCard type="hifz" />
-      ) : hifzState === 'COMPLETION_DUE' ? (
-          <PlanEndCard activityType="HIFZ" localRefId={hifz?.id ?? 0} title={hifz?.startSurah?.toString() ?? ''} />
-      ) : !!hifz && hifzTodayTask ? (
+      ) : hifzState.type === 'PLAN_FINISHED' ? (
+          <PlanEndCard activityType="HIFZ" localRefId={hifzPlan?.id ?? 0} title={hifzPlan?.startSurah?.toString() ?? ''} />
+      ) : (hifzState.type === 'COMPLETED_TODAY' || hifzState.type === 'PLANNED_DAY' || hifzState.type === 'CATCHUP_DAY') ? (
         <HifzActionCard 
-          hifz={hifz!} 
-          task={hifzTodayTask} 
-          title={hifzTodayTask.displaySurah}
-          subTitle={`Target: ${hifzTodayTask.totalTarget} pages • Juz ${hifzTodayTask.juz}`}
+          hifz={hifzPlan!} 
+          task={hifzState.task} 
+          title={hifzState.task.displaySurah}
+          subTitle={`Target: ${hifzState.task.totalTarget} pages • Juz ${hifzState.task.juz}`}
           onDetails={onLogHifz}
         />
-      ) : !!hifz && (
+      ) : hifzState.type === 'REST_DAY' ? (
         <RestDayCardSingle type="hifz" onLog={onLogHifz} />
-      )}
+      ) : null}
       
       {/* Muraja Slot */}
-      {murajaState === 'EVALUATION_DUE' ? (
+      {murajaState.type === 'EVALUATION_DUE' ? (
           <EvaluationRequiredCard type="muraja" />
-      ) : murajaState === 'COMPLETION_DUE' ? (
-          <PlanEndCard activityType="MURAJA" localRefId={weeklyPlan?.id ?? 0} title="Muraja Plan" />
-      ) : !!weeklyPlan && todayPlan ? (
+      ) : murajaState.type === 'PLAN_FINISHED' ? (
+          <PlanEndCard activityType="MURAJA" localRefId={murajaPlan?.id ?? 0} title="Muraja Plan" />
+      ) : (murajaState.type === 'COMPLETED_TODAY' || murajaState.type === 'PLANNED_DAY' || murajaState.type === 'CATCHUP_DAY') ? (
         <MurajaActionCard 
-          todayPlan={todayPlan} 
-          weeklyPlan={weeklyPlan} 
+          todayPlan={murajaState.task} 
+          weeklyPlan={murajaPlan} 
           onDetails={onLogMuraja}
         />
-      ) : !!weeklyPlan && (
+      ) : murajaState.type === 'REST_DAY' ? (
         <RestDayCardSingle type="muraja" onLog={onLogMuraja} />
-      )}
+      ) : null}
     </View>
   );
 };

@@ -60,19 +60,26 @@ export const MurajaActionCard = ({
     }
   };
 
-  const isPartial = todayPlan.status === "partial";
-
-  const subTitle = todayPlan.status === "partial" 
-    ? `${todayPlan.completedPages} pages done · ${todayPlan.startPage} – ${todayPlan.endPage}`
-    : `${todayPlan.isVirtualTask ? "Next Suggested · " : ""}Pages ${todayPlan.startPage} – ${todayPlan.endPage}`;
-
-  const title =
-    todayPlan.startSurah === todayPlan.endSurah ?
-      todayPlan.startSurah
-    : `${todayPlan.startSurah} – ${todayPlan.endSurah}`;
+  // quotaEnd = planned target end; endPage = actual logged end (may exceed quota)
+  const planTargetEnd = todayPlan.quotaEnd ?? todayPlan.endPage;
+  const actualEnd = todayPlan.endPage; // may be > planTargetEnd when user logged beyond plan
+  const planTargetStart = todayPlan.startPage;
+  const plannedCount = planTargetEnd - planTargetStart + 1;
 
   const currentStatus = todayPlan?.status || "pending";
   const isCompleted = currentStatus === "completed";
+  const isPartial = currentStatus === "partial";
+
+  const subTitle = isPartial
+    ? `${todayPlan.completedPages} / ${plannedCount} pages · ${planTargetStart}–${planTargetEnd}`
+    : isCompleted && todayPlan.completedPages > 0
+    ? `${todayPlan.completedPages} pages done · ${planTargetStart}–${actualEnd}`
+    : `${todayPlan.isVirtualTask ? "Next Suggested · " : ""}Pages ${planTargetStart}–${planTargetEnd}`;
+
+  const title =
+    todayPlan.startSurah === todayPlan.endSurah
+      ? todayPlan.startSurah
+      : `${todayPlan.startSurah} – ${todayPlan.endSurah}`;
 
   return (
     <>

@@ -83,12 +83,16 @@ export const ActionTaskCard = ({
           </Text>
         </View>
 
-        <Pressable
-          onPress={onDetails}
-          className="w-10 h-10 rounded-2xl items-center justify-center active:scale-95 bg-slate-50 border border-slate-100"
-        >
-          <Ionicons name="ellipsis-horizontal" size={18} color="#94a3b8" />
-        </Pressable>
+
+
+        {!hideActionButtons && (
+          <Pressable
+            onPress={onDetails}
+            className="w-10 h-10 rounded-2xl items-center justify-center active:scale-95 bg-slate-50 border border-slate-100"
+          >
+            <Ionicons name="ellipsis-horizontal" size={18} color="#94a3b8" />
+          </Pressable>
+        )}
       </View>
 
       {!hideActionButtons && (
