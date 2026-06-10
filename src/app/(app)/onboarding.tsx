@@ -204,7 +204,7 @@ export default function OnboardingBridge() {
         <View className="absolute top-24 -right-8 w-40 h-40 rounded-full bg-white/10" />
 
         <View className="mb-8">
-          <Text className="text-white/70 text-xs uppercase tracking-[3px] mb-3 font-medium">
+          <Text className="text-white/70 text-xs uppercase tracking-[3px] mb-3 ">
             Your Quran Journey
           </Text>
           <Text className="text-white text-[40px]  leading-[44px] tracking-tight">
@@ -230,7 +230,7 @@ export default function OnboardingBridge() {
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          <Text className="text-[11px] uppercase tracking-[2px] text-slate-400 font-medium mb-5 px-1">
+          <Text className="text-[11px] uppercase tracking-[2px] text-slate-400  mb-5 px-1">
             Choose Your Path
           </Text>
 
