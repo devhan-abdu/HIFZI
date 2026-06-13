@@ -13,9 +13,8 @@
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhcWNycWJueGFybmttY3ZzYnluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMTYyNzEsImV4cCI6MjA5NjU5MjI3MX0.qRDupwX_wRjF84zFe7lHrtjgwdm7cZHIIySTYStl6o0",
         "EXPO_PUBLIC_QF_CLIENT_ID": "8ac8d4dd-a859-4d3c-a269-254630f9111d",
         "EXPO_PUBLIC_BACKEND_URL": "https://aaqcrqbnxarnkmcvsbyn.supabase.co/functions/v1",
-        "EXPO_PUBLIC_QF_ENV": "prelive",
-        "EXPO_PUBLIC_QF_URL": "https://prelive-oauth2.quran.foundation",
-        "EXPO_PUBLIC_REDIRECT_URI": "hifzi-dev://login"
+        "EXPO_PUBLIC_QF_ENV": "production",
+        "EXPO_PUBLIC_QF_URL": "https://oauth2.quran.foundation"
       },
       "android": {
         "buildType": "apk"
@@ -30,9 +29,8 @@
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhcWNycWJueGFybmttY3ZzYnluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMTYyNzEsImV4cCI6MjA5NjU5MjI3MX0.qRDupwX_wRjF84zFe7lHrtjgwdm7cZHIIySTYStl6o0",
         "EXPO_PUBLIC_QF_CLIENT_ID": "8ac8d4dd-a859-4d3c-a269-254630f9111d",
         "EXPO_PUBLIC_BACKEND_URL": "https://aaqcrqbnxarnkmcvsbyn.supabase.co/functions/v1",
-        "EXPO_PUBLIC_QF_ENV": "prelive",
-        "EXPO_PUBLIC_QF_URL": "https://prelive-oauth2.quran.foundation",
-        "EXPO_PUBLIC_REDIRECT_URI": "hifzi://login"
+        "EXPO_PUBLIC_QF_ENV": "production",
+        "EXPO_PUBLIC_QF_URL": "https://oauth2.quran.foundation"
       },
       "android": {
         "buildType": "apk"
@@ -46,9 +44,8 @@
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhcWNycWJueGFybmttY3ZzYnluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMTYyNzEsImV4cCI6MjA5NjU5MjI3MX0.qRDupwX_wRjF84zFe7lHrtjgwdm7cZHIIySTYStl6o0",
         "EXPO_PUBLIC_QF_CLIENT_ID": "8ac8d4dd-a859-4d3c-a269-254630f9111d",
         "EXPO_PUBLIC_BACKEND_URL": "https://aaqcrqbnxarnkmcvsbyn.supabase.co/functions/v1",
-        "EXPO_PUBLIC_QF_ENV": "prelive",
-        "EXPO_PUBLIC_QF_URL": "https://prelive-oauth2.quran.foundation",
-        "EXPO_PUBLIC_REDIRECT_URI": "hifzi://login"
+        "EXPO_PUBLIC_QF_ENV": "production",
+        "EXPO_PUBLIC_QF_URL": "https://oauth2.quran.foundation"
       },
       "android": {
         "buildType": "app-bundle"
