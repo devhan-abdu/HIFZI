@@ -22,7 +22,6 @@ export const PlanEndCard: React.FC<PlanEndCardProps> = ({ activityType, localRef
             className="mb-6 overflow-hidden"
         >
             <View className="p-7 rounded-[40px] bg-white relative shadow-2xl shadow-slate-200 border border-slate-200 overflow-hidden">
-                {/* Achievement Glow Decoration */}
                 <View className="absolute -right-6 -bottom-6 w-32 h-32 bg-amber-400/20 border border-amber-300 rounded-full" />
                 <View className="absolute -right-12 -bottom-12 w-48 h-48 bg-amber-50/50 rounded-full" />
 

@@ -15,6 +15,7 @@ export function MurajaOnlyEvaluation({
   report,
   needsExam,
   isFinalizing,
+  examPassed,
   error,
   onTakeExam,
   onFinalize,
@@ -22,11 +23,12 @@ export function MurajaOnlyEvaluation({
   report: WeeklyPerformanceReport;
   needsExam: boolean;
   isFinalizing: boolean;
+  examPassed: boolean;
   error: string | null;
   onTakeExam: () => void;
   onFinalize: () => void;
 }) {
-  const recommendationUnlocked = !needsExam || report.murajaTestScore !== undefined;
+ const recommendationUnlocked = !needsExam || examPassed;
 
   return (
     <View className="pb-20">
@@ -39,23 +41,43 @@ export function MurajaOnlyEvaluation({
       <View className="gap-6">
         <SectionCard>
           <View className="flex-row flex-wrap gap-4">
-            <MetricTile label="Muraja Consistency" value={`${report.murajaCompletion.toFixed(0)}%`} accent="primary" />
-            <MetricTile label="Pages Revised" value={`${report.murajaTotalCompletedPages}`} />
-            <MetricTile label="Days Missed" value={`${report.murajaMissedDays}`} accent={report.murajaMissedDays > 0 ? "amber" : "primary"} />
+            <MetricTile
+              label="Muraja Consistency"
+              value={`${report.murajaCompletion.toFixed(0)}%`}
+              accent="primary"
+            />
+            <MetricTile
+              label="Pages Revised"
+              value={`${report.murajaTotalCompletedPages}`}
+            />
+            <MetricTile
+              label="Days Missed"
+              value={`${report.murajaMissedDays}`}
+              accent={report.murajaMissedDays > 0 ? "amber" : "primary"}
+            />
           </View>
         </SectionCard>
 
-        {needsExam ? (
+        {needsExam ?
           <ExamGateCard
             title="Muraja Revision Test"
             description="This test is scoped to the pages you revised in this cycle. Complete it before finalizing the new revision pace."
-            buttonLabel={report.murajaTestScore !== undefined ? `Retake Muraja Exam (${report.murajaTestScore.toFixed(0)}%)` : "Start Muraja Exam"}
+            buttonLabel={
+              report.murajaTestScore !== undefined ?
+                `Retake Muraja Exam (${report.murajaTestScore.toFixed(0)}%)`
+              : "Start Muraja Exam"
+            }
             onPress={onTakeExam}
             headerTone="amber"
+            footerNote={
+              report.murajaTestScore !== undefined && !examPassed ?
+                "A passing score is 75% or higher."
+              : undefined
+            }
           />
-        ) : null}
+        : null}
 
-        {recommendationUnlocked ? (
+        {recommendationUnlocked ?
           <RecommendationCard
             title="Adjusted Revision Goal"
             description={report.recommendation}
@@ -64,18 +86,18 @@ export function MurajaOnlyEvaluation({
             isLoading={isFinalizing}
             error={error}
           >
-            {report.hifzAdaptiveSuggestion ? (
+            {report.hifzAdaptiveSuggestion ?
               <SuggestionAlert
                 title="Pace Balance Recommended"
                 message={report.hifzAdaptiveSuggestion.message}
                 currentValue={`${report.hifzAdaptiveSuggestion.currentHifzTarget} pgs/day`}
                 suggestedValue={
-                  report.hifzAdaptiveSuggestion.action === "pause"
-                    ? "Pause new Hifz"
-                    : `${report.hifzAdaptiveSuggestion.suggestedHifzTarget} pgs/day`
+                  report.hifzAdaptiveSuggestion.action === "pause" ?
+                    "Pause new Hifz"
+                  : `${report.hifzAdaptiveSuggestion.suggestedHifzTarget} pgs/day`
                 }
               />
-            ) : null}
+            : null}
 
             <TargetRow
               label="Daily Muraja"
@@ -83,9 +105,8 @@ export function MurajaOnlyEvaluation({
               value={`${report.suggestedMurajaTarget} pgs`}
             />
           </RecommendationCard>
-        ) : (
-          <LockedRecommendationCard message="Your recommendation will unlock after you complete the Muraja revision test." />
-        )}
+        : <LockedRecommendationCard message="Your recommendation will unlock after you pass the Muraja revision test." />
+        }
       </View>
     </View>
   );

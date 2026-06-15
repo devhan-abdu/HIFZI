@@ -84,7 +84,6 @@ export default function PlanCompletionScreen() {
             await queryClient.invalidateQueries({ queryKey: ['hifz', user.id] });
             await queryClient.invalidateQueries({ queryKey: ['hifz-plan', user.id] });
             await queryClient.invalidateQueries({ queryKey: ['muraja-dashboard', user.id] });
-            await queryClient.invalidateQueries({ queryKey: ['muraja-review', user.id] });
             await queryClient.invalidateQueries({ queryKey: ['activity-plans', user.id] });
             await queryClient.invalidateQueries({ queryKey: ['habit-progress', user.id] });
             await queryClient.invalidateQueries({ queryKey: ['user-stats', user.id] });
@@ -106,7 +105,6 @@ export default function PlanCompletionScreen() {
             push('/(app)/hifz/create-hifz-plan');
         } else {
             await queryClient.invalidateQueries({ queryKey: ['muraja-dashboard', user.id] });
-            await queryClient.invalidateQueries({ queryKey: ['muraja-review', user.id] });
             await queryClient.invalidateQueries({ queryKey: ['activity-plans', user.id] });
             await queryClient.invalidateQueries({ queryKey: ['habit-progress', user.id] });
             push('/(app)/muraja/create-muraja-plan');
@@ -128,7 +126,6 @@ export default function PlanCompletionScreen() {
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={{ paddingBottom: 48, paddingHorizontal: 16 }}
                 >
-                    {/* ── Hero ── */}
                     <View className="items-center pt-10 pb-6">
                         <View
                             className="w-[72px] h-[72px] rounded-full items-center justify-center mb-4"
@@ -157,7 +154,6 @@ export default function PlanCompletionScreen() {
                         </Text>
                     </View>
 
-                    {/* ── Quick Stats ── */}
                     <View className="flex-row gap-2 mb-3">
                         <StatCard
                             value={`${report?.planDurationDays}d`}
@@ -176,7 +172,6 @@ export default function PlanCompletionScreen() {
                         />
                     </View>
 
-                    {/* ── Consistency Summary ── */}
                     <SectionCard>
                         <View className="flex-row items-center justify-between mb-4 pb-3 border-b border-slate-100">
                             <View className="flex-row items-center gap-2">
@@ -216,7 +211,6 @@ export default function PlanCompletionScreen() {
                         </View>
                     </SectionCard>
 
-                    {/* ── AI Retention Intelligence ── */}
                     <SectionCard>
                         <View className="flex-row items-center gap-2 mb-3 pb-3 border-b border-slate-100">
                             <Ionicons name="sparkles" size={15} color={PRIMARY} />
@@ -309,7 +303,6 @@ export default function PlanCompletionScreen() {
                         )}
                     </SectionCard>
 
-                    {/* ── Achievements ── */}
                     <SectionCard>
                         <View className="flex-row items-center gap-2 mb-3 pb-3 border-b border-slate-100">
                             <Ionicons name="ribbon" size={15} color={PRIMARY} />
@@ -358,7 +351,6 @@ export default function PlanCompletionScreen() {
                         )}
                     </SectionCard>
 
-                    {/* ── Next Path ── */}
                     <Text className="text-[10px] text-slate-400 uppercase tracking-[2px] mb-3 mt-2 px-0.5">
                         Choose next path
                     </Text>
