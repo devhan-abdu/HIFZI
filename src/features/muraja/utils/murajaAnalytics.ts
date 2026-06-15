@@ -82,7 +82,6 @@ export const computeWeeklyReview = (plan: any) => {
   };
 };
 
-// Alias for backward compat
 export const computePlanReview = computeWeeklyReview;
 
 export function calculateExpectedPages(
@@ -123,16 +122,7 @@ export function getPerformanceStatus(diff: number): 'ahead' | 'behind' | 'on-tra
         return 'on-track';
 }
 
-// ─── Rolling 7-Day Window (Range-Based) ──────────────────────────────────────
-/**
- * Generates a 7-day rolling window of plan days, always anchored within the
- * plan's startDate–endDate bounds.
- *
- * Window rules:
- *  - Normal: [today-3 … today … today+3] clipped to plan bounds
- *  - Near start (< 3 past plan days): show first 7 plan days
- *  - Near end (< 3 future plan days): anchor backward so window fills 7 days
- */
+
 export function generateRolling7DayWindow(
     planStartDateStr: string,
     planEndDateStr: string,
@@ -147,36 +137,29 @@ export function generateRolling7DayWindow(
     planEnd.setHours(0, 0, 0, 0);
     today.setHours(0, 0, 0, 0);
 
-    // Clamp today to plan bounds for window center calculation
     const windowCenter = today < planStart ? planStart : today > planEnd ? planEnd : today;
 
-    // Desired window: center ± 3 days
     let windowStart = new Date(windowCenter);
     windowStart.setDate(windowCenter.getDate() - 3);
     let windowEnd = new Date(windowCenter);
     windowEnd.setDate(windowCenter.getDate() + 3);
 
-    // Clamp window to plan bounds
     if (windowStart < planStart) windowStart = new Date(planStart);
     if (windowEnd > planEnd) windowEnd = new Date(planEnd);
 
-    // Ensure at least 7 days where possible
     const MS_PER_DAY = 1000 * 60 * 60 * 24;
     let windowDays = Math.round((windowEnd.getTime() - windowStart.getTime()) / MS_PER_DAY) + 1;
 
     if (windowDays < 7) {
         const shortage = 7 - windowDays;
-        // Try to extend forward first
         const potentialEnd = new Date(windowEnd);
         potentialEnd.setDate(windowEnd.getDate() + shortage);
         if (potentialEnd <= planEnd) {
             windowEnd = potentialEnd;
         } else {
-            // Extend backward
             const potentialStart = new Date(windowStart);
             potentialStart.setDate(windowStart.getDate() - shortage);
             windowStart = potentialStart < planStart ? planStart : potentialStart;
-            // Re-extend forward to fill remaining gap
             const newDays = Math.round((windowEnd.getTime() - windowStart.getTime()) / MS_PER_DAY) + 1;
             if (newDays < 7) {
                 const potentialEnd2 = new Date(windowEnd);
@@ -231,7 +214,6 @@ export function generateRolling7DayWindow(
     return result;
 }
 
-// Backward compat: generateWeeklyProgress still works for review page etc.
 export function generateWeeklyProgress(
     startDateStr: string,
     todayStr: string,
@@ -239,10 +221,8 @@ export function generateWeeklyProgress(
     logs: any[],
     evaluationDay?: number,
 ): IWeeklyMUrajaStatus[] {
-    // Use rolling window with same plan start as end for a 7-day slice
     const today = new Date(todayStr);
 
-    // Legacy: cycle start based on evaluationDay
     let calendarDate = new Date(today);
     if (evaluationDay !== undefined) {
         const todayDayOfWeek = (today.getDay() + 6) % 7;
@@ -253,7 +233,6 @@ export function generateWeeklyProgress(
         calendarDate.setDate(calendarDate.getDate() - 6);
     }
 
-    // Compute a 7-day window from calendarDate to calendarDate+6
     const windowEnd = new Date(calendarDate);
     windowEnd.setDate(windowEnd.getDate() + 6);
 
@@ -301,13 +280,7 @@ export function generateWeeklyProgress(
     return progress;
 }
 
-// ─── Range-Based Today's Task ─────────────────────────────────────────────────
-/**
- * Calculates what the user should do today:
- * - Scheduled day  → normal task from last position
- * - Not scheduled, missed pages exist → catch-up task (capped at plannedPagesPerDay)
- * - Not scheduled, no missed pages → null (true rest day)
- */
+
 export function calculateTodayTask(params: {
     today: Date;
     planStartDate: string;
@@ -448,7 +421,6 @@ export function calculateTodayTask(params: {
     };
 }
 
-// ─── Missed Pages Helper ──────────────────────────────────────────────────────
 function _countMissedPages(
     planStartStr: string,
     todayStr: string,
@@ -482,23 +454,19 @@ function _countMissedPages(
     return missed;
 }
 
-// ─── Recommendation Engine (Proportional) ────────────────────────────────────
 export function computeRecommendedRate(
     currentRate: number,
     missedDays: number,
     avgQuality: number,
 ): number {
     if (missedDays >= 4 || avgQuality < 2) {
-        // Reduce by 20–30%
         const reduction = Math.ceil(currentRate * 0.25);
         return Math.max(1, currentRate - reduction);
     }
     if (missedDays >= 2 || avgQuality < 3) {
-        // Reduce by 1–2 pages
         return Math.max(1, currentRate - 2);
     }
     if (missedDays === 0 && avgQuality >= 4) {
-        // Maintain or slight increase
         return currentRate;
     }
     return Math.max(1, currentRate - 1);

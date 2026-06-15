@@ -1,125 +1,54 @@
 import { View, Pressable } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
-import { useWeeklyMuraja } from "@/src/features/muraja/hooks/useWeeklyMuraja";
-import { useHifzDailyTask } from "@/src/features/hifz/hooks/useHifzDailyTask";
-import { HifzActionCard } from "./HifzActionCard";
-import { MurajaActionCard } from "./MurajaActionCard";
-import { CardSkeleton } from "./Skeleton";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import { useNavigate } from "@/src/hooks/useNavigate";
-import { PlanEndCard } from "@/src/features/habits/components/PlanEndCard";
+import { HifzCard } from "@/src/features/hifz/components/HifzCard";
+import { MurajaCard } from "@/src/features/muraja/components/MurajaCard";
 
-import { useDashboardState } from "@/src/features/habits/hooks/useDashboardState";
-
-export const TodayTasksSection = ({ 
-  onLogHifz, 
+export const TodayTasksSection = ({
+  onLogHifz,
   onLogMuraja,
-}: { 
-  onLogHifz: () => void; 
+}: {
+  onLogHifz: () => void;
   onLogMuraja: () => void;
 }) => {
-  const {
-    todayTask: murajaTask,
-    loading: murajaLoading,
-    weeklyPlan: murajaPlan,
-    isRestDay: murajaRestDay,
-    refetch: refetchMuraja,
-  } = useWeeklyMuraja();
-
-  const {
-    hifz: hifzPlan,
-    todayTask: hifzTask,
-    loading: hifzLoading,
-    isRestDay: hifzRestDay,
-    hasTodayLog: hifzHasTodayLog,
-    refetch: refetchHifz,
-  } = useHifzDailyTask();
-
-  const { state: hifzState, isLoading: hifzStateLoading } = useDashboardState(
-    'HIFZ', 
-    hifzPlan, 
-    hifzTask, 
-    !!hifzRestDay, 
-    hifzLoading, 
-    refetchHifz,
-    hifzHasTodayLog
-  );
-
-  const { state: murajaState, isLoading: murajaStateLoading } = useDashboardState(
-    'MURAJA', 
-    murajaPlan, 
-    murajaTask, 
-    !!murajaRestDay, 
-    murajaLoading, 
-    refetchMuraja
-  );
-
-  if (murajaStateLoading || hifzStateLoading) {
-    return [1, 2].map((index) => <CardSkeleton key={index} />);
-  }
-
-  const hasAnyPlan = !!(hifzPlan || murajaPlan);
-  if (!hasAnyPlan) return null;
-
-  return (
-    <View className="gap-y-4">
-      {/* Hifz Slot */}
-      {hifzState.type === 'EVALUATION_DUE' ? (
-          <EvaluationRequiredCard type="hifz" />
-      ) : hifzState.type === 'PLAN_FINISHED' ? (
-          <PlanEndCard activityType="HIFZ" localRefId={hifzPlan?.id ?? 0} title={hifzPlan?.startSurah?.toString() ?? ''} />
-      ) : (hifzState.type === 'COMPLETED_TODAY' || hifzState.type === 'PLANNED_DAY' || hifzState.type === 'CATCHUP_DAY') ? (
-        <HifzActionCard 
-          hifz={hifzPlan!} 
-          task={hifzState.task} 
-          title={hifzState.task.displaySurah}
-          subTitle={`Target: ${hifzState.task.totalTarget} pages · Pages ${hifzState.task.startPage}–${hifzState.task.endPage}`}
-          onDetails={onLogHifz}
-        />
-      ) : hifzState.type === 'REST_DAY' ? (
-        <RestDayCardSingle type="hifz" onLog={onLogHifz} />
-      ) : null}
-      
-      {/* Muraja Slot */}
-      {murajaState.type === 'EVALUATION_DUE' ? (
-          <EvaluationRequiredCard type="muraja" />
-      ) : murajaState.type === 'PLAN_FINISHED' ? (
-          <PlanEndCard activityType="MURAJA" localRefId={murajaPlan?.id ?? 0} title="Muraja Plan" />
-      ) : (murajaState.type === 'COMPLETED_TODAY' || murajaState.type === 'PLANNED_DAY' || murajaState.type === 'CATCHUP_DAY') ? (
-        <MurajaActionCard 
-          todayPlan={murajaState.task} 
-          weeklyPlan={murajaPlan} 
-          onDetails={onLogMuraja}
-        />
-      ) : murajaState.type === 'REST_DAY' ? (
-        <RestDayCardSingle type="muraja" onLog={onLogMuraja} />
-      ) : null}
-    </View>
-  );
+   return (
+     <View className="gap-y-4">
+       <HifzCard onLog={onLogHifz} />
+       <MurajaCard onLog={onLogMuraja} />
+     </View>
+   );
 };
 
-export const EvaluationRequiredCard = ({ type }: { type: 'hifz' | 'muraja' }) => {
+export const EvaluationRequiredCard = ({ type,planId }: { type: 'hifz' | 'muraja' , planId?:number}) => {
   const { push } = useNavigate();
   return (
-    <Pressable 
-        onPress={() => push("/evaluation")}
-        className="bg-white border border-[#276359]/10 rounded-2xl p-6 shadow-sm overflow-hidden"
+    <Pressable
+      onPress={() =>
+        push(`/evaluation?type=${type.toUpperCase()}&planId=${planId}`)
+      }
+      className="bg-white border border-[#276359]/10 rounded-2xl p-6 shadow-sm overflow-hidden"
     >
-        <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center gap-4">
-                <View className="w-12 h-12 bg-[#276359]/10 rounded-full items-center justify-center">
-                    <Ionicons name="lock-closed-outline" size={24} color="#276359" />
-                </View>
-                <View>
-                    <Text className="">{type === 'hifz' ? 'Hifz Review Required' : 'Muraja Review Required'}</Text>
-                    <Text className="text-slate-500 text-xs">Finish evaluation to unlock new tasks</Text>
-                </View>
-            </View>
-            <View className="bg-primary px-3 py-1 rounded-full">
-                <Text className="text-[10px] text-white  uppercase">Test</Text>
-            </View>
+      <View className="flex-row items-center justify-between">
+        <View className="flex-row items-center gap-4">
+          <View className="w-12 h-12 bg-[#276359]/10 rounded-full items-center justify-center">
+            <Ionicons name="lock-closed-outline" size={24} color="#276359" />
+          </View>
+          <View>
+            <Text className="">
+              {type === "hifz" ?
+                "Hifz Review Required"
+              : "Muraja Review Required"}
+            </Text>
+            <Text className="text-slate-500 text-xs">
+              Finish evaluation to unlock new tasks
+            </Text>
+          </View>
         </View>
+        <View className="bg-primary px-3 py-1 rounded-full">
+          <Text className="text-[10px] text-white  uppercase">Test</Text>
+        </View>
+      </View>
     </Pressable>
   );
 };

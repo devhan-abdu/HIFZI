@@ -12,6 +12,7 @@ import { notificationService } from "../../notifications/services/notificationSe
 
 import { userStats } from '../../user/database/userSchema';
 import { habitStackingService } from '../../habits/services/habitStackingService';
+import { getLocalDateString } from '../utils/murajaAnalytics';
 
 export type LocalMurajaLogWriteResult = {
   localLogId: number | null;
@@ -136,6 +137,7 @@ export const murajaService = {
   },
 
   async getDashboardState(userId: string) {
+
     let plan = await db.query.weeklyMurajaPlans.findFirst({
       where: and(eq(weeklyMurajaPlans.userId, userId), eq(weeklyMurajaPlans.isActive, true)),
       orderBy: [desc(weeklyMurajaPlans.id)],
@@ -154,12 +156,32 @@ export const murajaService = {
       where: eq(userStats.userId, userId),
     });
 
+      const todayStr = getLocalDateString(new Date());
+
+
     const logs = await db.query.dailyMurajaLogs.findMany({
       where: eq(dailyMurajaLogs.planId, plan.id),
       orderBy: [dailyMurajaLogs.date],
     });
 
-    const mapLog = (l: any) => ({
+    const todayLog = logs.find(l => l.date === todayStr) ?? null
+
+      const activityPlan = await db.query.activityPlans.findFirst({
+      where: and(
+        eq(activityPlans.userId, userId),
+        eq(activityPlans.localRefId, plan.id),
+        eq(activityPlans.activityType, 'MURAJA')
+      )
+      });
+    
+    const todayDay = (new Date().getDay() + 6) % 7
+    const isEvaluationDay = todayDay === plan.evaluationDay
+    const evaluationDue = isEvaluationDay && activityPlan?.lastEvaluationDate !== todayStr
+
+    const totalCompleted = logs.reduce((acc, l) => acc + (l.completedPages ?? 0), 0);
+    const totalTarget = (plan.endPage ?? 1) - (plan.startPage ?? 1) + 1;
+    const planFinished = totalCompleted >= totalTarget;
+    const mapLog = (l: any):IDailyMurajaLog=> ({
       id: l.id,
       remote_id: l.remoteId,
       plan_id: l.planId,
@@ -175,7 +197,6 @@ export const murajaService = {
       quality_score: l.qualityScore,
     });
 
-    const todayStr = new Date().toISOString().slice(0, 10);
     const extraSessionsLogs = await db.query.dailyMurajaLogs.findMany({
       where: and(
         isNull(dailyMurajaLogs.planId),
@@ -185,15 +206,22 @@ export const murajaService = {
       orderBy: [asc(dailyMurajaLogs.id)],
     });
 
+    const activeDays: number[] = typeof plan.selectedDays === 'string'
+     ? JSON.parse(plan.selectedDays || '[]')
+      : plan.selectedDays ?? [];
+
     return {
       ...plan,
-      preferred_time: plan.preferredTime ?? undefined,
-      is_custom_time: plan.isCustomTime ?? undefined,
       muraja_last_page: stats?.murajaLastPage ?? 0,
       muraja_current_streak: stats?.murajaCurrentStreak ?? 0,
       daily_logs: logs.map(mapLog),
-      all_logs: logs.map(mapLog),
+      todayLog: todayLog ? mapLog(todayLog) : null,
       today_extra_sessions: extraSessionsLogs.map(mapLog),
+      evaluationDue,     
+      planFinished,
+      activeDays,
+      preferred_time: plan.preferredTime ?? undefined,
+      is_custom_time: plan.isCustomTime ?? undefined,
     };
   },
 

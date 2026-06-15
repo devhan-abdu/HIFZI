@@ -11,9 +11,10 @@ export const activityPlans = sqliteTable('quran_activity_plans', {
   title: text('title'),
   startDate: text('start_date'),
   endDate: text('end_date'),
-  status: text('status').notNull().default('active'),
+  status: text('status').notNull().default('active'), // 'active' | 'completed'
   metadata: text('metadata'),
   evaluationDay: integer('evaluation_day').notNull().default(7),
+  lastEvaluationDate: text('last_evaluation_date').default(sql`NULL`), // ← add this
   remoteId: text('remote_id'),
   isSynced: integer('is_synced').notNull().default(0),
   createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),

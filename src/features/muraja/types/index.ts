@@ -165,4 +165,16 @@ export const WeeklyMurajaSchema = Yup.object({
   evaluation_day: Yup.number().required("Evaluation day is required").min(0).max(6).default(5),
 });
 
+export interface DashboardState extends IWeeklyMurajaPLan {
+  muraja_last_page: number;
+  muraja_current_streak: number;
+  daily_logs: IDailyMurajaLog[];
+  todayLog: IDailyMurajaLog | null;
+  today_extra_sessions: IDailyMurajaLog[];
+  evaluationDue: boolean;
+  planFinished: boolean;
+}
+
+
+
 export type WeeklyMurajaFormType = Yup.InferType<typeof WeeklyMurajaSchema>;

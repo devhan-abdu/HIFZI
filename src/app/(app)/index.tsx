@@ -5,7 +5,6 @@ import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { View } from "react-native";
 import { useAppActiveRefresh } from "@/src/hooks/useAppActiveRefresh";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useRef, useMemo } from "react";
 import { Redirect } from "expo-router";
 import { useNavigate } from "@/src/hooks/useNavigate";
 import Card from "@/src/components/dashboard/Card";
@@ -17,33 +16,49 @@ import { Text } from "@/src/components/common/ui/Text";
 import { HabitProgressRing } from "@/src/features/habits/components/HabitProgressRing";
 import { HeatmapOfHeart } from "@/src/features/quran/components/HeatmapOfHeart";
 import { useHabitProgress } from "@/src/features/habits/hooks/useHabitProgress";
-import { useWeeklyMuraja } from "@/src/features/muraja/hooks/useWeeklyMuraja";
 import { useHifzPlan } from "@/src/features/hifz/hooks/useHifzPlan";
+import { useHifzCardState } from "@/src/features/hifz/hooks/useHifzCardState";
 import { useUserStats } from "@/src/hooks/useUserStats";
 import { useUserBadges } from "@/src/hooks/useUserBadges";
 import { AchievementSection } from "@/src/components/dashboard/AchievementSection";
-import { useHifzDailyTask } from "@/src/features/hifz/hooks/useHifzDailyTask";
 import { useSyncStore } from "@/src/services/sync/syncStore";
+import { useMurajaAnalytics } from "@/src/features/muraja/hooks/useMurajaAnalytics";
+import { useMurajaCardState } from "@/src/features/muraja/hooks/useMurajaCardState";
+import { useMemo, useRef, useCallback } from "react";
+import { useSession } from "@/src/hooks/useSession";
 
 export default function Dashboard() {
-  const queryClient = useQueryClient();
-
   const { push } = useNavigate();
+  const { user } = useSession();
+  const queryClient = useQueryClient();
   const { items: surah } = useLoadSurahData();
+
   const { hifz: hifzPlan, isLoading: loadingHifz } = useHifzPlan();
   const habitProgress = useHabitProgress();
   const { analytics } = habitProgress;
+  const { data: badges = [] } = useUserBadges();
+  const { data: userStats } = useUserStats();
+  const hasSyncedOnce = useSyncStore((s) => s.hasSyncedOnce);
+
+  // New architecture — card states
+  const hifzCardState = useHifzCardState();
+  const murajaCardState = useMurajaCardState();
+
   const {
     weeklyPlan: murajaPlan,
     stats: murajaStats,
     loading: loadingMuraja,
-    todayTask: murajaTodayTask,
-  } = useWeeklyMuraja();
-  const { todayTask: hifzTodayTask } = useHifzDailyTask();
-  const { data: badges = [] } = useUserBadges();
-  const { data: userStats } = useUserStats();
+  } = useMurajaAnalytics() ?? {};
 
-  const hasSyncedOnce = useSyncStore((s) => s.hasSyncedOnce);
+  useAppActiveRefresh(
+    useCallback(() => {
+      queryClient.invalidateQueries({ queryKey: ["hifz", user?.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["muraja-dashboard", user?.id],
+      });
+    }, [queryClient, user?.id]),
+  );
+
   const surahReady = surah.length > 0;
 
   const hifzAnalytics = useMemo(() => {
@@ -88,44 +103,53 @@ export default function Dashboard() {
 
   const lastHifzAnalytics = useRef(hifzAnalytics);
   if (hifzAnalytics) lastHifzAnalytics.current = hifzAnalytics;
-
   const lastMurajaHero = useRef(murajaHero);
   if (murajaHero) lastMurajaHero.current = murajaHero;
 
   const dynamicGoalPages = useMemo(() => {
     let goal = 0;
-    if (murajaPlan && murajaTodayTask) {
-      const start = murajaTodayTask.startPage;
-      const end = murajaTodayTask.quotaEnd ?? murajaTodayTask.endPage;
-      goal += Math.max(0, end - start + 1);
+
+    const murajaTask =
+      (
+        murajaCardState.type === "PLANNED_DAY" ||
+        murajaCardState.type === "CATCHUP_DAY" ||
+        murajaCardState.type === "COMPLETED_TODAY"
+      ) ?
+        murajaCardState.task
+      : null;
+
+    const hifzTask =
+      (
+        hifzCardState.type === "PLANNED_DAY" ||
+        hifzCardState.type === "CATCHUP_DAY" ||
+        hifzCardState.type === "COMPLETED_TODAY"
+      ) ?
+        hifzCardState.task
+      : null;
+
+    if (murajaTask) {
+      goal += Math.max(
+        0,
+        (murajaTask.quotaEnd ?? murajaTask.endPage) - murajaTask.startPage + 1,
+      );
     }
-    if (hifzPlan && hifzTodayTask) {
-      goal += hifzTodayTask.totalTarget ?? 0;
+    if (hifzTask) {
+      goal += hifzTask.totalTarget ?? 0;
     }
-    if (goal === 0) {
-      const completed = habitProgress.todayStats.completedPages;
-      return Math.max(1, completed);
-    }
+    if (goal === 0) return Math.max(1, habitProgress.todayStats.completedPages);
     return goal;
-  }, [
-    murajaPlan,
-    murajaTodayTask,
-    hifzPlan,
-    hifzTodayTask,
-    habitProgress.todayStats.completedPages,
-  ]);
+  }, [murajaCardState, hifzCardState, habitProgress.todayStats.completedPages]);
 
   const isFirstLoad =
     (loadingHifz && !hifzPlan) || (loadingMuraja && !murajaPlan);
+
   if (isFirstLoad) return <DashboardSkeleton />;
 
   if (hasSyncedOnce && !hifzPlan && !murajaPlan) {
     return <Redirect href="/onboarding" />;
   }
 
-  if (!hifzPlan && !murajaPlan) {
-    return <DashboardSkeleton />;
-  }
+  if (!hifzPlan && !murajaPlan) return <DashboardSkeleton />;
 
   return (
     <>
@@ -146,9 +170,7 @@ export default function Dashboard() {
               Focus
             </Text>
             <View className="flex-row justify-between items-end mb-4 px-1">
-              <Text className="text-xl text-gray-900">
-                Today&apos;s Checklist
-              </Text>
+              <Text className="text-xl text-gray-900">Today's Checklist</Text>
             </View>
             <TodayTasksSection
               onLogHifz={() => push("/(app)/hifz/log")}
@@ -210,6 +232,7 @@ export default function Dashboard() {
               />
             </View>
           </View>
+
           <AchievementSection badges={badges} />
         </ScreenContent>
       </Screen>

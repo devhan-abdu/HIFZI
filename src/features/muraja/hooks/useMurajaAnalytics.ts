@@ -1,0 +1,125 @@
+import { useMemo } from "react";
+import { useWeeklyMuraja } from "./useWeeklyMuraja";
+import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
+import {
+  formatJuzRange,
+  getJuzByPage,
+  getPagePositionLabel,
+  getSurahByPage,
+} from "../utils/quranMapping";
+import {
+  generateRolling7DayWindow,
+  getPerformanceStatus,
+  calculateExpectedPages,
+  getLocalDateString,
+} from "../utils/murajaAnalytics";
+
+export const useMurajaAnalytics = () => {
+  const { data, isLoading } = useWeeklyMuraja();
+  const { items: surah, loading: surahLoading } = useLoadSurahData();
+
+  return useMemo(() => {
+    if (!data || !surah?.length) return { loading: isLoading || surahLoading };
+
+    const todayStr = getLocalDateString(new Date());
+    const today = new Date();
+
+    const activeDays = data.activeDays
+
+    const start_page = data.startPage ?? 1;
+    const end_page   = data.endPage ?? 604;
+    const planned_pages_per_day = data.plannedPagesPerDay ?? 1;
+
+    const totalRangePages = end_page - start_page + 1;
+    const start_juz = getJuzByPage(start_page) ?? 0;
+    const end_juz   = getJuzByPage(end_page) ?? 0;
+    const startSurah = getSurahByPage(start_page, surah) ?? '';
+    const endSurah   = getSurahByPage(end_page, surah) ?? '';
+
+    const totalCompletedPages = data.daily_logs.reduce(
+      (acc, l) => acc + (l.completed_pages ?? 0), 0
+    );
+
+    const missedDaysCount = data.daily_logs.filter(
+      (l) => l.status === 'missed' || (l.status === 'pending' && l.date < todayStr)
+    ).length;
+
+    const totalMissedPages = missedDaysCount * planned_pages_per_day;
+    const accuracy =
+      (totalCompletedPages + totalMissedPages) === 0
+        ? 100
+        : Math.min(
+            Math.round((totalCompletedPages / (totalCompletedPages + totalMissedPages)) * 100),
+            100
+          );
+
+    const safeLastPage = Math.max(data.muraja_last_page ?? 0, start_page - 1);
+    const overAllProgress =
+      totalRangePages > 0
+        ? (((safeLastPage - start_page + 1) / totalRangePages) * 100).toFixed(1)
+        : '0.0';
+
+    const expectedPages = calculateExpectedPages(
+      data.weekStartDate ?? '',
+      activeDays,
+      planned_pages_per_day,
+      today
+    );
+    const performanceStatus = getPerformanceStatus(totalCompletedPages - expectedPages);
+
+    const displayPage = Math.max(data.muraja_last_page ?? 0, start_page);
+    const pagePosition = getPagePositionLabel(displayPage, surah);
+    const juzRangeLabel = formatJuzRange(start_juz, end_juz);
+
+    const dayProgress = generateRolling7DayWindow(
+      data.weekStartDate ?? '',
+      data.weekEndDate ?? '',
+      activeDays,
+      data.daily_logs,
+      today
+    );
+
+    const planOverview = {
+      id: data.id,
+      totalRangePages,
+      plannedDays: activeDays.length,
+      startDate: data.weekStartDate,
+      endDate: data.weekEndDate,
+      estimated_time_min: data.estimatedTimeMin,
+      planned_pages_per_day,
+      start_juz,
+      end_juz,
+      startSurah,
+      endSurah,
+      startPage: start_page,
+      endPage: end_page,
+      weeklyTargetPages: totalRangePages,
+      totalDays: activeDays.length,
+      week_start_date: data.weekStartDate,
+      week_end_date: data.weekEndDate,
+    };
+
+    return {
+      loading: false,
+      planOverview,
+      weeklyPlan: planOverview,
+      stats: {
+        totalCompletedPages,
+        totalRangePages,
+        performanceStatus,
+        accuracy,
+        streak: data.muraja_current_streak,
+        overAllProgress,
+        missedDaysCount,
+        currentPage: displayPage,
+        currentSurah: pagePosition.surahName,
+        currentJuz: getJuzByPage(displayPage),
+        pageInSurah: pagePosition.pageInSurah,
+        juzRangeLabel,
+      },
+      dayProgress,
+      weekProgress: dayProgress,
+      today_extra_sessions: data.today_extra_sessions ?? [],
+    };
+  }, [data, surah, isLoading, surahLoading]);
+};
