@@ -3,9 +3,9 @@ import { View, Pressable, TextInput } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-
 import { StatusTab } from "@/src/features/hifz/components/StatusTab";
-import { useHifzDailyTask } from "@/src/features/hifz/hooks/useHifzDailyTask";
+import { useHifzPlan } from "@/src/features/hifz/hooks/useHifzPlan";
+import { useHifzCardState } from "@/src/features/hifz/hooks/useHifzCardState";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { useAddLog } from "@/src/features/hifz/hooks/useAddLog";
 import { useRetentionLog } from "@/src/features/habits/hooks/useRetentionLog";
@@ -23,9 +23,8 @@ import { LogProgressSkeleton } from "@/src/features/hifz/components/skeleton";
 import { Switch } from "@/src/features/hifz/components/Switch";
 import { getTodayTask } from "@/src/features/hifz/utils/quran-logic";
 import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
-import { usePlanLifecycle } from "@/src/features/habits/hooks/usePlanLifecycle";
-
-
+import { ExistingProgressCard } from "@/src/features/hifz/components/hifz-log/ExistingProgressCard";
+import { HeroCard } from "@/src/features/hifz/components/hifz-log/HeroCard";
 export default function LogProgress() {
   const router = useRouter();
   const params = useLocalSearchParams<{
@@ -35,15 +34,27 @@ export default function LogProgress() {
   }>();
   const { user } = useSession();
 
-  const {
-    hifz: plan,
-    todayTask: logContext,
-    loading: planLoading,
-  } = useHifzDailyTask();
+  const { hifz: plan, isLoading: planLoading } = useHifzPlan();
+  const cardState = useHifzCardState();
   const { items: surahData, loading: quranLoading } = useLoadSurahData();
   const { addLog, isCreating: isAddingHifz } = useAddLog();
   const { logRetention, isLogging: isLoggingRetention } = useRetentionLog();
-  const { getPlanState } = usePlanLifecycle();
+
+  const isLocked =
+    cardState.type === "EVALUATION_DUE" || cardState.type === "PLAN_FINISHED";
+  const planState =
+    cardState.type === "EVALUATION_DUE" ? "EVALUATION_DUE"
+    : cardState.type === "PLAN_FINISHED" ? "COMPLETION_DUE"
+    : null;
+
+  const logContext =
+    (
+      cardState.type === "PLANNED_DAY" ||
+      cardState.type === "CATCHUP_DAY" ||
+      cardState.type === "COMPLETED_TODAY"
+    ) ?
+      cardState.task
+    : null;
 
   const [pages, setPages] = useState(1);
   const [status, setStatus] = useState<"completed" | "partial" | "missed">(
@@ -55,8 +66,9 @@ export default function LogProgress() {
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [reviewed, setReviewed] = useState(false);
-  const [sessionMode, setSessionMode] = useState<"append" | "overwrite">("append");
-
+  const [sessionMode, setSessionMode] = useState<"append" | "overwrite">(
+    "append",
+  );
   const [startSurah, setStartSurah] = useState(1);
   const [startPage, setStartPage] = useState(1);
   const [endSurah, setEndSurah] = useState(1);
@@ -66,10 +78,6 @@ export default function LogProgress() {
   const reviewEndPage = Number(params.reviewEndPage ?? 0);
   const hasReviewPrefill =
     Number.isFinite(reviewStartPage) && reviewStartPage > 0;
-
-  const planState = getPlanState(plan?.id, "HIFZ");
-  const isLocked =
-    planState === "EVALUATION_DUE" || planState === "COMPLETION_DUE";
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const todayLog = plan?.hifzDailyLogs?.find((l) => l.date === todayStr);
@@ -96,10 +104,7 @@ export default function LogProgress() {
   useEffect(() => {
     if (sessionMistakes > 0) setMistakes(sessionMistakes);
     if (sessionHesitations > 0) setHesitations(sessionHesitations);
-
-    if (sessionMistakes > 0 || sessionHesitations > 0) {
-      resetSessionTally();
-    }
+    if (sessionMistakes > 0 || sessionHesitations > 0) resetSessionTally();
   }, [sessionMistakes, sessionHesitations, resetSessionTally]);
 
   useEffect(() => {
@@ -108,57 +113,43 @@ export default function LogProgress() {
       return;
     }
     if (!logContext) return;
-    
     if (hasExistingProgress) {
-        setStatus("completed");
-        setPages(Math.max(0, logContext.totalTarget - completedPages));
+      setStatus("completed");
+      setPages(Math.max(0, logContext.totalTarget - completedPages));
     } else {
-        setPages(logContext.totalTarget);
+      setPages(logContext.totalTarget);
     }
   }, [hasReviewPrefill, logContext, reviewEndPage, reviewStartPage]);
 
   useEffect(() => {
     if (isRestDay && surahData.length > 0) {
-      const startFound = surahData.find((s) => s.number === startSurah);
-      if (startFound) {
-        setStartPage(startFound.startingPage);
-      }
+      const found = surahData.find((s) => s.number === startSurah);
+      if (found) setStartPage(found.startingPage);
     }
   }, [startSurah, isRestDay, surahData]);
 
   useEffect(() => {
     if (isRestDay && surahData.length > 0) {
-      const endFound = surahData.find((s) => s.number === endSurah);
-      if (endFound) {
-        setEndPage(endFound.startingPage);
-      }
+      const found = surahData.find((s) => s.number === endSurah);
+      if (found) setEndPage(found.startingPage);
     }
   }, [endSurah, isRestDay, surahData]);
 
   useEffect(() => {
-    if (startSurah > endSurah) {
-      setEndSurah(startSurah);
-    }
+    if (startSurah > endSurah) setEndSurah(startSurah);
   }, [startSurah]);
 
   useEffect(() => {
-    if (startPage > endPage) {
-      setEndPage(startPage);
-    }
+    if (startPage > endPage) setEndPage(startPage);
   }, [startPage]);
 
   useEffect(() => {
     if (hasReviewPrefill) return;
-
     const targetPages = logContext?.totalTarget;
     if (!targetPages) return;
-    if (pages >= targetPages) {
-      setStatus("completed");
-    } else if (pages === 0) {
-      setStatus("missed");
-    } else {
-      setStatus("partial");
-    }
+    if (pages >= targetPages) setStatus("completed");
+    else if (pages === 0) setStatus("missed");
+    else setStatus("partial");
   }, [hasReviewPrefill, logContext?.totalTarget, pages]);
 
   const handleStatusSelection = (
@@ -166,22 +157,15 @@ export default function LogProgress() {
   ) => {
     setStatus(selectedStatus);
     const targetPages =
-      hasReviewPrefill && reviewEndPage >= reviewStartPage
-        ? Math.max(1, reviewEndPage - reviewStartPage + 1)
-        : (logContext?.totalTarget ?? 1);
-
-    if (selectedStatus === "completed") {
-      setPages(targetPages);
-    } else if (selectedStatus === "missed") {
-      setPages(0);
-    } else {
-      setPages(Math.max(1, Math.floor(targetPages / 2)));
-    }
+      hasReviewPrefill && reviewEndPage >= reviewStartPage ?
+        Math.max(1, reviewEndPage - reviewStartPage + 1)
+      : (logContext?.totalTarget ?? 1);
+    if (selectedStatus === "completed") setPages(targetPages);
+    else if (selectedStatus === "missed") setPages(0);
+    else setPages(Math.max(1, Math.floor(targetPages / 2)));
   };
 
-  if (planLoading || quranLoading) {
-    return <LogProgressSkeleton />;
-  }
+  if (planLoading || quranLoading) return <LogProgressSkeleton />;
 
   if (!plan) {
     return (
@@ -205,21 +189,25 @@ export default function LogProgress() {
     try {
       const today = new Date();
       const logDay = (today.getDay() + 6) % 7;
-
       const isMissed = status === "missed";
-      const finalPages = isMissed ? 0 : (hasExistingProgress && sessionMode === "append" && !hasReviewPrefill
-        ? completedPages + pages 
-        : pages);
 
-      const actualStartPage = hasReviewPrefill
-        ? reviewStartPage
-        : (hasExistingProgress && sessionMode === "append" ? (todayLog?.actualStartPage ?? plan.startPage) : (logContext?.startPage ?? plan.startPage));
+      const finalPages =
+        isMissed ? 0
+        : hasExistingProgress && sessionMode === "append" && !hasReviewPrefill ?
+          completedPages + pages
+        : pages;
 
-      const actualEndPage = hasReviewPrefill
-        ? reviewStartPage + Math.max(0, finalPages - 1)
-        : (getTodayTask(plan, surahData, finalPages)?.endPage ?? actualStartPage);
+      const actualStartPage =
+        hasReviewPrefill ? reviewStartPage
+        : hasExistingProgress && sessionMode === "append" ?
+          (todayLog?.actualStartPage ?? plan.startPage)
+        : (logContext?.startPage ?? plan.startPage);
 
-      const pagesCompleted = finalPages;
+      const actualEndPage =
+        hasReviewPrefill ?
+          reviewStartPage + Math.max(0, finalPages - 1)
+        : (getTodayTask(plan, surahData, finalPages)?.endPage ??
+          actualStartPage);
 
       if (hasReviewPrefill) {
         const pagesArray = Array.from(
@@ -234,7 +222,7 @@ export default function LogProgress() {
       } else {
         const payload: IHifzLog = {
           hifzPlanId: plan.id,
-          actualPagesCompleted: pagesCompleted,
+          actualPagesCompleted: finalPages,
           actualStartPage,
           actualEndPage,
           status,
@@ -244,17 +232,11 @@ export default function LogProgress() {
           mistakesCount: mistakes,
           hesitationCount: hesitations,
         };
-
         await addLog({ todayLog: payload, userId: user?.id });
       }
 
-      if (isMissed) {
-        router.back();
-        return;
-      }
-
       router.back();
-    } catch (err: unknown) {
+    } catch (err) {
       console.error("[HifzLog] Save failed:", err);
       setErrorMessage(
         "We couldn't save your progress. Please check your connection and try again.",
@@ -263,17 +245,14 @@ export default function LogProgress() {
     }
   };
 
-  const heroSurahLabel = hasReviewPrefill
-    ? "Targeted Review"
-    : (logContext?.displaySurah ?? "—");
-
-  const heroRangeLabel = hasReviewPrefill
-    ? `${reviewStartPage}—${reviewEndPage}`
+  const heroSurahLabel =
+    hasReviewPrefill ? "Targeted Review" : (logContext?.displaySurah ?? "—");
+  const heroRangeLabel =
+    hasReviewPrefill ?
+      `${reviewStartPage}—${reviewEndPage}`
     : `${logContext?.startPage ?? 0}—${logContext?.endPage ?? 0}`;
-
-  const heroPageCount = hasReviewPrefill
-    ? Math.max(1, reviewEndPage - reviewStartPage + 1)
-    : pages;
+  const heroPageCount =
+    hasReviewPrefill ? Math.max(1, reviewEndPage - reviewStartPage + 1) : pages;
 
   return (
     <>
@@ -294,85 +273,34 @@ export default function LogProgress() {
               <View className="flex-1">
                 <Text className="text-red-900 text-sm">Logging Locked</Text>
                 <Text className="text-red-700/70 text-xs">
-                  {planState === "EVALUATION_DUE"
-                    ? "Please complete your evaluation exam to unlock logging."
-                    : "This plan is completed. Start a new plan to resume logging."}
+                  {planState === "EVALUATION_DUE" ?
+                    "Please complete your evaluation exam to unlock logging."
+                  : "This plan is completed. Start a new plan to resume logging."
+                  }
                 </Text>
               </View>
             </View>
           )}
 
           {hasExistingProgress && !isLocked && !hasReviewPrefill && (
-            <View className="mb-8 p-4 bg-primary/5 border border-primary/10 rounded-2xl">
-              <View className="flex-row items-center gap-3 mb-3">
-                <Ionicons name="information-circle" size={20} color="#276359" />
-                <Text className="text-primary text-sm ">
-                  Today's Progress: {completedPages} pages logged
-                </Text>
-              </View>
-              <View className="flex-row gap-2">
-                <Pressable
-                  onPress={() => setSessionMode("append")}
-                  className={`flex-1 py-2 px-3 rounded-xl border ${sessionMode === "append" ? "bg-primary border-primary" : "bg-white border-slate-200"}`}
-                >
-                  <Text className={`text-center text-xs  ${sessionMode === "append" ? "text-white" : "text-slate-600"}`}>Add (Continue)</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => setSessionMode("overwrite")}
-                  className={`flex-1 py-2 px-3 rounded-xl border ${sessionMode === "overwrite" ? "bg-primary border-primary" : "bg-white border-slate-200"}`}
-                >
-                  <Text className={`text-center text-xs  ${sessionMode === "overwrite" ? "text-white" : "text-slate-600"}`}>Overwrite (New)</Text>
-                </Pressable>
-              </View>
-            </View>
+            <ExistingProgressCard
+              hasExistingProgress={hasExistingProgress}
+              isLocked={isLocked}
+              hasReviewPrefill={hasReviewPrefill}
+              completedPages={completedPages}
+              sessionMode={sessionMode}
+              setSessionMode={setSessionMode}
+            />
           )}
 
-          <View className="bg-primary rounded-3xl p-6 mb-8 shadow-sm">
-            <View className="flex-row justify-between items-center mb-4">
-              <View className="bg-white/10 px-2.5 py-1 rounded-lg border border-white/10">
-                <Text className="text-white text-[10px] uppercase tracking-[2px]">
-                  {hasReviewPrefill
-                    ? "Revision Session"
-                    : logContext?.isNextPlannedDay
-                      ? "Next Plan"
-                      : isRestDay
-                        ? "Next Plan"
-                        : logContext?.isPlannedDay
-                          ? "Study Target"
-                          : "Extra"}
-                </Text>
-              </View>
-              <Text className="text-white/60 text-[10px] uppercase tracking-widest">
-                Hifz
-              </Text>
-            </View>
-
-            <View className="flex-row items-end justify-between">
-              <View className="flex-1">
-                <Text className="text-white text-2xl tracking-tighter">
-                  {heroSurahLabel}
-                </Text>
-                <Text className="text-white/50 text-xs mt-1">
-                  {isRestDay && logContext
-                    ? `Next session: ${heroRangeLabel}`
-                    : `Range: ${heroRangeLabel}`}
-                </Text>
-              </View>
-              <View className="items-end">
-                <View className="flex-row items-baseline">
-                  <Text className="text-white text-2xl tracking-tighter">
-                    {heroPageCount}
-                  </Text>
-                  <Text className="text-white/40 text-sm ml-1">Pgs</Text>
-                </View>
-                <Text className="text-white/40 text-[9px] uppercase tracking-widest">
-                  Target Volume
-                </Text>
-              </View>
-            </View>
-          </View>
-
-
+          <HeroCard
+            hasReviewPrefill={hasReviewPrefill}
+            logContext={logContext}
+            isRestDay={isRestDay}
+            heroSurahLabel={heroSurahLabel}
+            heroRangeLabel={heroRangeLabel}
+            heroPageCount={heroPageCount}
+          />
 
           {!isRestDay && !hasReviewPrefill && (
             <View className="bg-slate-50/50 border border-slate-100 p-4 rounded-2xl mb-8 flex-row items-center justify-between">
@@ -456,7 +384,6 @@ export default function LogProgress() {
                     </Pressable>
                   </View>
                 </View>
-
                 <View className="flex-1 bg-white border border-slate-100 p-4 rounded-2xl">
                   <View className="flex-row items-center gap-2 mb-3">
                     <Ionicons name="timer-outline" size={16} color="#eab308" />
@@ -464,12 +391,16 @@ export default function LogProgress() {
                   </View>
                   <View className="flex-row items-center justify-between">
                     <Pressable
-                      onPress={() => setHesitations(Math.max(0, hesitations - 1))}
+                      onPress={() =>
+                        setHesitations(Math.max(0, hesitations - 1))
+                      }
                       className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
                     >
                       <Ionicons name="remove" size={16} color="#64748b" />
                     </Pressable>
-                    <Text className="text-lg text-slate-900">{hesitations}</Text>
+                    <Text className="text-lg text-slate-900">
+                      {hesitations}
+                    </Text>
                     <Pressable
                       onPress={() => setHesitations(hesitations + 1)}
                       className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
@@ -519,7 +450,6 @@ export default function LogProgress() {
                     </Pressable>
                   </View>
                 </View>
-
                 <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-2 ml-1">
                   Notes & Reflection
                 </Text>
@@ -536,6 +466,7 @@ export default function LogProgress() {
             </View>
           )}
         </ScreenContent>
+
         <ScreenFooter>
           <Button
             onPress={handleSave}
@@ -550,6 +481,7 @@ export default function LogProgress() {
             </View>
           </Button>
         </ScreenFooter>
+
         <Alert
           visible={errorVisible}
           type="delete"
@@ -557,9 +489,7 @@ export default function LogProgress() {
           message={errorMessage}
           confirmText="Try Again"
           cancelText="Close"
-          onConfirm={() => {
-            setErrorVisible(false);
-          }}
+          onConfirm={() => setErrorVisible(false)}
           onCancel={() => setErrorVisible(false)}
         />
       </Screen>

@@ -153,6 +153,44 @@ export const hifzService = {
       orderBy: [hifzLogs.date],
     });
 
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayLog = logs.find(l => l.date === todayStr) ?? null;
+
+
+     const activityPlan = await db.query.activityPlans.findFirst({
+     where: and(
+      eq(activityPlans.userId, userId),
+      eq(activityPlans.localRefId, localPlan.id),
+      eq(activityPlans.activityType, 'HIFZ')
+    )
+  });
+
+  const todayDay = (new Date().getDay() + 6) % 7;
+  const isEvaluationDay = todayDay === (localPlan.evaluationDay ?? 5);
+  const evaluationDue = isEvaluationDay && activityPlan?.lastEvaluationDate !== todayStr;
+
+    const totalCompleted = logs.reduce((acc, l) => acc + (l.actualPagesCompleted ?? 0), 0);
+    const planFinished = totalCompleted >= localPlan.totalPages;
+
+
+
+    const mappedLogs = logs.map(l => ({
+    id: l.id,
+    hifzPlanId: l.hifzPlanId,
+    actualStartPage: l.actualStartPage,
+    actualEndPage: l.actualEndPage,
+    actualPagesCompleted: l.actualPagesCompleted,
+    date: l.date,
+    logDay: l.logDay,
+    status: l.status as any,
+    notes: l.notes ?? undefined,
+    mistakesCount: l.mistakesCount,
+    hesitationCount: l.hesitationCount,
+    qualityScore: l.qualityScore ?? undefined,
+     }));
+    
+    
     return {
       id: localPlan.id,
       userId: localPlan.userId,
@@ -170,20 +208,10 @@ export const hifzService = {
       isCustomTime: localPlan.isCustomTime ?? undefined,
       isReinforcementEnabled: localPlan.isReinforcementEnabled ?? true,
       evaluationDay: localPlan.evaluationDay ?? 5,
-      hifzDailyLogs: logs.map(l => ({
-        id: l.id,
-        hifzPlanId: l.hifzPlanId,
-        actualStartPage: l.actualStartPage,
-        actualEndPage: l.actualEndPage,
-        actualPagesCompleted: l.actualPagesCompleted,
-        date: l.date,
-        logDay: l.logDay,
-        status: l.status as any,
-        notes: l.notes ?? undefined,
-        mistakesCount: l.mistakesCount,
-        hesitationCount: l.hesitationCount,
-        qualityScore: l.qualityScore ?? undefined,
-      })),
+       hifzDailyLogs: mappedLogs,
+       todayLog: todayLog ? mappedLogs.find(l => l.date === todayStr) ?? null : null,
+       evaluationDue,  
+       planFinished,
     };
   },
 

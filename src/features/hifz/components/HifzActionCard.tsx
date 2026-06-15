@@ -3,12 +3,11 @@ import { View, Text } from "react-native";
 import { useAddLog } from "@/src/features/hifz/hooks/useAddLog";
 import { IHifzPlan, IHifzLog } from "@/src/features/hifz/types";
 import { useSession } from "@/src/hooks/useSession";
-import { ActionTaskCard } from "../common/ActionCard";
-import { Alert } from "../common/Alert";
-import { QualityModal } from "../common/QualityModal";
 import { useCelebrationStore } from "@/src/hooks/useCelebrationStore";
-
 import { useNavigate } from "@/src/hooks/useNavigate";
+import { ActionTaskCard } from "@/src/components/common/ActionCard";
+import { QualityModal } from "@/src/components/common/QualityModal";
+import { Alert } from "@/src/components/common/Alert";
 
 export const HifzActionCard = ({
   hifz,
@@ -47,7 +46,6 @@ export const HifzActionCard = ({
   const planTargetStart = task.startPage;
   const plannedCount = task.totalTarget ?? (planTargetEnd - planTargetStart + 1);
 
-  // Derive subtitle dynamically from actual log data (mirrors MurajaActionCard)
   const derivedSubTitle = currentStatus === 'partial'
     ? `${completedPages} / ${plannedCount} pages · ${planTargetStart}–${planTargetEnd}`
     : currentStatus === 'completed' && completedPages > 0
@@ -83,9 +81,7 @@ export const HifzActionCard = ({
         qualityScore: quality,
       };
 
-      // Special case for toggling back to pending: delete the log
       if (status === "pending") {
-         // @ts-ignore - 'pending' status in todayLog triggers a delete
         payload.status = "pending";
       }
 

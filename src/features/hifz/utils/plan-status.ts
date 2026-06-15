@@ -131,10 +131,7 @@ export const hifzStatus = (
   };
 };
 
-/**
- * Pace vs schedule: expected memorized pages (through yesterday + today only if logged)
- * minus actual completed pages. Positive = behind, negative = ahead.
- */
+
 export function getHifzPaceDelta(plan: IHifzPlan, surah: ISurah[]) {
   const status = hifzStatus(plan, surah);
   if (!status) {

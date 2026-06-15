@@ -1,6 +1,3 @@
-import { EvaluationRequiredCard, RestDayCardSingle } from "@/src/components/dashboard/TodayTask";
-import { ReinforcementCard } from "@/src/components/dashboard/ReinforcementCard";
-import { NotificationCard } from "@/src/components/NotificationCard";
 import Screen from "@/src/components/screen/Screen";
 import {
   ScreenContent,
@@ -12,214 +9,170 @@ import HifzEmptyState from "@/src/features/hifz/components/HifzEmptyState";
 import { HifzPlanOverviewCard } from "@/src/features/hifz/components/HifzPlanOverviewCard";
 import { HifzTrackerSkeleton } from "@/src/features/hifz/components/skeleton";
 import StatCard from "@/src/features/hifz/components/StatCard";
-import { useHifzDailyTask } from "@/src/features/hifz/hooks/useHifzDailyTask";
+import { ReinforcementCard } from "@/src/components/dashboard/ReinforcementCard";
+import { useHifzCardState } from "@/src/features/hifz/hooks/useHifzCardState";
+import { useHifzAnalytics } from "@/src/features/hifz/hooks/useHifzAnalytics";
+import { useHifzPlan } from "@/src/features/hifz/hooks/useHifzPlan";
 import { getReviewPriorityColor } from "@/src/features/hifz/utils/reviewPriority";
-import { getHifzPaceDelta, hifzStatus } from "@/src/features/hifz/utils/plan-status";
-import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { useNavigate } from "@/src/hooks/useNavigate";
-import { useMemo, useCallback } from "react";
-import { Pressable, View } from "react-native";
+import { useCallback } from "react";
+import { View } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
-import { useSession } from "@/src/hooks/useSession";
-import { useNotifications } from "@/src/hooks/useNotifications";
-import { sendTestNotification } from "@/src/utils/testNotifications";
-import { HifzActionCard } from "@/src/components/dashboard/HifzActionCard";
-import { PlanEndCard } from "@/src/features/habits/components/PlanEndCard";
-import { useDashboardState } from "@/src/features/habits/hooks/useDashboardState";
 import { useAppActiveRefresh } from "@/src/hooks/useAppActiveRefresh";
+import { useQueryClient } from "@tanstack/react-query";
+import { useSession } from "@/src/hooks/useSession";
+import { HifzCard } from "@/src/features/hifz/components/HifzCard";
+import { IHifzPlan } from "@/src/features/hifz/types";
+
 export default function Hifz() {
   const { push } = useNavigate();
-  const { 
-    hifz, 
-    loading: isLoading, 
-    error, 
-    refetch, 
-    reinforcementTask, 
-    isReinforcementDone,
-    todayTask, 
-    dailyReviews,
-    hasTodayLog,
-  } = useHifzDailyTask();
+  const { user } = useSession();
+  const queryClient = useQueryClient();
+
+  const cardState = useHifzCardState();
+
+  const { hifz } = useHifzPlan();
 
   const {
-    state: dashboardState,
-    refetchAll,
-    isLoading: isStateLoading,
-  } = useDashboardState('HIFZ', hifz, todayTask, !todayTask, isLoading, refetch, hasTodayLog);
+    analytics,
+    pace,
+    reinforcementTask,
+    isReinforcementDone,
+    dailyReviews,
+  } = useHifzAnalytics() ?? {};
+
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["hifz", user?.id] });
+  }, [queryClient, user?.id]);
 
   useFocusEffect(
     useCallback(() => {
-      refetchAll();
-    }, [refetchAll])
+      invalidate();
+    }, [invalidate]),
   );
-  useAppActiveRefresh(useCallback(() => {
-    refetchAll();
-  }, [refetchAll]));
-  const { user } = useSession();
+  useAppActiveRefresh(
+    useCallback(() => {
+      invalidate();
+    }, [invalidate]),
+  );
 
-  const handleSendTestNotification = async () => {
-    if (!user?.id) return;
-    await sendTestNotification(user.id, "xp");
-  };
+  if (cardState.type === "LOADING") return <HifzTrackerSkeleton />;
+  if (cardState.type === "NO_PLAN") return <HifzEmptyState />;
 
-  const { items: surah } = useLoadSurahData();
-  const { latestUnread } = useNotifications();
-
-  const analytics = useMemo(() => {
-    if (!hifz || !surah.length) return null;
-    return hifzStatus(hifz, surah);
-  }, [hifz, surah]);
-
-  const pace = useMemo(() => {
-    if (!hifz || !surah.length) return null;
-    return getHifzPaceDelta(hifz, surah);
-  }, [hifz, surah]);
-
-  if (isStateLoading || (hifz && !analytics)) {
-    return <HifzTrackerSkeleton />;
-  }
-  if (error) {
-    return (
-      <Screen>
-        <View className="flex-1 items-center justify-center gap-4">
-          <Text className="text-center text-gray-500 mb-4">
-            Failed to load plan
-          </Text>
-          <Button onPress={() => refetchAll()}>
-            <Text className="text-white">Retry</Text>
-          </Button>
-        </View>
-      </Screen>
-    );
-  }
-  if (!hifz) return <HifzEmptyState />;
-  if (!analytics) return <HifzTrackerSkeleton />;
+  const isBlocked =
+    cardState.type === "EVALUATION_DUE" || cardState.type === "PLAN_FINISHED";
 
   return (
-    <>
-      <Screen>
-        <ScreenContent>
-          {analytics && pace && (
-            <HifzPlanOverviewCard
-              startSurah={analytics.startSurah?.replace(/^Surah\s+/i, "") ?? ""}
-              endSurah={analytics.endSurah?.replace(/^Surah\s+/i, "") ?? ""}
-              targetEndDate={analytics.targetEndDate}
-              totalPages={analytics.totalExpectedPages}
-              completedPages={analytics.completedPages}
-              progress={analytics.progress}
-              remainingPages={analytics.remainingPages}
-              currentSurah={analytics.currentSurah ?? ""}
-              currentPage={analytics.currentPage}
-              planEndPage={analytics.endPage}
-              pagesPerDay={analytics.todayTarget}
-              daysPerWeek={hifz.selectedDays?.length ?? 0}
-              paceDelta={pace.delta}
-            />
-          )}
-          
+    <Screen>
+      <ScreenContent>
+        {/* Plan Overview */}
+        {analytics && pace && (
+          <HifzPlanOverviewCard
+            startSurah={analytics.startSurah?.replace(/^Surah\s+/i, "") ?? ""}
+            endSurah={analytics.endSurah?.replace(/^Surah\s+/i, "") ?? ""}
+            targetEndDate={analytics.targetEndDate}
+            totalPages={analytics.totalExpectedPages}
+            completedPages={analytics.completedPages}
+            progress={analytics.progress}
+            remainingPages={analytics.remainingPages}
+            currentSurah={analytics.currentSurah ?? ""}
+            currentPage={analytics.currentPage}
+            planEndPage={analytics.endPage}
+            pagesPerDay={analytics.todayTarget}
+            daysPerWeek={hifz?.selectedDays?.length ?? 0}
+            paceDelta={pace.delta}
+          />
+        )}
+
+        <View className="mt-10 px-1">
+          <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
+            Active Task
+          </Text>
+          <Text className="text-xl text-gray-900 mb-4 px-1">Today Hifz</Text>
+          <HifzCard onLog={() => push("/(app)/hifz/log")} />
+        </View>
+
+        {reinforcementTask && (
           <View className="mt-10 px-1">
             <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
-              Active Task
+              Memory Refresh
             </Text>
-            <Text className="text-xl  text-gray-900 mb-4 px-1">Today Hifz</Text>
-            {dashboardState.type === 'EVALUATION_DUE' ? (
-               <EvaluationRequiredCard type="hifz" />
-            ) : dashboardState.type === 'PLAN_FINISHED' ? (
-               <PlanEndCard activityType="HIFZ" localRefId={hifz?.id ?? 0} title={analytics!.startSurah?.toString() ?? ''} />
-            ) : (dashboardState.type === 'COMPLETED_TODAY' || dashboardState.type === 'PLANNED_DAY' || dashboardState.type === 'CATCHUP_DAY') ? (
-              <HifzActionCard
-                hifz={hifz} 
-                task={dashboardState.task} 
-                onDetails={() => push("/(app)/hifz/log")}
-              />
-            ) : dashboardState.type === 'REST_DAY' ? (
-              <RestDayCardSingle type="hifz" onLog={() => push("/(app)/hifz/log")} />
-            ) : null}
+            <Text className="text-xl text-gray-900 mb-4">Keep it Fresh</Text>
+            <ReinforcementCard
+              task={{ ...reinforcementTask, label: "Memory refresh" }}
+              isCompleted={isReinforcementDone ?? false}
+              onStart={() =>
+                push(
+                  `/(app)/quran/reader?page=${reinforcementTask.startPage}&planId=${hifz?.id}&type=hifz&start=${reinforcementTask.startPage}&end=${reinforcementTask.endPage}`,
+                )
+              }
+            />
           </View>
+        )}
 
-          {reinforcementTask && (
-            <View className="mt-10 px-1">
-              <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
-                Memory Refresh
-              </Text>
-              <Text className="text-xl text-gray-900 mb-4">Keep it Fresh</Text>
-              <ReinforcementCard
-                task={{
-                  ...reinforcementTask,
-                  label: "Memory refresh",
-                }}
-                isCompleted={isReinforcementDone}
-                onStart={() => {
-                  push(`/(app)/quran/reader?page=${reinforcementTask.startPage}&planId=${hifz?.id}&type=hifz&start=${reinforcementTask.startPage}&end=${reinforcementTask.endPage}`);
-                }}
-              />
-            </View>
-          )}
-
-          {dailyReviews.length > 0 && (
-            <View className="mt-10 px-1">
-              <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
-                Priority Review
-              </Text>
-              <Text className="text-xl text-gray-900 mb-4">Strengthen Your Heart</Text>
-              <View className="gap-y-4">
-                {dailyReviews.map((item) => (
-                  <ReinforcementCard
-                    key={item.slotId}
-                    isCompleted={item.isCompleted}
-                    task={{
-                      startPage: item.startPage,
-                      endPage: item.endPage,
-                      actualPages: Array.from(
-                        { length: item.endPage - item.startPage + 1 },
-                        (_, i) => item.startPage + i,
+        {(dailyReviews?.length ?? 0) > 0 && (
+          <View className="mt-10 px-1">
+            <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
+              Priority Review
+            </Text>
+            <Text className="text-xl text-gray-900 mb-4">
+              Strengthen Your Heart
+            </Text>
+            <View className="gap-y-4">
+              {dailyReviews!.map((item) => (
+                <ReinforcementCard
+                  key={item.slotId}
+                  isCompleted={item.isCompleted}
+                  task={{
+                    startPage: item.startPage,
+                    endPage: item.endPage,
+                    actualPages: Array.from(
+                      { length: item.endPage - item.startPage + 1 },
+                      (_, i) => item.startPage + i,
+                    ),
+                    displaySurah:
+                      item.startSurah === item.endSurah ?
+                        item.startSurah
+                      : `${item.startSurah} – ${item.endSurah}`,
+                    priority: item.isCompleted ? undefined : item.priority,
+                    badgeColor:
+                      item.isCompleted ? undefined : (
+                        getReviewPriorityColor(item.priority)
                       ),
-                      displaySurah:
-                        item.startSurah === item.endSurah
-                          ? item.startSurah
-                          : `${item.startSurah} – ${item.endSurah}`,
-                      priority: item.isCompleted ? undefined : item.priority,
-                      badgeColor: item.isCompleted
-                        ? undefined
-                        : getReviewPriorityColor(item.priority),
-                      label: item.isCompleted
-                        ? "Review completed"
-                        : item.overdueDays > 0
-                          ? `${item.overdueDays}d overdue`
-                          : "Due today",
-                    }}
-                    onStart={() => {
-                      push(
-                        `/(app)/quran/reader?page=${item.startPage}&planId=${hifz?.id}&type=hifz&start=${item.startPage}&end=${item.endPage}`,
-                      );
-                    }}
-                  />
-                ))}
-              </View>
+                    label:
+                      item.isCompleted ? "Review completed"
+                      : item.overdueDays > 0 ? `${item.overdueDays}d overdue`
+                      : "Due today",
+                  }}
+                  onStart={() =>
+                    push(
+                      `/(app)/quran/reader?page=${item.startPage}&planId=${hifz?.id}&type=hifz&start=${item.startPage}&end=${item.endPage}`,
+                    )
+                  }
+                />
+              ))}
             </View>
-          )}
-
-          <View className="mt-10 mb-2 px-1">
-            <Text className="text-gray-400   uppercase tracking-[2px] text-[10px] mb-2">
-              Activity
-            </Text>
-
-            <Text className="text-xl  text-gray-900 mb-5">
-              Weekly Consistency
-            </Text>
-
-            <DayByDay plan={hifz} />
           </View>
+        )}
+
+        <View className="mt-10 mb-2 px-1">
+          <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
+            Activity
+          </Text>
+          <Text className="text-xl text-gray-900 mb-5">Weekly Consistency</Text>
+          <DayByDay plan={hifz as IHifzPlan} />
+        </View>
+
+        {analytics && (
           <View className="mt-10">
-            <Text className="text-gray-400   uppercase tracking-[2px] text-[10px] mb-2 px-1">
+            <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2 px-1">
               Insights
             </Text>
-            <Text className="text-xl  text-gray-900 mb-4 px-1">
+            <Text className="text-xl text-gray-900 mb-4 px-1">
               Plan Analytics
             </Text>
-
             <View className="flex-row flex-wrap justify-between">
               <StatCard
                 title="Completed"
@@ -248,33 +201,36 @@ export default function Hifz() {
               />
             </View>
           </View>
-        </ScreenContent>
-        <ScreenFooter>
-          <View className="flex-row gap-x-3">
-            <Button
-              className={`flex-1 shadow-lg ${(dashboardState.type === 'EVALUATION_DUE' || dashboardState.type === 'PLAN_FINISHED') ? 'opacity-50' : 'shadow-primary/20'}`}
-              onPress={() => !(dashboardState.type === 'EVALUATION_DUE' || dashboardState.type === 'PLAN_FINISHED') && push("/(app)/hifz/log")}
-              disabled={dashboardState.type === 'EVALUATION_DUE' || dashboardState.type === 'PLAN_FINISHED'}
-            >
-              <Ionicons name="add-circle" size={20} color="white" />
-              <Text className="text-white">
-                {dashboardState.type === 'EVALUATION_DUE' ? 'Test Required' : dashboardState.type === 'PLAN_FINISHED' ? 'Plan Completed' : 'Log Progress'}
-              </Text>
-            </Button>
+        )}
+      </ScreenContent>
 
-            <Button
-              variant="outline"
-              className="flex-1"
-              onPress={() => push("/(app)/hifz/create-hifz-plan")}
-            >
-              <Ionicons name="create-outline" size={18} color="#276359" />
-              <Text>
-                Edit Plan
-              </Text> 
-            </Button>
-          </View>
-        </ScreenFooter>
-      </Screen>
-    </>
+      <ScreenFooter>
+        <View className="flex-row gap-x-3">
+          <Button
+            className={`flex-1 shadow-lg ${isBlocked ? "opacity-50" : "shadow-primary/20"}`}
+            onPress={() => !isBlocked && push("/(app)/hifz/log")}
+            disabled={isBlocked}
+          >
+            <Ionicons name="add-circle" size={20} color="white" />
+            <Text className="text-white">
+              {cardState.type === "EVALUATION_DUE" ?
+                "Test Required"
+              : cardState.type === "PLAN_FINISHED" ?
+                "Plan Completed"
+              : "Log Progress"}
+            </Text>
+          </Button>
+
+          <Button
+            variant="outline"
+            className="flex-1"
+            onPress={() => push("/(app)/hifz/create-hifz-plan")}
+          >
+            <Ionicons name="create-outline" size={18} color="#276359" />
+            <Text>Edit Plan</Text>
+          </Button>
+        </View>
+      </ScreenFooter>
+    </Screen>
   );
 }

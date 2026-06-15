@@ -13,7 +13,7 @@ export const useHifzPlan = () => {
             return await hifzService.getPlan(user.id);
         },
         enabled: !!user?.id,
-        staleTime: 30_000,
+        staleTime: 0,
     });
 
     return {

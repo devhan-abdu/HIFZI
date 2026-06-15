@@ -8,7 +8,7 @@ export interface IHifzLog {
     actualPagesCompleted: number;
     date: string;
     logDay: number;
-    status: "completed" | "partial" | "missed",
+    status: "completed" | "partial" | "missed" | "pending",
     notes?: string;
     mistakesCount?: number;
     hesitationCount?: number;
@@ -33,7 +33,10 @@ export interface IHifzPlan {
   isCustomTime?: boolean;
   isReinforcementEnabled?: boolean;
   evaluationDay?: number;
-  hifzDailyLogs?: IHifzLog[]
+  hifzDailyLogs?: IHifzLog[],
+  todayLog: IHifzLog | null,
+  evaluationDue: boolean;
+  planFinished: boolean;
 }
 export interface HifzQuestion {
   type: 'SEQUENCE' | 'BOUNDARY' | 'CHOICE';

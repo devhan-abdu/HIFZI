@@ -20,8 +20,6 @@ export function useAddLog() {
             queryClient.invalidateQueries({ queryKey: ["page-performance-all"] });
             queryClient.invalidateQueries({ queryKey: ["user-stats", user?.id] });
             queryClient.invalidateQueries({ queryKey: ["user-badges", user?.id] });
-            queryClient.invalidateQueries({ queryKey: ['finished-plans', user?.id] });
-            queryClient.invalidateQueries({ queryKey: ['weekly-evaluation-due', user?.id] });
             
             if (result?.changed) {
                 queryClient.invalidateQueries({ queryKey: ["adaptive-guidance", user?.id] });
