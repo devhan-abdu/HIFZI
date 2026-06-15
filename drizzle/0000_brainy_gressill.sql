@@ -386,3 +386,7 @@ CREATE TABLE `user_stats` (
 	`last_test_date` text,
 	`consecutive_perfects` integer DEFAULT 0 NOT NULL
 );
+
+
+
+

@@ -1,0 +1,1 @@
+ALTER TABLE `quran_activity_plans` ADD `last_evaluation_date` text DEFAULT NULL;
