@@ -4,49 +4,38 @@
     "appVersionSource": "remote"
   },
   "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "environment": "development",
+    "base": {
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://aaqcrqbnxarnkmcvsbyn.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhcWNycWJueGFybmttY3ZzYnluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMTYyNzEsImV4cCI6MjA5NjU5MjI3MX0.qRDupwX_wRjF84zFe7lHrtjgwdm7cZHIIySTYStl6o0",
-        "EXPO_PUBLIC_QF_CLIENT_ID": "8ac8d4dd-a859-4d3c-a269-254630f9111d",
+        "EXPO_PUBLIC_QF_CLIENT_ID": "52b3e206-f02e-460c-a5d3-b82ff40c32c4",
         "EXPO_PUBLIC_BACKEND_URL": "https://aaqcrqbnxarnkmcvsbyn.supabase.co/functions/v1",
         "EXPO_PUBLIC_QF_ENV": "production",
         "EXPO_PUBLIC_QF_URL": "https://oauth2.quran.foundation"
-      },
+      }
+    },
+    "development": {
+      "extends": "base",
+      "developmentClient": true,
+      "distribution": "internal",
+      "environment": "development",
       "android": {
         "buildType": "apk"
       }
     },
     "preview": {
+      "extends": "base",
       "distribution": "internal",
       "autoIncrement": true,
       "environment": "preview",
-      "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://aaqcrqbnxarnkmcvsbyn.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhcWNycWJueGFybmttY3ZzYnluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMTYyNzEsImV4cCI6MjA5NjU5MjI3MX0.qRDupwX_wRjF84zFe7lHrtjgwdm7cZHIIySTYStl6o0",
-        "EXPO_PUBLIC_QF_CLIENT_ID": "8ac8d4dd-a859-4d3c-a269-254630f9111d",
-        "EXPO_PUBLIC_BACKEND_URL": "https://aaqcrqbnxarnkmcvsbyn.supabase.co/functions/v1",
-        "EXPO_PUBLIC_QF_ENV": "production",
-        "EXPO_PUBLIC_QF_URL": "https://oauth2.quran.foundation"
-      },
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
+      "extends": "base",
       "autoIncrement": true,
       "environment": "production",
-      "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://aaqcrqbnxarnkmcvsbyn.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhcWNycWJueGFybmttY3ZzYnluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMTYyNzEsImV4cCI6MjA5NjU5MjI3MX0.qRDupwX_wRjF84zFe7lHrtjgwdm7cZHIIySTYStl6o0",
-        "EXPO_PUBLIC_QF_CLIENT_ID": "8ac8d4dd-a859-4d3c-a269-254630f9111d",
-        "EXPO_PUBLIC_BACKEND_URL": "https://aaqcrqbnxarnkmcvsbyn.supabase.co/functions/v1",
-        "EXPO_PUBLIC_QF_ENV": "production",
-        "EXPO_PUBLIC_QF_URL": "https://oauth2.quran.foundation"
-      },
       "android": {
         "buildType": "app-bundle"
       }
