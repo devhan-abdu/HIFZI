@@ -9,6 +9,7 @@ import { Alert } from "../common/Alert";
 import { Text } from "@/src/components/common/ui/Text";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigate } from "@/src/hooks/useNavigate";
+import { useColorScheme } from "nativewind";
 
 export const Header = ({
   title,
@@ -22,6 +23,9 @@ export const Header = ({
   const { unreadCount } = useNotifications();
   const { isFullyEnabled, togglePreference } = useNotificationPermissions();
   const { push } = useNavigate();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const iconColor = isDark ? "#ecedee" : "#11181c";
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [signOut, setSignOut] = useState(false);
@@ -44,14 +48,11 @@ export const Header = ({
   };
 
   return (
-    <View
-      style={{ paddingTop: insets.top + 8 }}
-      className="bg-white px-6 pb-2"
-    >
+    <View style={{ paddingTop: insets.top + 8 }} className="bg-background px-6 pb-2">
       <View className="flex-row justify-between items-center">
         <View className="flex-1">
           <View className="flex-row items-center gap-x-3">
-            <Text className="text-primary text-[18px]  uppercase tracking-[3px]">
+            <Text className="text-[#276359] text-[18px] uppercase tracking-[3px]">
               HIFZI
             </Text>
           </View>
@@ -60,9 +61,9 @@ export const Header = ({
         <View className="flex-row items-center gap-x-3">
           <Pressable
             onPress={() => push("/(app)/notifications" as never)}
-            className="w-11 h-11 rounded-full bg-slate-100 items-center justify-center"
+            className="w-11 h-11 rounded-full bg-surface items-center justify-center"
           >
-            <Ionicons name="notifications-outline" size={20} color="#0f172a" />
+            <Ionicons name="notifications-outline" size={20} color={iconColor} />
             {unreadCount > 0 && (
               <View className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 items-center justify-center">
                 <Text className="text-white text-[10px]">
@@ -79,9 +80,12 @@ export const Header = ({
 
       <Modal transparent visible={menuOpen} animationType="fade">
         <View className="flex-1">
-          <Pressable className="absolute inset-0" onPress={() => setMenuOpen(false)} />
+          <Pressable
+            className="absolute inset-0"
+            onPress={() => setMenuOpen(false)}
+          />
           <View
-            className="absolute right-6 bg-white rounded-2xl border border-slate-100 shadow-lg overflow-hidden min-w-[160px]"
+            className="absolute right-6 bg-surface rounded-2xl border border-border shadow-lg overflow-hidden min-w-[160px]"
             style={{ top: insets.top + 56 }}
           >
             <Pressable
@@ -89,29 +93,36 @@ export const Header = ({
                 setMenuOpen(false);
                 push("/(app)/journey" as never);
               }}
-              className="flex-row items-center px-4 py-3.5 border-b border-slate-100 active:bg-slate-50"
+              className="flex-row items-center px-4 py-3.5 border-b border-border active:bg-primary/5"
             >
               <Ionicons name="map-outline" size={18} color="#276359" />
-              <Text className="text-slate-900 text-sm ml-3">Journey</Text>
+              <Text className="text-text text-sm ml-3">Journey</Text>
             </Pressable>
-            
+
             <Pressable
               onPress={() => {
                 togglePreference(!isFullyEnabled);
               }}
-              className="flex-row items-center justify-between px-4 py-3.5 border-b border-slate-100 active:bg-slate-50"
+              className="flex-row items-center justify-between px-4 py-3.5 border-b border-border active:bg-primary/5"
             >
               <View className="flex-row items-center">
-                <Ionicons 
-                  name={isFullyEnabled ? "notifications" : "notifications-off-outline"} 
-                  size={18} 
-                  color={isFullyEnabled ? "#276359" : "#64748b"} 
+                <Ionicons
+                  name={
+                    isFullyEnabled ? "notifications" : (
+                      "notifications-off-outline"
+                    )
+                  }
+                  size={18}
+                  color={isFullyEnabled ? "#276359" : "#64748b"}
                 />
-                <Text className="text-slate-900 text-sm ml-3">Reminders</Text>
+                <Text className="text-text text-sm ml-3">Reminders</Text>
               </View>
-              {/* Custom simple toggle UI */}
-              <View className={`w-10 h-6 rounded-full p-1 justify-center ${isFullyEnabled ? 'bg-primary' : 'bg-slate-200'}`}>
-                <View className={`w-4 h-4 rounded-full bg-white shadow-sm transition-all ${isFullyEnabled ? 'ml-auto' : ''}`} />
+              <View
+                className={`w-10 h-6 rounded-full p-1 justify-center ${isFullyEnabled ? "bg-primary" : "bg-border"}`}
+              >
+                <View
+                  className={`w-4 h-4 rounded-full bg-surface shadow-sm transition-all ${isFullyEnabled ? "ml-auto" : ""}`}
+                />
               </View>
             </Pressable>
 
@@ -120,7 +131,7 @@ export const Header = ({
                 setMenuOpen(false);
                 setSignOut(true);
               }}
-              className="flex-row items-center px-4 py-3.5 active:bg-slate-50"
+              className="flex-row items-center px-4 py-3.5 active:bg-primary/5"
             >
               <Ionicons name="log-out-outline" size={18} color="#dc2626" />
               <Text className="text-red-600 text-sm ml-3">Logout</Text>
@@ -177,13 +188,13 @@ export const UserAvatar = ({
   return (
     <View
       style={{ width: size, height: size }}
-      className="bg-primary/10 rounded-full items-center justify-center border-2 border-primary/20 shadow-sm"
+      className="bg-background rounded-full items-center justify-center border-2 border-border shadow-sm"
     >
-      <Text style={{ fontSize: size * 0.4 }} className="text-primary ">
+      <Text style={{ fontSize: size * 0.4 }} className="text-muted ">
         {initials}
       </Text>
 
-      <View className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
+      <View className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-border" />
     </View>
   );
 };
