@@ -47,7 +47,7 @@ export const AyahActionMenu = () => {
 
   return (
     <View className="flex-row flex-wrap justify-between p-4">
-      <Text className="w-full text-center text-gray-500 mb-4">
+      <Text className="w-full text-center text-muted mb-4">
         Ayah {ayahLabel}
       </Text>
       {actions.map((action) => (
@@ -62,7 +62,7 @@ export const AyahActionMenu = () => {
           >
             <Ionicons name={action.icon as any} size={24} color="white" />
           </View>
-          <Text className="text-[10px]  text-gray-600 text-center">
+          <Text className="text-[10px]  text-muted text-center">
             {action.label}
           </Text>
         </TouchableOpacity>

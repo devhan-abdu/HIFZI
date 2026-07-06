@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, LayoutChangeEvent } from 'react-native';
 import { Image, ImageLoadEventData } from 'expo-image';
+import { useColorScheme } from 'nativewind';
 
 interface PageImageProps {
   uri: string | null;
@@ -8,14 +9,15 @@ interface PageImageProps {
 }
 
 export const PageImage: React.FC<PageImageProps> = ({ uri, onLayout }) => {
-
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   return (
     <View style={styles.container} onLayout={onLayout}>
       {uri && (
         <Image
           source={{ uri }}
-          style={styles.image}
+          style={[styles.image, isDark && { tintColor: 'white' }]}
           contentFit="contain"
           cachePolicy="memory-disk"
           transition={0}

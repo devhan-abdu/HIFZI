@@ -75,16 +75,16 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
 
   return (
     <View className="px-2 pb-8">
-      <View className="rounded-3xl bg-slate-900 p-5  shadow-xl">
+      <View className="rounded-3xl bg-primary p-5 shadow-xl">
         <View className="flex-row items-center justify-between">
           <View className="flex-1 pr-4">
-            <Text className="text-[10px]  uppercase tracking-widest text-teal-400">
+            <Text className="text-[10px] uppercase tracking-widest text-primary-foreground/80">
               {playerState === "playing" ? "Playing Now" : "Recitation"}
             </Text>
-            <Text className="text-lg  text-white" numberOfLines={1}>
+            <Text className="text-lg text-primary-foreground" numberOfLines={1}>
               {activeReciter?.name || "Select Reciter"}
             </Text>
-            <Text className="mt-1 text-xs text-slate-400">
+            <Text className="mt-1 text-xs text-primary-foreground/60">
               Surah {chapterId} •{" "}
               {playingAyah ||
                 (selectedAyah ?
@@ -96,10 +96,10 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
           <TouchableOpacity
             onPress={() => void togglePlayback()}
             disabled={playerState === "buffering" || isDownloading}
-            className="h-14 w-14 items-center justify-center rounded-full bg-white shadow-lg"
+            className="h-14 w-14 items-center justify-center rounded-full bg-surface shadow-lg"
           >
             {playerState === "buffering" || isDownloading ?
-              <ActivityIndicator size="small" color="#000" />
+              <ActivityIndicator size="small" color="#276359" />
             : <Ionicons
                 name={
                   playerState === "playing" ? "pause" 
@@ -107,7 +107,7 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
                   : "play"
                 }
                 size={30}
-                color="#000"
+                color="#276359"
               />
             }
           </TouchableOpacity>
@@ -115,14 +115,14 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
 
         {(isDownloading || playerState === "playing") && (
           <View className="mt-5">
-            <View className="h-1.5 overflow-hidden rounded-full bg-slate-800">
+            <View className="h-1.5 overflow-hidden rounded-full bg-white/20">
               <View
-                className="h-full rounded-full bg-teal-400"
+                className="h-full rounded-full bg-primary-foreground"
                 style={{ width: `${Math.max(downloadProgress, 0.05) * 100}%` }}
               />
             </View>
             {isDownloading && (
-              <Text className="mt-2 text-right text-[10px]  text-slate-400">
+              <Text className="mt-2 text-right text-[10px] text-primary-foreground/60">
                 Downloading: {Math.round(downloadProgress * 100)}%
               </Text>
             )}
@@ -141,12 +141,12 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
 
       {expanded && (
         <View className="mt-6">
-          <Text className="mb-4 text-[11px]  uppercase tracking-wider text-slate-400 ml-2">
+          <Text className="mb-4 text-[11px]  uppercase tracking-wider text-muted ml-2">
             Available Reciters
           </Text>
 
           {isLoadingReciters ?
-            <ActivityIndicator size="small" color="#0d9488" className="py-10" />
+            <ActivityIndicator size="small" color="#276359" className="py-10" />
           : <ScrollView
               style={{ maxHeight: 350 }}
               showsVerticalScrollIndicator={false}
@@ -161,21 +161,21 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
                     onPress={() => setAudio(item.id)}
                     className={`mb-2 flex-row items-center rounded-2xl p-4 ${
                       isSelected ?
-                        "bg-teal-50 border border-teal-100"
-                      : "bg-slate-50"
+                        "bg-primary/10 border border-primary/20"
+                      : "bg-background"
                     }`}
                   >
                     <View
-                      className={`h-8 w-8 items-center justify-center rounded-full ${isSelected ? "bg-teal-600" : "bg-slate-200"}`}
+                      className={`h-8 w-8 items-center justify-center rounded-full ${isSelected ? "bg-primary" : "bg-surface"}`}
                     >
                       <Text
-                        className={`text-xs  ${isSelected ? "text-white" : "text-slate-500"}`}
+                        className={`text-xs ${isSelected ? "text-primary-foreground" : "text-muted"}`}
                       >
                         {item.name[0]}
                       </Text>
                     </View>
                     <Text
-                      className={`ml-4 flex-1  ${isSelected ? "text-teal-900" : "text-slate-700"}`}
+                      className={`ml-4 flex-1 ${isSelected ? "text-text" : "text-muted"}`}
                       numberOfLines={1}
                     >
                       {item.name}
@@ -194,7 +194,7 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
                       <Ionicons
                         name="checkmark-circle"
                         size={20}
-                        color="#0d9488"
+                        color="#276359"
                       />
                     )}
                   </TouchableOpacity>
@@ -207,8 +207,8 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
 
       {!expanded && (
         <View className="mt-4 items-center">
-          <View className="h-1 w-8 rounded-full bg-slate-200" />
-          <Text className="mt-2 text-[10px]  text-slate-300 uppercase tracking-widest">
+          <View className="h-1 w-8 rounded-full bg-surface" />
+          <Text className="mt-2 text-[10px]  text-muted uppercase tracking-widest">
             Swipe up to change Qari
           </Text>
         </View>

@@ -10,6 +10,7 @@ import { PageData } from "../type";
 import { TranslationSelectorPanel } from "./TranslationSelectorPanel";
 import { countDownloadedPages } from "../services/quranImageService";
 import { useMushafBulkDownloadStore } from "../store/mushafBulkDownloadStore";
+import { useColorScheme } from "nativewind";
 
 interface ReaderHeaderProps {
   pageData?: PageData;
@@ -18,6 +19,8 @@ interface ReaderHeaderProps {
 export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
   const { push, back } = useNavigate();
   const insets = useSafeAreaInsets();
+  const { colorScheme } = useColorScheme();
+  const iconColor = colorScheme === "dark" ? "#e2e8f0" : "#334155";
 
   const {
     selectedAyah,
@@ -54,7 +57,6 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
       resetSelection();
     } else {
       closeTranslationSelector();
-      // Ensure we go back to the Quran Index specifically
       push("/(app)/quran");
     }
   }, [selectedAyah, resetSelection, closeTranslationSelector, push]);
@@ -79,10 +81,6 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
     }
   };
 
-  const openOfflineSettings = useCallback(() => {
-    push("/(app)/quran/offline");
-  }, [push]);
-
   if (!uiVisible) return null;
 
   const surahName = pageData?.name ?? "Loading...";
@@ -98,6 +96,7 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
     downloaded: isDownloadingAll ? bulk.downloaded : diskPages ?? 0,
     total: bulk.total,
   };
+
   const mushafFullyCached =
     (diskPages !== null && diskPages >= 604) || bulk.status === "completed";
 
@@ -105,64 +104,59 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
     <>
       <View
         style={{ paddingTop: insets.top + 8, zIndex: 100, position: "absolute" }}
-        className="top-0 left-0 right-0 bg-white shadow-sm border-b border-gray-100"
+        className="top-0 left-0 right-0 bg-surface shadow-sm border-b border-border"
       >
         <View className="flex-row items-center justify-between px-4 py-3">
-          {/* Back / Close */}
-          <TouchableOpacity onPress={handleBack} className="p-2">
+          <TouchableOpacity onPress={handleBack} className="p-2 mr-2">
             <Ionicons
               name={selectedAyah ? "close" : "chevron-back"}
               size={24}
-              color="#374151"
+              color={iconColor}
             />
           </TouchableOpacity>
 
-          {/* Center title */}
           <TouchableOpacity
             onPress={toggleUI}
             activeOpacity={0.8}
-            className="flex-1 items-center justify-center"
+            className="flex-1 flex-col justify-center"
           >
-            <Text className="text-lg text-gray-800 tracking-tight">{surahName}</Text>
+            <Text className="text-lg text-text tracking-tight">{surahName}</Text>
             {isDownloadingAll ? (
               <View className="flex-row items-center mt-0.5 space-x-1.5">
-                <ActivityIndicator size="small" color="#0d9488" style={{ transform: [{ scale: 0.7 }] }} />
-                <Text className="text-[10px] text-teal-600 ">
+                <ActivityIndicator size="small" color={iconColor} style={{ transform: [{ scale: 0.7 }] }} />
+                <Text className="text-[10px] text-muted">
                   Offline download ({downloadProgress.downloaded}/{downloadProgress.total})
                 </Text>
               </View>
             ) : (
-              <Text className="text-xs text-gray-500 mt-0.5">{pageLabel}</Text>
+              <Text className="text-xs text-muted mt-0.5">{pageLabel} • Juz' {pageData?.juz}</Text>
             )}
           </TouchableOpacity>
 
-          {/* Actions */}
           <View className="flex-row items-center space-x-1">
-            {/* Translation mode toggle */}
             <TouchableOpacity
               onPress={() => {
                 if (viewMode === "translation") closeTranslationSelector();
                 setViewMode(viewMode === "mushaf" ? "translation" : "mushaf");
               }}
-              className="p-2 bg-slate-50 rounded-full"
+              className="p-2 bg-surface rounded-full"
             >
               <Ionicons
                 name={viewMode === "mushaf" ? "language" : "book"}
                 size={20}
-                color="#0d9488"
+                color={iconColor}
               />
             </TouchableOpacity>
 
-            {/* Translation selector — only in translation mode */}
             {viewMode === "translation" && (
               <TouchableOpacity
                 onPress={toggleTranslationSelector}
-                className={`p-2 rounded-full ${translationSelectorOpen ? "bg-teal-500" : "bg-slate-50"}`}
+                className="p-2 rounded-full bg-surface"
               >
                 <Ionicons
                   name="chevron-down"
                   size={20}
-                  color={translationSelectorOpen ? "#fff" : "#0d9488"}
+                  color={iconColor}
                   style={{
                     transform: [{ rotate: translationSelectorOpen ? "180deg" : "0deg" }],
                   }}
@@ -170,29 +164,18 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
               </TouchableOpacity>
             )}
 
-            {/* Offline download settings */}
-            <TouchableOpacity className="p-2" onPress={openOfflineSettings}>
-              <Ionicons
-                name={mushafFullyCached ? "cloud-done-outline" : "cloud-download-outline"}
-                size={22}
-                color="#0d9488"
-              />
-            </TouchableOpacity>
-
-            {/* Bookmark */}
             <TouchableOpacity className="p-2" onPress={handleToggleBookmark}>
               <Ionicons
                 name={isBookmarkedActive ? "bookmark" : "bookmark-outline"}
                 size={22}
-                color={isBookmarkedActive ? "#C7326A" : "#4b5563"}
+                color={iconColor}
               />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Subtle Progress Bar at the bottom of the header */}
         {isDownloadingAll && (
-          <View className="w-full h-1 bg-slate-100">
+          <View className="w-full h-1 bg-surface">
             <View
               style={{
                 width: `${Math.min(100, (downloadProgress.downloaded / downloadProgress.total) * 100)}%`,
@@ -203,7 +186,6 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
         )}
       </View>
 
-      {/* Translation selector panel — slides down below header */}
       {viewMode === "translation" && <TranslationSelectorPanel />}
     </>
   );

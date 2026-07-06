@@ -12,14 +12,18 @@ import { PageImage } from "./PageImage";
 import { AyahHighlight } from "./AyahHighlight";
 import { findAyahAtPoint } from "../utils/bboxGrouping";
 import { useReaderStore } from "../../quran/hooks/useReaderStore";
+import { PageData } from "../../quran/type";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface MushafPageProps {
   pageNumber: number;
   isActive: boolean;
+  pageData?: PageData;
 }
 
-export const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNumber, isActive }) => {
+export const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNumber, isActive, pageData }) => {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const insets = useSafeAreaInsets();
 
   const { selectedAyah, setSelectedAyah, playingAyah, toggleUI } = useReaderStore();
 
@@ -52,15 +56,22 @@ export const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNumber, i
 
   const showBlockingSpinner = loading && !imageUri;
 
+  const imageAspect = 0.65;
+  const renderedImageHeight = dimensions.width > 0 ? dimensions.width / imageAspect : 0;
+  const letterBoxHeight = dimensions.height > 0 ? Math.max(0, (dimensions.height - renderedImageHeight) / 2) : 0;
+  
+  const topOffset = Math.max(insets.top + 8, letterBoxHeight - 48);
+  const bottomOffset = Math.max(insets.bottom + 8, letterBoxHeight - 34);
+
   return (
-    <View className="flex-1 bg-white" onLayout={handleLayout}>
+    <View className="flex-1 bg-background" onLayout={handleLayout}>
       {showBlockingSpinner ? (
         <View className="flex-1" />
       ) : !imageUri ? (
-        <View className="flex-1 items-center justify-center p-6 bg-slate-50">
+        <View className="flex-1 items-center justify-center p-6 bg-background">
           <Ionicons name="cloud-offline-outline" size={48} color="#94a3b8" />
-          <Text className="text-slate-800 text-base mt-4">Could not load page {pageNumber}</Text>
-          <Text className="text-slate-400 text-xs text-center mt-1 mb-6 px-6">
+          <Text className="text-text text-base mt-4">Could not load page {pageNumber}</Text>
+          <Text className="text-muted text-xs text-center mt-1 mb-6 px-6">
             Connect to the internet to fetch this page, or download all mushaf pages from Quran →
             Offline reading (optional).
           </Text>
@@ -70,12 +81,12 @@ export const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNumber, i
             className="px-6 py-3 rounded-full flex-row items-center shadow-sm active:opacity-90"
           >
             <Ionicons
-              name="download-outline"
+              name="refresh-outline"
               size={18}
               color="#fff"
               style={{ marginRight: 8 }}
             />
-            <Text className="text-white">Tap to Download</Text>
+            <Text className="text-white">Tap to Retry</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -85,7 +96,28 @@ export const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNumber, i
           delayLongPress={300}
         >
           <View className="flex-1 relative">
+            {pageData && dimensions.height > 0 && (
+              <View 
+                className="flex-row justify-between px-5 absolute w-full z-10"
+                style={{ top: topOffset }}
+                pointerEvents="none"
+              >
+                <Text className="text-base text-muted font-medium tracking-wider">{pageData.name}</Text>
+                <Text className="text-base text-muted font-medium tracking-wider">Juz' {pageData.juz}</Text>
+              </View>
+            )}
+
             <PageImage uri={imageUri} onLayout={() => {}} />
+
+            {pageData && dimensions.height > 0 && (
+              <View 
+                className="items-center absolute w-full z-10"
+                style={{ bottom: bottomOffset }}
+                pointerEvents="none"
+              >
+                <Text className="text-base text-muted font-medium">{pageData.page}</Text>
+              </View>
+            )}
 
             {ayahRegions.map((region) => {
               const isPlaying = playingAyah === region.verseKey;

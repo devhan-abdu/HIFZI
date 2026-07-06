@@ -1,5 +1,5 @@
 import React, { memo } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PageData } from "../type";
 
@@ -7,44 +7,28 @@ interface PageMetaOverlayProps {
   pageData?: PageData;
 }
 
-/**
- * Always-visible overlay that shows surah name (top-left),
- * Juz number (top-right), and page number (bottom-center)
- * on top of the Mushaf image.
- *
- * Performance notes:
- *  - React.memo: only re-renders when pageData reference changes
- *  - StyleSheet.create: styles are registered once, no per-render object alloc
- *  - pointerEvents="none": the overlay never intercepts touches
- */
 function PageMetaOverlayInner({ pageData }: PageMetaOverlayProps) {
   const insets = useSafeAreaInsets();
 
   if (!pageData) return null;
 
   return (
-    <View
-      pointerEvents="none"
-      style={[
-        StyleSheet.absoluteFillObject,
-        { zIndex: 10 },
-      ]}
-    >
-      {/* ─── Top row: Surah name left | Juz number right ─── */}
+    <View pointerEvents="none" className="absolute inset-0 z-10">
       <View
-        style={[
-          styles.topRow,
-          { top: insets.top + 6 },
-        ]}
+        className="absolute left-3 right-3 flex-row justify-between items-center"
+        style={{ top: insets.top + 6 }}
       >
-        <View style={styles.pill}>
-          <Text style={styles.pillText} numberOfLines={1}>
+        <View className="bg-white/82 dark:bg-slate-900/82 px-2.5 py-1 rounded-full shadow-sm max-w-[55%]">
+          <Text
+            className="text-xs font-semibold text-slate-900 dark:text-slate-100 tracking-wider"
+            numberOfLines={1}
+          >
             {pageData.name}
           </Text>
         </View>
 
-        <View style={styles.pill}>
-          <Text style={styles.pillText}>
+        <View className="bg-white/82 dark:bg-slate-900/82 px-2.5 py-1 rounded-full shadow-sm">
+          <Text className="text-xs font-semibold text-slate-900 dark:text-slate-100 tracking-wider">
             {`Juz' ${pageData.juz}`}
           </Text>
         </View>
@@ -52,66 +36,15 @@ function PageMetaOverlayInner({ pageData }: PageMetaOverlayProps) {
 
       {/* ─── Bottom: page number ─── */}
       <View
-        style={[
-          styles.bottomCenter,
-          { bottom: insets.bottom + 8 },
-        ]}
+        className="absolute left-0 right-0 items-center"
+        style={{ bottom: insets.bottom + 8 }}
       >
-        <Text style={styles.pageNumber}>{pageData.page}</Text>
+        <Text className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-white/82 dark:bg-slate-900/82 px-3 py-0.5 rounded-full overflow-hidden shadow-sm">
+          {pageData.page}
+        </Text>
       </View>
     </View>
   );
 }
 
 export const PageMetaOverlay = memo(PageMetaOverlayInner);
-
-const styles = StyleSheet.create({
-  topRow: {
-    position: "absolute",
-    left: 12,
-    right: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  pill: {
-    backgroundColor: "rgba(255,255,255,0.82)",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    // subtle shadow so text is readable on any page color
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
-    maxWidth: "55%",
-  },
-  pillText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#1e293b",
-    letterSpacing: 0.1,
-  },
-  bottomCenter: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    alignItems: "center",
-  },
-  pageNumber: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#64748b",
-    backgroundColor: "rgba(255,255,255,0.82)",
-    paddingHorizontal: 12,
-    paddingVertical: 3,
-    borderRadius: 20,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-});

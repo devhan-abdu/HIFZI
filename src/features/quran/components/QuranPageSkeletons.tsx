@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { View, Animated, Easing, useWindowDimensions } from "react-native";
+import { View, Animated, Easing, useWindowDimensions, ActivityIndicator } from "react-native";
 
 function PulseBlock({ className }: { className: string }) {
   const opacity = useRef(new Animated.Value(0.35)).current;
@@ -36,38 +36,38 @@ export function MushafPageSkeleton() {
   const innerH = height - pad * 2 - 48;
 
   return (
-    <View className="flex-1 bg-slate-50" style={{ padding: pad }}>
+    <View className="flex-1 bg-background" style={{ padding: pad }}>
       <View
-        className="flex-1 rounded-lg bg-white overflow-hidden border border-slate-100"
+        className="flex-1 rounded-lg bg-surface overflow-hidden border border-border"
         style={{ minHeight: innerH }}
       >
         <View className="absolute top-4 left-0 right-0 items-center">
-          <PulseBlock className="h-2 w-24 rounded-full bg-slate-200" />
+          <PulseBlock className="h-2 w-24 rounded-full bg-border" />
         </View>
         <View
           className="flex-1 flex-row justify-between px-6 pt-14 pb-10"
           style={{ gap: innerW * 0.06 }}
         >
           <View className="flex-1 justify-between py-2">
-            <PulseBlock className="h-3 w-full rounded-md bg-slate-200" />
-            <PulseBlock className="h-3 w-[92%] rounded-md bg-slate-200 self-end" />
-            <PulseBlock className="h-3 w-full rounded-md bg-slate-200" />
-            <PulseBlock className="h-3 w-[88%] rounded-md bg-slate-200 self-end" />
-            <PulseBlock className="h-3 w-full rounded-md bg-slate-200" />
-            <PulseBlock className="h-3 w-[95%] rounded-md bg-slate-200 self-end" />
-            <PulseBlock className="h-3 w-full rounded-md bg-slate-200" />
-            <PulseBlock className="h-3 w-[80%] rounded-md bg-slate-200 self-end" />
+            <PulseBlock className="h-3 w-full rounded-md bg-border" />
+            <PulseBlock className="h-3 w-[92%] rounded-md bg-border self-end" />
+            <PulseBlock className="h-3 w-full rounded-md bg-border" />
+            <PulseBlock className="h-3 w-[88%] rounded-md bg-border self-end" />
+            <PulseBlock className="h-3 w-full rounded-md bg-border" />
+            <PulseBlock className="h-3 w-[95%] rounded-md bg-border self-end" />
+            <PulseBlock className="h-3 w-full rounded-md bg-border" />
+            <PulseBlock className="h-3 w-[80%] rounded-md bg-border self-end" />
           </View>
-          <View style={{ width: 1 }} className="bg-slate-100" />
+          <View style={{ width: 1 }} className="bg-surface" />
           <View className="flex-1 justify-between py-2">
-            <PulseBlock className="h-3 w-[90%] rounded-md bg-slate-200 self-end" />
-            <PulseBlock className="h-3 w-full rounded-md bg-slate-200" />
-            <PulseBlock className="h-3 w-[85%] rounded-md bg-slate-200 self-end" />
-            <PulseBlock className="h-3 w-full rounded-md bg-slate-200" />
-            <PulseBlock className="h-3 w-[93%] rounded-md bg-slate-200 self-end" />
-            <PulseBlock className="h-3 w-full rounded-md bg-slate-200" />
-            <PulseBlock className="h-3 w-[78%] rounded-md bg-slate-200 self-end" />
-            <PulseBlock className="h-3 w-full rounded-md bg-slate-200" />
+            <PulseBlock className="h-3 w-[90%] rounded-md bg-border self-end" />
+            <PulseBlock className="h-3 w-full rounded-md bg-border" />
+            <PulseBlock className="h-3 w-[85%] rounded-md bg-border self-end" />
+            <PulseBlock className="h-3 w-full rounded-md bg-border" />
+            <PulseBlock className="h-3 w-[93%] rounded-md bg-border self-end" />
+            <PulseBlock className="h-3 w-full rounded-md bg-border" />
+            <PulseBlock className="h-3 w-[78%] rounded-md bg-border self-end" />
+            <PulseBlock className="h-3 w-full rounded-md bg-border" />
           </View>
         </View>
         <View className="absolute bottom-6 left-0 right-0 items-center">
@@ -91,18 +91,18 @@ function VerseBlockSkeleton() {
       }}
     >
       <View style={{ marginBottom: 18 }}>
-        <PulseBlock className="h-6 w-20 rounded-lg bg-slate-100" />
+        <PulseBlock className="h-6 w-20 rounded-lg bg-border" />
       </View>
       <View style={{ alignItems: "flex-end", marginBottom: 24 }}>
-        <PulseBlock className="h-4 w-full rounded-md bg-slate-100 mb-2" />
-        <PulseBlock className="h-4 w-[94%] rounded-md bg-slate-100 mb-2" />
-        <PulseBlock className="h-4 w-[88%] rounded-md bg-slate-100 mb-2" />
-        <PulseBlock className="h-4 w-[72%] rounded-md bg-slate-100" />
+        <PulseBlock className="h-4 w-full rounded-md bg-border mb-2" />
+        <PulseBlock className="h-4 w-[94%] rounded-md bg-border mb-2" />
+        <PulseBlock className="h-4 w-[88%] rounded-md bg-border mb-2" />
+        <PulseBlock className="h-4 w-[72%] rounded-md bg-border" />
       </View>
       <PulseBlock className="h-3 w-28 rounded-md bg-teal-50 mb-2" />
-      <PulseBlock className="h-3 w-full rounded-md bg-slate-100 mb-2" />
-      <PulseBlock className="h-3 w-[96%] rounded-md bg-slate-100 mb-2" />
-      <PulseBlock className="h-3 w-[85%] rounded-md bg-slate-100" />
+      <PulseBlock className="h-3 w-full rounded-md bg-border mb-2" />
+      <PulseBlock className="h-3 w-[96%] rounded-md bg-border mb-2" />
+      <PulseBlock className="h-3 w-[85%] rounded-md bg-border" />
     </View>
   );
 }
@@ -110,10 +110,8 @@ function VerseBlockSkeleton() {
 /** Mimics translation mode: verse badge + RTL Arabic block + translation lines */
 export function TranslationPageSkeleton() {
   return (
-    <View style={{ flex: 1, backgroundColor: "#ffffff" }}>
-      {[0, 1, 2, 3, 4].map((k) => (
-        <VerseBlockSkeleton key={k} />
-      ))}
+    <View className="flex-1 justify-center items-center bg-surface">
+      <ActivityIndicator size="large" color="#0d9488" />
     </View>
   );
 }

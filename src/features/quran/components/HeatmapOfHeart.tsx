@@ -4,6 +4,7 @@ import { Text } from "@/src/components/common/ui/Text";
 import { useNavigate } from "@/src/hooks/useNavigate";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { useColorScheme } from "nativewind";
 import { getSurahByPage } from "../../muraja/utils/quranMapping";
 import { useCatalogStore } from "../../quran/store/catalogStore";
 import {
@@ -49,6 +50,8 @@ export const HeatmapOfHeart = () => {
   const surahs = useCatalogStore((s) => s.surahs);
   const { push } = useNavigate();
   const { data: performanceData } = usePagePerformance();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const pages = useMemo(
     () => Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1),
@@ -64,9 +67,9 @@ export const HeatmapOfHeart = () => {
       if (!data || !data.lastReviewedAt) {
         return {
           label: "Not Started",
-          color: "#64748b",
-          hex: "#f1f5f9",
-          border: "#e2e8f0",
+          color: isDark ? "#cdd3d1" : "#64748b",
+          hex: isDark ? "#272e2a" : "#f1f5f9",
+          border: isDark ? "#2a312d" : "#e2e8f0",
           percentage: 0,
           surahName,
         };
@@ -124,7 +127,7 @@ export const HeatmapOfHeart = () => {
         surahName,
       };
     },
-    [performanceData, surahs]
+    [performanceData, surahs, isDark]
   );
 
   const pageInfoMap = useMemo(() => {
@@ -154,11 +157,10 @@ export const HeatmapOfHeart = () => {
     : null;
 
   return (
-    <View className="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm">
-      {/* Header */}
+    <View className="bg-surface rounded-[32px] p-6 border border-border shadow-sm">
       <View className="flex-row justify-between items-center mb-5 px-1">
         <View>
-          <Text className="text-gray-400 uppercase tracking-[2px] text-[10px]">
+          <Text className="text-muted uppercase tracking-[2px] text-[10px]">
             Heatmap of the Heart
           </Text>
         </View>
@@ -168,7 +170,7 @@ export const HeatmapOfHeart = () => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedPage(null);
             }}
-            className="bg-slate-50 px-2 py-1 rounded-lg"
+            className="bg-primary/10 px-2 py-1 rounded-lg"
           >
             <Text className="text-primary text-[10px] uppercase tracking-wider">
               Clear
@@ -193,14 +195,12 @@ export const HeatmapOfHeart = () => {
         })}
       </View>
 
-      {/* Bottom panel */}
-      <View className="mt-8 pt-6 border-t border-slate-50">
+      <View className="mt-8 pt-6 border-t border-border">
         {selectedPage ? (
-          <View className="flex-row items-center justify-between bg-slate-50/50 p-4 rounded-[24px] border border-slate-100">
+          <View className="flex-row items-center justify-between bg-primary/5 p-4 rounded-[24px] border border-border">
             <View className="flex-1 mr-4">
-              {/* Page number + strength badge */}
               <View className="flex-row items-center gap-2 mb-1">
-                <Text className="text-lg text-slate-900 leading-tight">
+                <Text className="text-lg text-text leading-tight">
                   Page {selectedPage}
                 </Text>
                 <View
@@ -209,7 +209,7 @@ export const HeatmapOfHeart = () => {
                       ? `${strengthInfo.color}15`
                       : "transparent",
                   }}
-                  className="px-2 py-0.5 rounded-full border border-slate-200"
+                  className="px-2 py-0.5 rounded-full border border-border"
                 >
                   <Text
                     style={{ color: strengthInfo?.color }}
@@ -220,13 +220,13 @@ export const HeatmapOfHeart = () => {
                 </View>
               </View>
 
-              <Text className="text-slate-500 text-sm">
+              <Text className="text-muted text-sm">
                 {pageInfoMap.get(selectedPage)?.surahName ?? "—"}
               </Text>
 
               {strengthInfo?.label !== "Not Started" && (
                 <View className="flex-row items-center mt-1.5 gap-1.5">
-                  <View className="h-1 flex-1 bg-slate-200 rounded-full overflow-hidden">
+                  <View className="h-1 flex-1 bg-border rounded-full overflow-hidden">
                     <View
                       style={{
                         width: `${strengthInfo?.percentage ?? 0}%`,
@@ -235,7 +235,7 @@ export const HeatmapOfHeart = () => {
                       className="h-full rounded-full"
                     />
                   </View>
-                  <Text className="text-[10px] text-slate-400">
+                  <Text className="text-[10px] text-muted">
                     {strengthInfo?.percentage}%
                   </Text>
                 </View>
@@ -253,13 +253,13 @@ export const HeatmapOfHeart = () => {
         ) : (
           <View className="gap-y-3">
             {/* Hint */}
-            <Text className="text-center text-[11px] text-slate-400">
+            <Text className="text-center text-[11px] text-muted">
               Press any page to see its surah and memory strength
             </Text>
 
             {/* Legend */}
             <View className="flex-row justify-between items-center opacity-60 px-2">
-              <LegendItem color="#f1f5f9" border="#e2e8f0" label="Not Started" />
+              <LegendItem color={isDark ? "#1a211d" : "#f1f5f9"} border={isDark ? "#2a312d" : "#e2e8f0"} label="Not Started" />
               <LegendItem color="#fee2e2" border="#ef4444" label="Weak" />
               <LegendItem color="#fef3c7" border="#f59e0b" label="Partial" />
               <LegendItem
@@ -294,7 +294,7 @@ const LegendItem = ({
       }}
       className="w-2.5 h-2.5 rounded-sm mr-1.5 shadow-sm shadow-black/5"
     />
-    <Text className="text-[9px] text-slate-400 uppercase tracking-tighter">
+    <Text className="text-[9px] text-muted uppercase tracking-tighter">
       {label}
     </Text>
   </View>

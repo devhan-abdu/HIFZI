@@ -78,13 +78,13 @@ export const TranslationContent = () => {
       <Text className="text-sm  mb-2 text-teal-700">
         {resourceName.toUpperCase()}
       </Text>
-      <Text className="text-xs text-gray-400 mb-4">Ayah {ayahLabel}</Text>
+      <Text className="text-xs text-muted mb-4">Ayah {ayahLabel}</Text>
 
       {loading ?
         <ActivityIndicator color="#276359" />
       : error ?
         <Text className="text-sm text-rose-500">{error}</Text>
-      : <Text className="text-lg leading-7 text-gray-800">
+      : <Text className="text-lg leading-7 text-text">
           {sanitizedText || "No translation text available for this ayah."}
         </Text>
       }

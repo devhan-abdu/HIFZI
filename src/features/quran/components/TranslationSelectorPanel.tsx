@@ -102,7 +102,6 @@ export function TranslationSelectorPanel() {
           style={{
             marginHorizontal: 12,
             borderRadius: 20,
-            backgroundColor: "#fff",
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.12,
@@ -111,15 +110,15 @@ export function TranslationSelectorPanel() {
             maxHeight: 480,
             overflow: "hidden",
           }}
+          className="bg-background"
         >
-          {/* Handle */}
           <View className="items-center pt-3 pb-1">
-            <View className="w-8 h-1 rounded-full bg-slate-200" />
+            <View className="w-8 h-1 rounded-full bg-border" />
           </View>
 
           {loading ? (
             <View className="py-12 items-center">
-              <ActivityIndicator color="#0d9488" />
+              <ActivityIndicator className="text-primary" />
             </View>
           ) : (
             <FlatList
@@ -135,7 +134,7 @@ export function TranslationSelectorPanel() {
               renderItem={({ item }) => {
                 if (item.type === "header") {
                   return (
-                    <Text className="text-[10px] uppercase tracking-widest text-slate-400 mt-4 mb-2 px-1">
+                    <Text className="text-[10px] uppercase tracking-widest text-muted mt-4 mb-2 px-1">
                       {item.label}
                     </Text>
                   );
@@ -158,56 +157,52 @@ export function TranslationSelectorPanel() {
                       }
                     }}
                     className={`flex-row items-center px-3 py-3 mb-1 rounded-2xl ${
-                      isSelected ? "bg-teal-50" : "bg-slate-50/80"
+                      isSelected ? "bg-primary/10" : "bg-surface"
                     }`}
                   >
-                    {/* Checkbox Icon */}
                     <View className={`w-5 h-5 rounded border mr-3 items-center justify-center ${
-                      isSelected ? "bg-teal-600 border-teal-600" : "border-slate-300 bg-white"
+                      isSelected ? "bg-primary border-primary" : "border-border bg-background"
                     }`}>
                       {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
                     </View>
 
-                    {/* Name */}
                     <View className="flex-1 mr-3">
                       <Text
-                        className={`text-sm  ${isSelected ? "text-teal-800" : "text-slate-700"}`}
+                        className={`text-sm ${isSelected ? "text-primary" : "text-muted"}`}
                         numberOfLines={1}
                       >
                         {t.name}
                       </Text>
                       <View className="flex-row items-center space-x-1.5 mt-0.5">
                         {t.language_name ? (
-                          <Text className="text-[10px] text-slate-400">{t.language_name}</Text>
+                          <Text className="text-[10px] text-muted">{t.language_name}</Text>
                         ) : null}
                         {t.downloaded && (
-                          <Text className="text-[10px] text-teal-600">• Downloaded</Text>
+                          <Text className="text-[10px] text-primary">• Downloaded</Text>
                         )}
                       </View>
                       
-                      {/* Active Download Progress Bar */}
                       {inProgress && (
-                        <View className="w-full h-1 bg-slate-200 rounded-full mt-2 overflow-hidden">
+                        <View className="w-full h-1 bg-surface rounded-full mt-2 overflow-hidden">
                           <View 
                             style={{ width: `${progress * 100}%` }} 
-                            className="h-full bg-teal-600" 
+                            className="h-full bg-primary" 
                           />
                         </View>
                       )}
                     </View>
 
-                    {/* Right side: Status/Download */}
                     {t.downloaded ? (
-                      <Ionicons name="checkmark-circle" size={18} color="#10b981" />
+                      <Ionicons name="checkmark-circle" size={18} className="text-primary" />
                     ) : inProgress ? (
                       <View className="flex-row items-center space-x-1">
-                        <ActivityIndicator size="small" color="#0d9488" />
-                        <Text className="text-[10px] text-teal-600 ">{Math.round(progress * 100)}%</Text>
+                        <ActivityIndicator size="small" className="text-primary" />
+                        <Text className="text-[10px] text-primary ">{Math.round(progress * 100)}%</Text>
                       </View>
                     ) : (
-                      <View className="flex-row items-center bg-slate-100/80 px-2 py-1 rounded-full space-x-1">
+                      <View className="flex-row items-center bg-surface/80 px-2 py-1 rounded-full space-x-1">
                         <Ionicons name="cloud-download-outline" size={12} color="#64748b" />
-                        <Text className="text-[9px] text-slate-500 ">Tap to use</Text>
+                        <Text className="text-[9px] text-muted ">Tap to use</Text>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -216,9 +211,9 @@ export function TranslationSelectorPanel() {
               ListFooterComponent={
                 <TouchableOpacity 
                   onPress={closeTranslationSelector}
-                  className="mt-2 py-3 items-center border-t border-slate-100"
+                  className="mt-2 py-3 items-center border-t border-border"
                 >
-                  <Text className="text-teal-600  text-sm">More Translations</Text>
+                  <Text className="text-primary text-sm">More Translations</Text>
                 </TouchableOpacity>
               }
             />

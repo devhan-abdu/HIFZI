@@ -10,18 +10,18 @@ interface SurahRowProps {
 
 export const SurahRow = memo(({ surah, onPress }: SurahRowProps) => {
   return (
-    <Pressable onPress={() => onPress(surah)} className=" px-4">
+    <Pressable onPress={() => onPress(surah)} className="px-6 py-4  active:bg-primary/5">
       <View className="flex-row justify-between items-center">
-        <View className="flex-1 flex-row items-center gap-4">
-          <Text className="text-xl text-black">{surah.number}</Text>
+        <View className="flex-1 flex-row items-center gap-5">
+          <Text className="text-xl text-text opacity-70 w-8">{surah.number}</Text>
           <View>
-            <Text className="text-lg ">{surah.englishName}</Text>
-            <Text className="text-sm ">
-              {surah.numberOfAyahs} Ayahs - {surah.revelationType}
+            <Text className="text-lg text-text ">{surah.englishName}</Text>
+            <Text className="text-xs text-muted mt-0.5">
+              {surah.revelationType} - {surah.numberOfAyahs} verses
             </Text>
           </View>
         </View>
-        <Text className="text-lg ">{surah.startingPage}</Text>
+        <Text className="text-sm text-muted">{surah.startingPage}</Text>
       </View>
     </Pressable>
   );

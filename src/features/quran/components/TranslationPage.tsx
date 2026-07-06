@@ -1,5 +1,12 @@
 import React, { useCallback, useMemo } from "react";
-import { View, FlatList, Text, TouchableOpacity, Pressable } from "react-native";
+import {
+  View,
+  FlatList,
+  Text,
+  TouchableOpacity,
+  Pressable,
+} from "react-native";
+import { useColorScheme } from "nativewind";
 import { useReaderStore } from "../hooks/useReaderStore";
 import { useTranslationPage } from "../hooks/useTranslationPage";
 import { VerseTranslationEntry } from "../services/translationPageService";
@@ -13,8 +20,6 @@ interface TranslationPageProps {
   chapterIds: number[];
 }
 
-// ─── Verse Row ────────────────────────────────────────────────────────────────
-
 const VerseRow = React.memo(function VerseRow({
   item,
   translationNames,
@@ -23,78 +28,37 @@ const VerseRow = React.memo(function VerseRow({
   translationNames: Map<number, string>;
 }) {
   return (
-    <View
-      style={{
-        paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 28,
-        borderBottomWidth: 1,
-        borderBottomColor: "#f1f5f9",
-        backgroundColor: "#ffffff",
-      }}
-    >
-      {/* Verse Key Badge */}
-      <View style={{ flexDirection: "row", justifyContent: "flex-start", marginBottom: 18 }}>
-        <View
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 5,
-            borderRadius: 8,
-            backgroundColor: "#f1f5f9",
-          }}
-        >
-          <Text style={{ fontSize: 12, fontWeight: "600", color: "#64748b", letterSpacing: 0.5 }}>
+    <View className="px-5 pt-5 pb-7 border-b border-border bg-background">
+      <View className="flex-row justify-start mb-4">
+        <View className="px-3 py-1.5 rounded-xl bg-background/80 dark:bg-background/90">
+          <Text className="text-[12px] font-semibold text-muted tracking-[0.5px]">
             {item.verseKey}
           </Text>
         </View>
       </View>
 
-      {/* Arabic Text */}
       <Text
+        className="text-[24px] leading-[52px] text-right text-text mb-8"
         style={{
           fontFamily: "Uthman",
-          fontSize: 24,
-          lineHeight: 52,
-          textAlign: "right",
-          color: "#0f172a",
-          marginBottom: 32,
-          writingDirection: "rtl",
+          writingDirection: "rtl" as const,
+          textAlign: "right" as const,
         }}
       >
         {item.arabicText}
       </Text>
 
-      {/* Translations */}
       {item.translations.map((t, idx) => {
         const name = translationNames.get(t.id) ?? "Translation";
         return (
-          <View key={t.id} style={{ marginTop: idx === 0 ? 0 : 24 }}>
-            {/* Translator Name */}
-            <Text
-              style={{
-                fontSize: 11,
-                fontWeight: "700",
-                color: "#0d9488",
-                textTransform: "uppercase",
-                letterSpacing: 0.8,
-                marginBottom: 8,
-              }}
-            >
+          <View key={t.id} className={idx === 0 ? "mt-0" : "mt-6"}>
+            <Text className="text-[11px] font-bold uppercase tracking-[0.2em] mb-2 text-muted">
               {name}
             </Text>
 
-            {/* Divider line under label */}
-            <View style={{ height: 1, backgroundColor: "#f0fdf4", marginBottom: 10 }} />
+            <View className="h-px bg-border mb-2" />
 
-            {/* Translation Text */}
-            <Text
-              style={{
-                fontSize: 15,
-                lineHeight: 26,
-                color: "#334155",
-                letterSpacing: 0.1,
-              }}
-            >
+            <Text className="text-[15px] leading-7 text-text tracking-[0.1px]">
               {t.text || "Translation not available."}
             </Text>
           </View>
@@ -104,51 +68,30 @@ const VerseRow = React.memo(function VerseRow({
   );
 });
 
-// ─── Surah Divider ────────────────────────────────────────────────────────────
-
 function SurahDivider({ name }: { name: string }) {
   return (
-    <View
-      style={{
-        backgroundColor: "#e8e0d5",   // warm sand tone matching screenshot
-        borderTopWidth: 1,
-        borderBottomWidth: 1,
-        borderColor: "#d4c9bb",
-        paddingVertical: 18,
-        paddingHorizontal: 20,
-        alignItems: "center",
-      }}
-    >
-      {/* Decorative top line */}
-      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-        <View style={{ flex: 1, height: 1, backgroundColor: "#b5a99a" }} />
-        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: "#b5a99a", marginHorizontal: 8 }} />
-        <View style={{ flex: 1, height: 1, backgroundColor: "#b5a99a" }} />
+    <View className="bg-background border-y border-border py-4 px-5 items-center">
+      <View className="flex-row items-center mb-2 w-full">
+        <View className="flex-1 h-px bg-border" />
+        <View className="w-1.5 h-1.5 rounded-full bg-border mx-2" />
+        <View className="flex-1 h-px bg-border" />
       </View>
 
       <Text
-        style={{
-          fontSize: 20,
-          color: "#2d1f0e",
-          fontFamily: "Uthman",
-          marginBottom: 2,
-          textAlign: "center",
-        }}
+        className="text-[20px] text-text text-center mb-0"
+        style={{ fontFamily: "Uthman" }}
       >
         {name}
       </Text>
 
-      {/* Decorative bottom line */}
-      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
-        <View style={{ flex: 1, height: 1, backgroundColor: "#b5a99a" }} />
-        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: "#b5a99a", marginHorizontal: 8 }} />
-        <View style={{ flex: 1, height: 1, backgroundColor: "#b5a99a" }} />
+      <View className="flex-row items-center mt-2 w-full">
+        <View className="flex-1 h-px bg-border" />
+        <View className="w-1.5 h-1.5 rounded-full bg-border mx-2" />
+        <View className="flex-1 h-px bg-border" />
       </View>
     </View>
   );
 }
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 
 export const TranslationPage = React.memo(function TranslationPage({
   pageNumber,
@@ -156,17 +99,22 @@ export const TranslationPage = React.memo(function TranslationPage({
 }: TranslationPageProps) {
   const { selectedTranslations, toggleUI } = useReaderStore();
   const { surahs } = useCatalogStore();
-  const { verses, loading, error, retry } = useTranslationPage(pageNumber, selectedTranslations);
+  const { verses, loading, error, retry } = useTranslationPage(
+    pageNumber,
+    selectedTranslations,
+  );
 
   const surahNameMap = useMemo(() => {
     const map = new Map<number, string>();
     (surahs ?? []).forEach((s) =>
-      map.set(s.number, s.englishName ?? s.name ?? `Surah ${s.number}`)
+      map.set(s.number, s.englishName ?? s.name ?? `Surah ${s.number}`),
     );
     return map;
   }, [surahs]);
 
-  const [availableTranslations, setAvailableTranslations] = React.useState<Map<number, string>>(new Map());
+  const [availableTranslations, setAvailableTranslations] = React.useState<
+    Map<number, string>
+  >(new Map());
   React.useEffect(() => {
     getTranslationsCached().then((list) => {
       setAvailableTranslations(new Map(list.map((t) => [t.id, t.name])));
@@ -198,12 +146,16 @@ export const TranslationPage = React.memo(function TranslationPage({
         const name = surahNameMap.get(item.surahId) ?? `Surah ${item.surahId}`;
         return <SurahDivider name={name} />;
       }
-      return <VerseRow item={item.entry} translationNames={availableTranslations} />;
+      return (
+        <VerseRow item={item.entry} translationNames={availableTranslations} />
+      );
     },
     [surahNameMap, availableTranslations],
   );
 
   const keyExtractor = useCallback((item: ListItem) => item.key, []);
+  const { colorScheme } = useColorScheme();
+  const iconColor = colorScheme === "dark" ? "#9ba3a0" : "#6b7280";
 
   if (loading && verses.length === 0) {
     return <TranslationPageSkeleton />;
@@ -211,55 +163,48 @@ export const TranslationPage = React.memo(function TranslationPage({
 
   if (error) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "#fff",
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 32,
-        }}
-      >
-        <Ionicons name="cloud-offline-outline" size={40} color="#cbd5e1" style={{ marginBottom: 12 }} />
-        <Text
-          style={{
-            textAlign: "center",
-            color: "#94a3b8",
-            fontSize: 14,
-            lineHeight: 22,
-            marginBottom: 24,
-          }}
-        >
-          {error.includes("network") || error.includes("fetch")
-            ? "No internet connection. Download this translation for offline use."
-            : "Could not load translation. Try again."}
+      <Pressable onPress={toggleUI} className="flex-1 bg-background justify-center items-center p-8">
+        <Ionicons
+          name="cloud-offline-outline"
+          size={40}
+          color={iconColor}
+          style={{ marginBottom: 12 }}
+        />
+        <Text className="text-sm leading-6 text-muted text-center mb-6">
+          {error.includes("network") || error.includes("fetch") ?
+            "No internet connection. Download this translation for offline use."
+          : "Could not load translation. Try again."}
         </Text>
         <TouchableOpacity
           onPress={retry}
-          className="bg-teal-600 px-6 py-2.5 rounded-full flex-row items-center"
+          className="bg-primary px-6 py-2.5 rounded-full flex-row items-center active:opacity-90"
         >
-          <Ionicons name="refresh" size={16} color="#fff" style={{ marginRight: 8 }} />
-          <Text className="text-white ">Retry</Text>
+          <Ionicons
+            name="refresh"
+            size={16}
+            color="#ffffff"
+            style={{ marginRight: 8 }}
+          />
+          <Text className="text-primary-foreground font-semibold">Retry</Text>
         </TouchableOpacity>
-      </View>
+      </Pressable>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#ffffff" }}>
-      <Pressable onPress={toggleUI} style={{ flex: 1 }}>
-        <FlatList
-          data={listData}
-          keyExtractor={keyExtractor}
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingBottom: 140 }}
-          showsVerticalScrollIndicator={false}
-          removeClippedSubviews
-          initialNumToRender={8}
-          maxToRenderPerBatch={8}
-          windowSize={5}
-        />
-      </Pressable>
+    <View className="flex-1 bg-background">
+      <FlatList
+        data={listData}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        contentContainerStyle={{ paddingBottom: 140 }}
+        showsVerticalScrollIndicator={false}
+        removeClippedSubviews
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={5}
+        onScrollBeginDrag={() => useReaderStore.getState().hideUI()}
+      />
     </View>
   );
 });
