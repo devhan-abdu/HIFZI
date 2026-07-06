@@ -54,14 +54,14 @@ export function LogFormSection({
         {!showCustomRange ?
           <Pressable
             onPress={() => updateForm({ showCustomRange: true })}
-            className="flex-row items-center justify-center gap-2 bg-slate-50 border border-slate-100 py-4 rounded-2xl active:bg-slate-100"
+            className="flex-row items-center justify-center gap-2 bg-background border border-border py-4 rounded-2xl active:bg-surface"
           >
             <Ionicons name="options-outline" size={20} color="#64748b" />
-            <Text className="text-slate-600">Add Custom Range</Text>
+            <Text className="text-muted">Add Custom Range</Text>
           </Pressable>
-        : <View className="p-5 rounded-3xl border border-slate-100 bg-white shadow-sm gap-y-4">
+        : <View className="p-5 rounded-3xl border border-border bg-surface shadow-sm gap-y-4">
             <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-slate-900 text-base ml-1">Study Range</Text>
+              <Text className="text-text text-base ml-1">Study Range</Text>
               <Pressable
                 onPress={() => {
                   updateForm({ showCustomRange: false, rangeError: "" });
@@ -121,7 +121,7 @@ export function LogFormSection({
                 updateForm(updates);
               }}
             />
-            <View className="h-[1px] bg-slate-100 my-2" />
+            <View className="h-[1px] bg-surface my-2" />
             <SurahDropdown
               label="End Surah"
               surah={endSurah}
@@ -169,7 +169,7 @@ export function LogFormSection({
 
       {!showCustomRange && (
         <View className="mb-8">
-          <Text className="text-slate-900 text-base mb-4 ml-1">
+          <Text className="text-text text-base mb-4 ml-1">
             How did it go?
           </Text>
           <View className="flex-row justify-between">
@@ -206,47 +206,47 @@ export function LogFormSection({
 
       {showDetails && (
         <View className="mb-8">
-          <Text className="text-slate-900 text-base mb-4 ml-1">
+          <Text className="text-text text-base mb-4 ml-1">
             Reading Quality
           </Text>
           <View className="flex-row gap-4">
-            <View className="flex-1 bg-white border border-slate-100 p-4 rounded-2xl">
+            <View className="flex-1 bg-surface border border-border p-4 rounded-2xl">
               <View className="flex-row items-center gap-2 mb-3">
                 <Ionicons name="alert-circle-outline" size={16} color="#ef4444" />
-                <Text className="text-slate-700 text-xs">Mistakes</Text>
+                <Text className="text-muted text-xs">Mistakes</Text>
               </View>
               <View className="flex-row items-center justify-between">
                 <Pressable
                   onPress={() => updateForm({ mistakes: Math.max(0, mistakes - 1) })}
-                  className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
+                  className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
                 >
                   <Ionicons name="remove" size={16} color="#64748b" />
                 </Pressable>
-                <Text className="text-lg text-slate-900">{mistakes}</Text>
+                <Text className="text-lg text-text">{mistakes}</Text>
                 <Pressable
                   onPress={() => updateForm({ mistakes: mistakes + 1 })}
-                  className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
+                  className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
                 >
                   <Ionicons name="add" size={16} color="#ef4444" />
                 </Pressable>
               </View>
             </View>
-            <View className="flex-1 bg-white border border-slate-100 p-4 rounded-2xl">
+            <View className="flex-1 bg-surface border border-border p-4 rounded-2xl">
               <View className="flex-row items-center gap-2 mb-3">
                 <Ionicons name="timer-outline" size={16} color="#eab308" />
-                <Text className="text-slate-700 text-xs">Hesitations</Text>
+                <Text className="text-muted text-xs">Hesitations</Text>
               </View>
               <View className="flex-row items-center justify-between">
                 <Pressable
                   onPress={() => updateForm({ hesitations: Math.max(0, hesitations - 1) })}
-                  className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
+                  className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
                 >
                   <Ionicons name="remove" size={16} color="#64748b" />
                 </Pressable>
-                <Text className="text-lg text-slate-900">{hesitations}</Text>
+                <Text className="text-lg text-text">{hesitations}</Text>
                 <Pressable
                   onPress={() => updateForm({ hesitations: hesitations + 1 })}
-                  className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
+                  className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
                 >
                   <Ionicons name="add" size={16} color="#eab308" />
                 </Pressable>
@@ -257,20 +257,20 @@ export function LogFormSection({
       )}
 
       <View className="mb-8">
-        <Text className="text-slate-900 text-base mb-4 ml-1">
+        <Text className="text-text text-base mb-4 ml-1">
           Actual Progress
         </Text>
-        <View className="bg-white border border-slate-100 p-5 rounded-3xl">
+        <View className="bg-surface border border-border p-5 rounded-3xl">
           <View className="flex-row items-center justify-between mb-6">
             <View>
-              <Text className="text-slate-900">Pages Completed</Text>
-              <Text className="text-slate-400 text-[10px]">
+              <Text className="text-text">Pages Completed</Text>
+              <Text className="text-muted text-[10px]">
                 {showCustomRange ?
                   `Range: ${startPage}–${endPage}`
                 : "Adjust if you did more/less"}
               </Text>
             </View>
-            <View className="flex-row items-center bg-slate-50 rounded-xl p-1 border border-slate-100">
+            <View className="flex-row items-center bg-background rounded-xl p-1 border border-border">
               <Pressable
                 onPress={() => {
                   const newPages = Math.max(0, pages - 1);
@@ -281,11 +281,11 @@ export function LogFormSection({
                   }
                   updateForm(updates);
                 }}
-                className="w-9 h-9 items-center justify-center active:bg-white rounded-lg"
+                className="w-9 h-9 items-center justify-center active:bg-surface rounded-lg"
               >
                 <Ionicons name="remove" size={18} color="#276359" />
               </Pressable>
-              <Text className="text-xl text-slate-900 px-4">{heroPages}</Text>
+              <Text className="text-xl text-text px-4">{heroPages}</Text>
               <Pressable
                 onPress={() => {
                   const newPages = pages + 1;
@@ -293,7 +293,7 @@ export function LogFormSection({
                   if (!showCustomRange && status === "missed") updates.status = "partial";
                   updateForm(updates);
                 }}
-                className="w-9 h-9 items-center justify-center active:bg-white rounded-lg"
+                className="w-9 h-9 items-center justify-center active:bg-surface rounded-lg"
               >
                 <Ionicons name="add" size={18} color="#276359" />
               </Pressable>
@@ -301,7 +301,7 @@ export function LogFormSection({
           </View>
           {showDetails && (
             <View className="mb-5">
-              <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-2 ml-1">
+              <Text className="text-muted text-[10px] uppercase tracking-widest mb-2 ml-1">
                 Time Spent (min)
               </Text>
               <TextInput
@@ -310,12 +310,12 @@ export function LogFormSection({
                 keyboardType="numeric"
                 value={min}
                 onChangeText={(val) => updateForm({ min: val })}
-                className="bg-slate-50/50 px-4 h-12 rounded-xl border border-slate-100 text-slate-900 text-sm"
+                className="bg-background/50 px-4 h-12 rounded-xl border border-border text-text text-sm"
               />
             </View>
           )}
           <View>
-            <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-2 ml-1">
+            <Text className="text-muted text-[10px] uppercase tracking-widest mb-2 ml-1">
               Notes & Reflection
             </Text>
             <TextInput
@@ -324,7 +324,7 @@ export function LogFormSection({
               placeholderTextColor="#cbd5e1"
               value={note}
               onChangeText={(val) => updateForm({ note: val })}
-              className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 h-24 text-slate-900 text-sm"
+              className="bg-background/50 p-4 rounded-2xl border border-border h-24 text-text text-sm"
               textAlignVertical="top"
             />
           </View>

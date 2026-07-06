@@ -57,29 +57,29 @@ export const Alert = ({
         return {
           icon: "trash",
           color: "text-red-500",
-          bg: "bg-red-50",
+          bg: "bg-red-500/10",
           btn: "bg-red-500",
         };
       case "warning":
         return {
           icon: "alert-circle",
           color: "text-amber-500",
-          bg: "bg-emerald-50",
+          bg: "bg-primary/10",
           btn: "bg-primary",
         };
       case "success":
         return {
           icon: "checkmark-done-circle",
           color: "text-primary",
-          bg: "bg-emerald-50",
+          bg: "bg-primary/10",
           btn: "bg-primary",
         };
       default:
         return {
           icon: "information-circle",
-          color: "text-slate-500",
-          bg: "bg-slate-50",
-          btn: "bg-slate-800",
+          color: "text-muted",
+          bg: "bg-background",
+          btn: "bg-primary",
         };
     }
   };
@@ -95,37 +95,37 @@ export const Alert = ({
       >
         <Animated.View
           style={animatedStyle}
-          className="w-full bg-white rounded-2xl p-8 items-center shadow-2xl"
+          className="w-full bg-surface rounded-2xl p-8 items-center shadow-2xl"
         >
           <View className={`${theme.bg} p-3 rounded-full mb-6`}>
             <Ionicons
               name={theme.icon as any}
               size={24}
-              color={type === "success" ? "#276359" : "#ef4444"}
+              color={type === "delete" ? "#ef4444" : type === "warning" ? "#f59e0b" : "#276359"}
             />
           </View>
 
-          <Text className="text-2xl  text-slate-900 text-center mb-2 tracking-tight">
+          <Text className="text-2xl  text-text text-center mb-2 tracking-tight">
             {title}
           </Text>
 
-          <Text className="text-slate-500 text-center text-md leading-6 mb-8 px-2">
+          <Text className="text-muted text-center text-md leading-6 mb-8 px-2">
             {message}
           </Text>
 
           <View className="flex-row w-full gap-3">
             <Button
               onPress={onCancel}
-              className="flex-1 h-12 bg-slate-100 rounded-xl justify-center items-center active:bg-slate-200"
+              className="flex-1 h-12 bg-surface rounded-xl justify-center items-center active:bg-surface"
             >
-              <Text className="text-slate-600   text-lg">{cancelText}</Text>
+              <Text className="text-muted   text-lg">{cancelText}</Text>
             </Button>
 
             <Button
               onPress={onConfirm}
-              className={`flex-1 h-12 ${theme.btn} rounded-xl justify-center items-center shadow-lg shadow-emerald-900/20 active:opacity-90`}
+              className={`flex-1 h-12 ${theme.btn} rounded-xl justify-center items-center shadow-lg shadow-black/20 active:opacity-90`}
             >
-              <Text className="text-white  text-lg">{confirmText}</Text>
+              <Text className="text-primary-foreground text-lg">{confirmText}</Text>
             </Button>
           </View>
         </Animated.View>

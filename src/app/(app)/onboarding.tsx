@@ -2,7 +2,6 @@ import {
   View,
   Pressable,
   ScrollView,
-  StatusBar,
   Dimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -150,10 +149,10 @@ function OptionCard({
 
           {/* Text */}
           <View className="flex-1 justify-center">
-            <Text className={`text-base mb-1 ${selected ? "text-primary" : "text-slate-900"}`}>
+            <Text className={`text-base mb-1 ${selected ? "text-primary" : "text-text"}`}>
               {option.title}
             </Text>
-            <Text className="text-xs text-slate-500">
+            <Text className="text-xs text-muted">
               {option.subtitle}
             </Text>
           </View>
@@ -191,7 +190,7 @@ function OptionCard({
             className="mt-4 border-t pt-4"
             style={{ borderTopColor: "rgba(30,90,84,0.1)" }}
           >
-            <Text className="text-[13px] leading-5 text-slate-600">
+            <Text className="text-[13px] leading-5 text-muted">
               {option.description}
             </Text>
           </Animated.View>
@@ -225,13 +224,12 @@ export default function OnboardingBridge() {
 
   return (
     <View className="flex-1" style={{ backgroundColor: BG_DARK }}>
-      <StatusBar barStyle="light-content" backgroundColor={BG_DARK} />
+      
 
       <View
         className="px-6  pb-4 flex-none justify-center overflow-hidden relative"
-        style={{ height: height * 0.35, paddingTop: insets.top + 40  }} // Added more padding to hero
+        style={{ height: height * 0.35, paddingTop: insets.top + 40  }} 
       >
-        {/* Gradient Background */}
         <LinearGradient
           colors={[PRIMARY, BG_DARK]}
           start={{ x: 0, y: 0 }}
@@ -239,9 +237,8 @@ export default function OnboardingBridge() {
           className="absolute inset-0"
         />
 
-        {/* Decorative elements */}
-        <View className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white opacity-5" />
-        <View className="absolute top-32 -right-10 w-48 h-48 rounded-full bg-white opacity-5" />
+        <View className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-surface opacity-5" />
+        <View className="absolute top-32 -right-10 w-48 h-48 rounded-full bg-surface opacity-5" />
 
         <Animated.View entering={SlideInUp.duration(600)} className="mb-2 z-10 mt-6">
           <Text className="text-white/60 text-xs uppercase tracking-[2px] mb-4">
@@ -256,7 +253,6 @@ export default function OnboardingBridge() {
         </Animated.View>
       </View>
 
-      {/* Card Sheet */}
       <View
         className="flex-1 rounded-t-3xl overflow-hidden"
         style={{ backgroundColor: CARD_BG, marginTop: 8 }}
@@ -271,12 +267,10 @@ export default function OnboardingBridge() {
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          {/* Section Label */}
-          <Text className="text-slate-400 text-xs uppercase tracking-widest mb-6 px-1">
+          <Text className="text-muted text-xs uppercase tracking-widest mb-6 px-1">
             Choose One to Get Started
           </Text>
 
-          {/* Option cards */}
           <View className="gap-y-4 mb-4">
             {OPTIONS.map((option, index) => (
               <Animated.View
@@ -293,7 +287,7 @@ export default function OnboardingBridge() {
           </View>
 
           <View className="mt-auto pt-8">
-            <Text className="text-slate-400 text-xs text-center mb-5 px-2">
+            <Text className="text-muted text-xs text-center mb-5 px-2">
               You can update this anytime in your settings
             </Text>
 

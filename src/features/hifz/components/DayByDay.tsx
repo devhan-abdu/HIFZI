@@ -12,7 +12,7 @@ export function DayByDay({ plan }: { plan: IHifzPlan }) {
   if (!week) return null;
 
   return (
-    <View className="flex-row justify-between bg-white p-5 rounded-[32px] border border-gray-100">
+    <View className="flex-row justify-between bg-surface p-5 rounded-[32px] border border-border">
       {week.map((day) => {
         const isCompleted = !!day.log && (day.log.status === "completed" || day.log.status === "partial");
 
@@ -31,10 +31,10 @@ export function DayByDay({ plan }: { plan: IHifzPlan }) {
                 ${isCompleted ? "bg-primary" : ""}
                 ${isMissed ? "bg-red-50" : ""}
                 ${!day.isToday && isMissed ? "border border-red-100" : ""}
-                ${isRest ? "bg-gray-50" : ""}
-                ${!day.isToday && isRest ? "border border-gray-200" : ""}
+                ${isRest ? "bg-surface" : ""}
+                ${!day.isToday && isRest ? "border border-border" : ""}
                 ${isPending ? "bg-primary/5" : ""}
-                ${!day.isToday && isPending ? "border border-gray-200" : ""}
+                ${!day.isToday && isPending ? "border border-border" : ""}
               `}
             >
               {isCompleted ? (
@@ -52,7 +52,7 @@ export function DayByDay({ plan }: { plan: IHifzPlan }) {
 
             <Text
               className={`text-[10px] ${
-                day.isToday ? "text-primary" : "text-gray-400"
+                day.isToday ? "text-primary" : "text-muted"
               }`}
             >
               {day.name}

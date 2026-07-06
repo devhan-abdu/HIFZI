@@ -64,7 +64,6 @@ export function NotificationSlide({ onNext }: { onNext: () => void }) {
       ]}
       className="bg-primary flex-1 justify-between px-8"
     >
-      {/* Heading */}
       <Animated.View style={headingStyle} className="mt-4">
         <Text className="text-white/60 uppercase tracking-[2px] text-[11px] mb-2">
           Habit Stacking
@@ -74,37 +73,35 @@ export function NotificationSlide({ onNext }: { onNext: () => void }) {
         </Text>
       </Animated.View>
 
-      {/* Main Feature Card */}
       <Animated.View style={cardStyle} className="my-6">
-        <View className="bg-white rounded-[32px] p-6 shadow-lg border border-slate-100 items-center">
+        <View className="bg-surface rounded-[32px] p-6 shadow-lg border border-border items-center">
           <View className="w-16 h-16 rounded-full bg-primary/10 items-center justify-center mb-4">
             <Ionicons name="notifications" size={32} color="#276359" />
           </View>
-          <Text className="text-slate-800 text-lg text-center mb-1">
+          <Text className="text-text text-lg text-center mb-1">
             Stay on Track
           </Text>
-          <Text className="text-slate-500 text-xs text-center leading-5 px-4">
+          <Text className="text-muted text-xs text-center leading-5 px-4">
             The secret to consistency is tying Quran review to something you already do every day.
           </Text>
 
-          <View className="mt-5 pt-4 border-t border-slate-100 w-full">
+          <View className="mt-5 pt-4 border-t border-border w-full">
             <View className="flex-row items-center justify-center gap-x-2">
-              <View className="bg-slate-100 px-3 py-1.5 rounded-lg">
-                <Text className="text-xs text-slate-600 font-medium">1. Finish Fajr</Text>
+              <View className="bg-surface px-3 py-1.5 rounded-lg">
+                <Text className="text-xs text-muted font-medium">1. Finish Fajr</Text>
               </View>
               <Ionicons name="arrow-forward" size={14} color="#94a3b8" />
-              <View className="bg-primary/10 px-3 py-1.5 rounded-lg">
-                <Text className="text-xs text-primary font-medium">2. Read Quran</Text>
+              <View className="bg-surface border border-border px-3 py-1.5 rounded-lg">
+                <Text className="text-xs text-text font-medium">2. Read Quran</Text>
               </View>
             </View>
           </View>
         </View>
       </Animated.View>
 
-      {/* Feature Bullet Points */}
       <Animated.View style={listStyle} className="gap-y-4 mb-4">
         <View className="flex-row items-start gap-x-3.5">
-          <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center mt-0.5">
+          <View className="w-8 h-8 rounded-full bg-surface/10 items-center justify-center mt-0.5">
             <Ionicons name="time" size={16} color="#FFFFFF" />
           </View>
           <View className="flex-1">
@@ -116,7 +113,7 @@ export function NotificationSlide({ onNext }: { onNext: () => void }) {
         </View>
 
         <View className="flex-row items-start gap-x-3.5">
-          <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center mt-0.5">
+          <View className="w-8 h-8 rounded-full bg-surface/10 items-center justify-center mt-0.5">
             <Ionicons name="shield-checkmark" size={16} color="#FFFFFF" />
           </View>
           <View className="flex-1">
@@ -128,11 +125,10 @@ export function NotificationSlide({ onNext }: { onNext: () => void }) {
         </View>
       </Animated.View>
 
-      {/* Action Buttons */}
       <Animated.View style={btnStyle} className="w-full gap-y-3">
         <Pressable
           onPress={handleEnable}
-          className="w-full h-14 bg-white rounded-xl items-center justify-center shadow-sm"
+          className="w-full h-14 bg-surface rounded-xl items-center justify-center shadow-sm"
         >
           <Text className="text-primary text-base font-semibold">Enable Reminders</Text>
         </Pressable>

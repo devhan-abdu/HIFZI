@@ -25,7 +25,6 @@ export function HifzSlide() {
   const listOpacity = useSharedValue(1);
 
   useEffect(() => {
-    // Entrance animations removed for smooth flatlist swiping
   }, []);
 
   const headingStyle = useAnimatedStyle(() => ({
@@ -54,7 +53,6 @@ export function HifzSlide() {
       ]}
       className="bg-primary flex-1 justify-between px-8"
     >
-      {/* Heading */}
       <Animated.View style={headingStyle} className="mt-4">
         <Text className="text-white/60 uppercase tracking-[2px] text-[11px] mb-2 ">
           Quran Reader & Companion
@@ -64,14 +62,12 @@ export function HifzSlide() {
         </Text>
       </Animated.View>
 
-      {/* Mock Reader & AI Chat Card */}
       <Animated.View style={cardStyle} className="my-6">
-        <View className="bg-white rounded-[32px] p-6 shadow-lg border border-slate-100">
-          {/* Header of Reader */}
-          <View className="flex-row justify-between items-center pb-4 border-b border-slate-50 mb-4">
+        <View className="bg-surface rounded-[32px] p-6 shadow-lg border border-border">
+          <View className="flex-row justify-between items-center pb-4 border-b border-border mb-4">
             <View className="flex-row items-center gap-x-2">
               <View className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              <Text className="text-slate-800  text-xs">Al-Hijr • Ayah 9</Text>
+              <Text className="text-text  text-xs">Al-Hijr • Ayah 9</Text>
             </View>
             <View className="flex-row gap-x-3">
               <Ionicons name="book-outline" size={16} color="#64748b" />
@@ -83,7 +79,6 @@ export function HifzSlide() {
             </View>
           </View>
 
-          {/* Ayah display */}
           <View className="items-center py-2">
             <Text
               style={{
@@ -97,14 +92,13 @@ export function HifzSlide() {
             >
               {SAMPLE_AYAH}
             </Text>
-            <Text className="text-slate-500 text-xs text-center mt-3 leading-5 px-2">
+            <Text className="text-muted text-xs text-center mt-3 leading-5 px-2">
               "Indeed, it is We who sent down the Quran and indeed, We will be
               its guardian."
             </Text>
           </View>
 
-          {/* AI Chat Pill */}
-          <View className="mt-5 bg-primary/5 rounded-2xl p-3 flex-row items-center justify-between border border-primary/10">
+          <View className="mt-5 bg-surface rounded-2xl p-3 flex-row items-center justify-between border border-border shadow-sm">
             <View className="flex-row items-center gap-x-2 flex-1 mr-2">
               <View className="w-7 h-7 rounded-full bg-primary items-center justify-center">
                 <Ionicons
@@ -114,21 +108,20 @@ export function HifzSlide() {
                 />
               </View>
               <Text
-                className="text-[11px] text-primary  flex-1"
+                className="text-[11px] text-text flex-1"
                 numberOfLines={1}
               >
                 Quran AI: Ask context, Tafsir, or lessons...
               </Text>
             </View>
-            <Ionicons name="arrow-forward" size={12} color="#276359" />
+            <Ionicons name="arrow-forward" size={12} color="#64748b" />
           </View>
         </View>
       </Animated.View>
 
-      {/* Feature Bullet Points */}
       <Animated.View style={listStyle} className="gap-y-4 mb-2">
         <View className="flex-row items-start gap-x-3.5">
-          <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center mt-0.5">
+          <View className="w-8 h-8 rounded-full bg-surface/10 items-center justify-center mt-0.5">
             <Ionicons name="book" size={16} color="#FFFFFF" />
           </View>
           <View className="flex-1">
@@ -143,7 +136,7 @@ export function HifzSlide() {
         </View>
 
         <View className="flex-row items-start gap-x-3.5">
-          <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center mt-0.5">
+          <View className="w-8 h-8 rounded-full bg-surface/10 items-center justify-center mt-0.5">
             <Ionicons name="language" size={16} color="#FFFFFF" />
           </View>
           <View className="flex-1">
@@ -158,7 +151,7 @@ export function HifzSlide() {
         </View>
 
         <View className="flex-row items-start gap-x-3.5">
-          <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center mt-0.5">
+          <View className="w-8 h-8 rounded-full bg-surface/10 items-center justify-center mt-0.5">
             <Ionicons name="chatbubbles" size={16} color="#FFFFFF" />
           </View>
           <View className="flex-1">

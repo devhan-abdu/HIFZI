@@ -30,7 +30,7 @@ export default function Input({
   return (
     <View className={`mb-4 ${style}`}>
       {label && (
-        <Text className="text-black text-[9px]  uppercase tracking-widest mb-2 ml-1">
+        <Text className="text-muted text-[10px] uppercase tracking-widest mb-2 ml-1">
           {label}
         </Text>
       )}
@@ -43,8 +43,8 @@ export default function Input({
           px-4
           flex-row
           items-center
-          bg-gray-50
-          ${isFocused ? "border-primary/40 bg-white" : "border-gray-100"}
+          bg-surface
+          ${isFocused ? "border-primary/40 bg-surface" : "border-border"}
         `}
       >
         {leftIcon && <View className="mr-2">{leftIcon}</View>}
@@ -59,7 +59,7 @@ export default function Input({
           }}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          className="flex-1 py-3.5 text-slate-900  text-[15px]"
+          className="flex-1 py-3.5 text-text  text-[15px]"
           {...rest}
         />
 

@@ -70,7 +70,7 @@ export default function Test() {
     return (
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator color="#276359" />
-        <Text className="text-slate-500 mt-3">Generating Test...</Text>
+        <Text className="text-muted mt-3">Generating Test...</Text>
       </View>
     );
 
@@ -78,7 +78,7 @@ export default function Test() {
     return (
       <View className="flex-1 items-center justify-center px-6">
         <Ionicons name="document-outline" size={48} color="#94a3b8" />
-        <Text className="text-slate-500 mt-4 text-center">No questions found for these pages.</Text>
+        <Text className="text-muted mt-4 text-center">No questions found for these pages.</Text>
       </View>
     );
 
@@ -99,7 +99,6 @@ export default function Test() {
     }
   };
 
-  // ─── Completion Screen ────────────────────────────────────────────────────────
   if (isFinished) {
     const totalQ = questions.length;
     const pct = totalQ > 0 ? Math.round((score / totalQ) * 100) : 0;
@@ -113,7 +112,6 @@ export default function Test() {
           contentContainerStyle={{ paddingVertical: 36 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* ── Score Hero ──────────────────────────────────────────────── */}
           <View className="items-center mb-10">
             <View
               className={`w-28 h-28 rounded-full items-center justify-center mb-5 ${
@@ -131,24 +129,22 @@ export default function Test() {
               />
             </View>
 
-            <Text className="text-3xl text-slate-900 mb-1">
+            <Text className="text-3xl text-text mb-1">
               {isPerfect ? "MashAllah! Perfect!" : isGood ? "Well Done!" : "Keep Practicing!"}
             </Text>
-            <Text className="text-slate-400 text-sm mb-6">
+            <Text className="text-muted text-sm mb-6">
               {parsedPages.length} page{parsedPages.length !== 1 ? "s" : ""} tested
             </Text>
 
-            {/* Score ring */}
             <View className="flex-row items-end gap-1">
               <Text className="text-5xl text-primary">{pct}</Text>
-              <Text className="text-xl text-slate-400 mb-1">%</Text>
+              <Text className="text-xl text-muted mb-1">%</Text>
             </View>
-            <Text className="text-slate-400 text-sm mt-1">
+            <Text className="text-muted text-sm mt-1">
               {Math.round(score)} correct out of {totalQ}
             </Text>
           </View>
 
-          {/* ── Quick breakdown pills ──────────────────────────────────── */}
           <View className="flex-row gap-3 mb-10">
             {[
               { label: "Correct", value: results.filter((r) => r.score === 1).length, color: "bg-emerald-50 border-emerald-100", text: "text-emerald-700" },
@@ -167,9 +163,9 @@ export default function Test() {
           {/* ── Review Answers (hidden by default) ────────────────────── */}
           <Pressable
             onPress={() => setShowReview((v) => !v)}
-            className="flex-row items-center justify-between bg-slate-50 border border-slate-200 px-5 py-4 rounded-2xl mb-4"
+            className="flex-row items-center justify-between bg-background border border-border px-5 py-4 rounded-2xl mb-4"
           >
-            <Text className="text-slate-700">Review Answers</Text>
+            <Text className="text-muted">Review Answers</Text>
             <Ionicons
               name={showReview ? "chevron-up" : "chevron-down"}
               size={18}
@@ -200,11 +196,11 @@ export default function Test() {
                 const answerB = isBoundary ? res.question.answer.end : res.question.answer.previous;
 
                 return (
-                  <View key={i} className={`bg-white p-5 rounded-3xl border ${borderColor}`}>
+                  <View key={i} className={`bg-surface p-5 rounded-3xl border ${borderColor}`}>
                     {/* Header row */}
                     <View className="flex-row justify-between items-center mb-4">
-                      <View className="bg-slate-50 px-3 py-1 rounded-lg border border-slate-100">
-                        <Text className="text-slate-400 text-[10px] uppercase tracking-widest">
+                      <View className="bg-background px-3 py-1 rounded-lg border border-border">
+                        <Text className="text-muted text-[10px] uppercase tracking-widest">
                           {res.question.type}
                         </Text>
                       </View>
@@ -284,7 +280,7 @@ export default function Test() {
               onPress={handleReturn}
               disabled={isSaving}
               className={`py-4 rounded-2xl items-center justify-center ${
-                isSaving ? "bg-slate-300" : "bg-primary"
+                isSaving ? "bg-surface" : "bg-primary"
               }`}
             >
               <View className="flex-row items-center gap-x-2">
@@ -298,15 +294,15 @@ export default function Test() {
             <View className="flex-row gap-3">
               <Pressable
                 onPress={() => { resetUI(); refresh(); }}
-                className="flex-1 bg-white border border-slate-200 py-3.5 rounded-2xl items-center justify-center"
+                className="flex-1 bg-surface border border-border py-3.5 rounded-2xl items-center justify-center"
               >
-                <Text className="text-slate-700">New Test</Text>
+                <Text className="text-muted">New Test</Text>
               </Pressable>
               <Pressable
                 onPress={resetUI}
-                className="flex-1 bg-slate-50 border border-slate-100 py-3.5 rounded-2xl items-center justify-center"
+                className="flex-1 bg-background border border-border py-3.5 rounded-2xl items-center justify-center"
               >
-                <Text className="text-slate-500">Retake</Text>
+                <Text className="text-muted">Retake</Text>
               </Pressable>
             </View>
           </View>
@@ -322,12 +318,12 @@ export default function Test() {
         {/* Progress bar */}
         <View className="mb-6">
           <View className="flex-row justify-between items-center mb-3">
-            <Text className="text-slate-400 text-[10px] uppercase tracking-widest">
+            <Text className="text-muted text-[10px] uppercase tracking-widest">
               Question {currentIndex + 1} of {questions.length}
             </Text>
             <Text className="text-primary text-sm">Score: {score}</Text>
           </View>
-          <View className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+          <View className="h-1.5 bg-surface rounded-full overflow-hidden">
             <View
               className="h-full bg-primary rounded-full"
               style={{ width: `${((currentIndex) / questions.length) * 100}%` }}
@@ -336,9 +332,9 @@ export default function Test() {
         </View>
 
         {/* Question card */}
-        <View className="bg-white border border-slate-100 rounded-3xl p-6 mb-6">
-          <View className="bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg self-start mb-4">
-            <Text className="text-slate-400 text-[10px] uppercase tracking-widest">
+        <View className="bg-surface border border-border rounded-3xl p-6 mb-6">
+          <View className="bg-background border border-border px-3 py-1.5 rounded-lg self-start mb-4">
+            <Text className="text-muted text-[10px] uppercase tracking-widest">
               {currentQuestion.type === "BOUNDARY"
                 ? "Boundary"
                 : currentQuestion.type === "CHOICE"
@@ -347,7 +343,7 @@ export default function Test() {
             </Text>
           </View>
 
-          <Text className="text-slate-400 text-xs mb-3">Based on this Ayah:</Text>
+          <Text className="text-muted text-xs mb-3">Based on this Ayah:</Text>
           <QuranText
             style={{
               fontFamily: "Uthman",
@@ -362,8 +358,8 @@ export default function Test() {
         </View>
 
         {/* Prompt */}
-        <View className="bg-slate-50 py-3 px-4 rounded-xl border border-slate-200 mb-6">
-          <Text className="text-slate-600 text-sm text-center leading-relaxed">
+        <View className="bg-background py-3 px-4 rounded-xl border border-border mb-6">
+          <Text className="text-muted text-sm text-center leading-relaxed">
             {currentQuestion.type === "BOUNDARY"
               ? currentQuestion.crossesSurah
                 ? "What is the last ayah of the first surah and the first ayah of the second surah on this page?"
@@ -379,7 +375,7 @@ export default function Test() {
               <Pressable
                 key={idx}
                 onPress={() => handleGrade(opt === currentQuestion.answer.correct ? 1 : 0)}
-                className="bg-white border-2 border-slate-100 p-4 rounded-2xl active:bg-primary/5 active:border-primary/30"
+                className="bg-surface border-2 border-border p-4 rounded-2xl active:bg-primary/5 active:border-primary/30"
               >
                 <QuranText
                   style={{
@@ -409,8 +405,8 @@ export default function Test() {
             <View className="gap-y-3">
               {/* Surah boundary badges */}
               {!isBoundary && currentQuestion.answer.nextSoraid !== currentQuestion.currentSoraid && (
-                <View className="bg-slate-100 py-1.5 px-3 self-end rounded-lg border border-slate-200">
-                  <Text className="text-slate-500 text-[10px] uppercase tracking-widest">— End of Surah —</Text>
+                <View className="bg-surface py-1.5 px-3 self-end rounded-lg border border-border">
+                  <Text className="text-muted text-[10px] uppercase tracking-widest">— End of Surah —</Text>
                 </View>
               )}
               {[
@@ -437,8 +433,8 @@ export default function Test() {
                 ) : null
               )}
               {!isBoundary && currentQuestion.answer.prevSoraid !== currentQuestion.currentSoraid && (
-                <View className="bg-slate-100 py-1.5 px-3 self-end rounded-lg border border-slate-200">
-                  <Text className="text-slate-500 text-[10px] uppercase tracking-widest">— Start of Surah —</Text>
+                <View className="bg-surface py-1.5 px-3 self-end rounded-lg border border-border">
+                  <Text className="text-muted text-[10px] uppercase tracking-widest">— Start of Surah —</Text>
                 </View>
               )}
             </View>
@@ -458,7 +454,7 @@ export default function Test() {
             </Pressable>
           ) : (
             <View className="gap-y-3 w-full">
-              <Text className="text-slate-400 text-[10px] uppercase tracking-widest text-center">
+              <Text className="text-muted text-[10px] uppercase tracking-widest text-center">
                 How well did you recall?
               </Text>
               <View className="flex-row gap-3">

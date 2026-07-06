@@ -18,6 +18,9 @@ export const weeklyMurajaPlans = sqliteTable('weekly_muraja_plan', {
   preferredTime: text('preferred_time'),
   isCustomTime: integer('is_custom_time', { mode: 'boolean' }).default(false),
   evaluationDay: integer('evaluation_day').notNull().default(6),
+  completedPages: integer('completed_pages').notNull().default(0),
+  missedDaysCount: integer('missed_days_count').notNull().default(0),
+  perfectDaysCount: integer('perfect_days_count').notNull().default(0),
 }, (table) => ({
   userIdIdx: index('idx_weekly_muraja_plan_user_id').on(table.userId),
   activeUserIdx: index('idx_weekly_muraja_plan_active_user').on(table.userId, table.isActive),

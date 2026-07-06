@@ -95,7 +95,7 @@ export function HookSlide() {
       {/* Top badge */}
       <Animated.View style={[tagStyle, { position: "absolute", top: 56, left: 28 }]}>
         <View className="flex-row items-center gap-x-2">
-          <View className="w-5 h-[1px] bg-white/40" />
+          <View className="w-5 h-[1px] bg-surface/40" />
           <Text className="text-white/50 text-[10px] tracking-[3px] uppercase">
             Powered by Quran.com
           </Text>
@@ -123,7 +123,7 @@ export function HookSlide() {
         </Animated.View>
 
         <Animated.View style={[transStyle, { marginTop: 20 }]} className="items-center px-6">
-          <View className="w-10 h-[1px] bg-white/25 mb-4" />
+          <View className="w-10 h-[1px] bg-surface/25 mb-4" />
           <Text className="text-white/65  text-center leading-6">
             "And We have certainly made the Quran easy to remember"
           </Text>

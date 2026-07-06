@@ -22,6 +22,9 @@ export const hifzPlans = sqliteTable('hifz_plans_local', {
   isCustomTime: integer('is_custom_time', { mode: 'boolean' }).default(false),
   isReinforcementEnabled: integer('is_reinforcement_enabled', { mode: 'boolean' }).default(true),
   evaluationDay: integer('evaluation_day').notNull().default(7),
+  completedPages: integer('completed_pages').notNull().default(0),
+  missedDaysCount: integer('missed_days_count').notNull().default(0),
+  perfectDaysCount: integer('perfect_days_count').notNull().default(0),
 }, (table) => ({
   userStatusIdx: index('idx_hifz_plans_local_user').on(table.userId, table.status),
   userIdIdx: index('idx_hifz_plans_local_user_id').on(table.userId),

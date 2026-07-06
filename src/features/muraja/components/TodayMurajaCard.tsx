@@ -20,30 +20,30 @@ export const TodayMurajaCard = ({
   const isDisabled = isUpdating || todayPlan.status !== "pending";
 
   return (
-    <View className="bg-white rounded-xl  border border-gray-300 shadow-sm">
+    <View className="bg-surface rounded-xl  border border-border shadow-sm">
       <View className="p-6">
         <View className="flex-row justify-between items-center mb-6 ">
           <View>
-            <Text className="text-xl  text-gray-900">
+            <Text className="text-xl  text-text">
               {todayPlan.startSurah === todayPlan.endSurah ?
                 todayPlan.startSurah
               : `${todayPlan.startSurah} – ${todayPlan.endSurah}`}
             </Text>
-            <Text className="text-sm uppercase tracking-wide text-gray-700 mt-1">
+            <Text className="text-sm uppercase tracking-wide text-muted mt-1">
               Pages {todayPlan.startPage}–{todayPlan.endPage}
             </Text>
           </View>
           <Ionicons name="book-outline" size={24} color="#276359" />
         </View>
 
-        <View className="border-t border-slate-100 pt-6 mt-4">
+        <View className="border-t border-border pt-6 mt-4">
           <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-[10px]  uppercase tracking-[2px] text-slate-400">
+            <Text className="text-[10px]  uppercase tracking-[2px] text-muted">
               Status
             </Text>
             <Pressable
               onPress={() => push(`/(app)/muraja/log`)}
-              className="flex-row items-center bg-primary/20 px-3 py-1.5 rounded-full active:bg-slate-100"
+              className="flex-row items-center bg-primary/20 px-3 py-1.5 rounded-full active:bg-surface"
             >
               <Text className="text-primary   text-[11px] mr-1.5">Add Log</Text>
               <Ionicons name="chevron-forward" size={12} color="#276359" />
@@ -81,7 +81,7 @@ const ActionButton = ({
       onPress={onPress}
       disabled={disabled}
       className={`flex-1 flex-row items-center justify-center gap-2 px-3 py-3 rounded-2xl border 
-        ${isActive ? colorClass : "bg-white border-slate-100"} 
+        ${isActive ? colorClass : "bg-surface border-border"} 
         ${disabled ? "opacity-40" : "active:scale-[0.96] shadow-sm"}`}
     >
       {loading ?
@@ -94,7 +94,7 @@ const ActionButton = ({
           />
           <Text
             className={`text-[11px]  uppercase tracking-wider 
-            ${isActive ? "text-white" : "text-slate-500"}`}
+            ${isActive ? "text-white" : "text-muted"}`}
           >
             {label}
           </Text>

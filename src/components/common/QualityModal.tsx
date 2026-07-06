@@ -3,6 +3,7 @@ import { View, Pressable, Modal, StyleSheet, Dimensions } from 'react-native';
 import { Text } from '@/src/components/common/ui/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { useColorScheme } from 'nativewind';
 
 const { width } = Dimensions.get('window');
 
@@ -14,6 +15,11 @@ interface QualityModalProps {
 }
 
 export const QualityModal = ({ visible, onSelect, onClose, title = "Session Quality" }: QualityModalProps) => {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const primaryColor = isDark ? "#4ade80" : "#276359";
+  const chevronColor = isDark ? "#94a3b8" : "#94a3b8";
+
   const options = [
     { 
       score: 5, 
@@ -35,8 +41,6 @@ export const QualityModal = ({ visible, onSelect, onClose, title = "Session Qual
     },
   ];
 
-  const primaryColor = "#276359";
-
   return (
     <Modal
       visible={visible}
@@ -52,12 +56,12 @@ export const QualityModal = ({ visible, onSelect, onClose, title = "Session Qual
         
         <View 
           style={styles.modalContainer}
-          className="bg-white rounded-[40px] p-8 shadow-2xl"
+          className="bg-surface rounded-[40px] p-8 shadow-2xl border border-border"
         >
           <View className="items-center mb-8">
-            <View className="w-16 h-1 bg-slate-100 rounded-full mb-6" />
-            <Text className="text-2xl tracking-tight text-slate-900 text-center ">{title}</Text>
-            <Text className="text-slate-500 text-[13px] text-center mt-2 px-6 leading-5">
+            <View className="w-16 h-1.5 bg-border rounded-full mb-6" />
+            <Text className="text-2xl tracking-tight text-text text-center">{title}</Text>
+            <Text className="text-muted text-[13px] text-center mt-2 px-6 leading-5">
               Honest feedback helps us track your progress accurately.
             </Text>
           </View>
@@ -67,25 +71,25 @@ export const QualityModal = ({ visible, onSelect, onClose, title = "Session Qual
               <Pressable
                 key={opt.score}
                 onPress={() => onSelect(opt.score)}
-                className="flex-row items-center p-4 rounded-2xl active:scale-[0.98] transition-all bg-slate-50 border border-slate-100/50"
+                className="flex-row items-center p-4 rounded-2xl active:scale-[0.98] transition-all bg-background border border-border active:bg-primary"
               >
                 <View 
-                  className="w-12 h-12 rounded-full items-center justify-center mr-4 bg-white border border-slate-100 shadow-sm"
+                  className="w-12 h-12 rounded-full items-center justify-center mr-4 bg-surface border border-border shadow-sm"
                 >
                   <Ionicons name={opt.icon as any} size={22} color={primaryColor} />
                 </View>
                 
                 <View className="flex-1">
-                  <Text className="text-base  text-slate-900">
+                  <Text className="text-base text-text">
                     {opt.label}
                   </Text>
-                  <Text className="text-slate-500 text-[12px] leading-4 mt-0.5">
+                  <Text className="text-muted text-[12px] leading-4 mt-0.5">
                     {opt.subLabel}
                   </Text>
                 </View>
 
-                <View className="w-8 h-8 rounded-full bg-white items-center justify-center border border-slate-100">
-                  <Ionicons name="chevron-forward" size={14} color="#94a3b8" />
+                <View className="w-8 h-8 rounded-full bg-surface items-center justify-center border border-border">
+                  <Ionicons name="chevron-forward" size={14} color={chevronColor} />
                 </View>
               </Pressable>
             ))}
@@ -93,9 +97,9 @@ export const QualityModal = ({ visible, onSelect, onClose, title = "Session Qual
 
           <Pressable 
             onPress={onClose}
-            className="mt-8 py-4 items-center rounded-2xl active:bg-slate-50"
+            className="mt-8 py-4 items-center rounded-2xl active:bg-background"
           >
-            <Text className="text-slate-400  uppercase tracking-widest text-[11px]">Maybe Later</Text>
+            <Text className="text-muted uppercase tracking-widest text-[11px]">Maybe Later</Text>
           </Pressable>
         </View>
       </View>

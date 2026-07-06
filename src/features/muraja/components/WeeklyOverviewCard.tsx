@@ -27,7 +27,7 @@ export const WeeklyOverviewCard = ({
 
   return (
     <View className="bg-primary rounded-[40px] p-7 mb-8 shadow-2xl shadow-primary/40 overflow-hidden relative border border-white/5">
-      <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
+      <View className="absolute -top-10 -right-10 w-40 h-40 bg-surface/5 rounded-full" />
 
       {/* Header row */}
       <View className="flex-row justify-between items-start mb-6">
@@ -35,7 +35,7 @@ export const WeeklyOverviewCard = ({
           <Text className="text-white/50 uppercase tracking-[2px] text-[9px] mb-1.5">
             Plan Range
           </Text>
-          <View className="bg-white/10 px-3 py-1 rounded-full self-start border border-white/10">
+          <View className="bg-surface/10 px-3 py-1 rounded-full self-start border border-white/10">
             <Text className="text-white text-[10px] tracking-wider">
               {weeklyPlan.startSurah} – {weeklyPlan.endSurah}
             </Text>
@@ -66,15 +66,15 @@ export const WeeklyOverviewCard = ({
           <Text className="text-white/40 text-[9px] uppercase tracking-widest">Progress</Text>
           <Text className="text-white/70 text-[9px]">{progressPct.toFixed(0)}%</Text>
         </View>
-        <View className="w-full h-1.5 bg-white/15 rounded-full overflow-hidden">
+        <View className="w-full h-1.5 bg-surface/15 rounded-full overflow-hidden">
           <View
-            className="h-full bg-white rounded-full"
+            className="h-full bg-surface rounded-full"
             style={{ width: `${Math.min(100, progressPct)}%` }}
           />
         </View>
       </View>
 
-      <View className="w-full h-[1px] bg-white/10 rounded-full mb-6" />
+      <View className="w-full h-[1px] bg-surface/10 rounded-full mb-6" />
 
       {/* Stats row */}
       <View className="flex-row justify-between items-center">

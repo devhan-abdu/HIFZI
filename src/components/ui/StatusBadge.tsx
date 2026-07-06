@@ -15,7 +15,7 @@ export default function StatusBadge({
   const getStatusStyle = (status: Status) => {
     if (inverted) {
       return {
-        bg: "bg-white/20",
+        bg: "bg-surface/20",
         text: "text-white",
         border: "border-white/20",
         iconColor: "#ffffff",
@@ -53,9 +53,9 @@ export default function StatusBadge({
         };
       default:
         return {
-          bg: "bg-gray-50",
-          text: "text-gray-800",
-          border: "border-gray-200",
+          bg: "bg-surface",
+          text: "text-text",
+          border: "border-border",
           iconColor: "#1f2937",
         };
     }

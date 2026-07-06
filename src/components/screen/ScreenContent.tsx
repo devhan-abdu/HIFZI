@@ -86,7 +86,7 @@ export function ScreenFooter({ children }: { children: ReactNode }) {
 
   const bottomPadding = hideTabs
     ? Math.max(insets.bottom, 16)
-    : 70 + Math.max(insets.bottom, 10) + 12; // Push above the floating tab bar if visible
+    : 70 + Math.max(insets.bottom, 10) + 12; 
 
   return (
     <View
@@ -95,9 +95,8 @@ export function ScreenFooter({ children }: { children: ReactNode }) {
         paddingHorizontal: 16,
         paddingBottom: bottomPadding,
         borderTopWidth: 1,
-        borderTopColor: "#F1F5F9",
-        backgroundColor: "#ffffff",
       }}
+      className="bg-background border-border"
     >
       {children}
     </View>

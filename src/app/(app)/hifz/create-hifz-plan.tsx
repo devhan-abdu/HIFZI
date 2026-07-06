@@ -1,3 +1,4 @@
+import { useColorScheme } from "nativewind";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { View, ActivityIndicator, Pressable } from "react-native";
@@ -37,6 +38,8 @@ import { useNotificationPermissions } from "@/src/hooks/useNotificationPermissio
 import { NotificationPermissionModal } from "@/src/components/common/NotificationPermissionModal";
 
 export default function CreateHifzPlan() {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [notificationModalLoading, setNotificationModalLoading] = useState(false);
@@ -149,7 +152,7 @@ export default function CreateHifzPlan() {
           if (!existingPlan && !isFullyEnabled) {
             setShowNotificationModal(true);
           } else {
-            router.replace("/(app)");
+            router.back();
           }
         },
       );
@@ -164,36 +167,34 @@ export default function CreateHifzPlan() {
 
   return (
     <>
-      <View className="bg-white border-b border-slate-100">
         <View className="h-16 px-4 flex-row items-center">
-          <Pressable
-            onPress={() => router.replace("/(app)/hifz")}
-            className="w-10 h-10 items-center justify-center rounded-full active:bg-slate-100"
-          >
-            <Ionicons name="arrow-back" size={24} color="#0f172a" />
-          </Pressable>
-
-          <View className="flex-1 ml-2">
-            <Text className="text-lg text-primary leading-tight ">
+              <Pressable
+                onPress={() => router.back()}
+                className="w-10 h-10 items-center justify-center rounded-full active:bg-surface"
+              >
+                <Ionicons name="arrow-back" size={24} color={isDark ? "#ecedee" : "#11181c"} />
+              </Pressable>
+      
+              <View className="flex-1 ml-2">
+                <Text className="text-lg  text-text leading-tight">
               {existingPlan ? "Edit Hifz Plan" : "Create Hifz Plan"}
-            </Text>
-          </View>
-        </View>
-      </View>
+                </Text>
+              </View>
+            </View>
 
       <Screen>
         <ScreenContent>
           <SectionHeader title="Plan Strategy" />
-          <View className="p-5 mb-10 rounded-[32px] border border-slate-100 bg-white">
+          <View className="p-5 mb-10 rounded-[32px] border border-border bg-surface">
             <View className="mb-6">
-              <Text className="text-slate-400 text-[10px] uppercase mb-3 ml-1 tracking-widest">
+              <Text className="text-muted text-[10px] uppercase mb-3 ml-1 tracking-widest">
                 Journey Direction
               </Text>
               <Controller
                 control={control}
                 name="direction"
                 render={({ field: { value, onChange } }) => (
-                  <View className="flex-row bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+                  <View className="flex-row bg-background p-1.5 rounded-2xl border border-border">
                     <Pressable
                       onPress={() => onChange("forward")}
                       className={`flex-1 py-2.5 rounded-xl items-center justify-center ${
@@ -201,7 +202,7 @@ export default function CreateHifzPlan() {
                       }`}
                     >
                       <Text className={`text-[11px]  uppercase tracking-wider ${
-                        value === "forward" ? "text-white" : "text-slate-400"
+                        value === "forward" ? "text-primary-foreground" : "text-muted"
                       }`}>
                         Forward
                       </Text>
@@ -213,7 +214,7 @@ export default function CreateHifzPlan() {
                       }`}
                     >
                       <Text className={`text-[11px]  uppercase tracking-wider ${
-                        value === "backward" ? "text-white" : "text-slate-400"
+                        value === "backward" ? "text-primary-foreground" : "text-muted"
                       }`}>
                         Juz Amma First
                       </Text>
@@ -241,8 +242,8 @@ export default function CreateHifzPlan() {
                         <Ionicons name="calendar" size={20} color={errors.start_date ? "#ef4444" : "#276359"} />
                       </View>
                       <View>
-                        <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-0.5">Start Date</Text>
-                        <Text className={`text-base ${errors.start_date ? "text-red-500" : "text-slate-900"}`}>
+                        <Text className="text-muted text-[10px] uppercase tracking-widest mb-0.5">Start Date</Text>
+                        <Text className={`text-base ${errors.start_date ? "text-red-500" : "text-text"}`}>
                           {formattedStartDate}
                         </Text>
                       </View>
@@ -272,7 +273,7 @@ export default function CreateHifzPlan() {
           </View>
 
           <SectionHeader title="Target & Rate" />
-          <View className="p-5 mb-10 rounded-[32px] border border-slate-100 bg-white gap-y-4">
+          <View className="p-5 mb-10 rounded-[32px] border border-border bg-surface gap-y-4">
             <Controller
               control={control}
               name="start_surah"
@@ -318,7 +319,7 @@ export default function CreateHifzPlan() {
           </View>
 
           <SectionHeader title="Daily Routine" />
-          <View className="p-5 mb-10 rounded-[32px] border border-slate-100 bg-white">
+          <View className="p-5 mb-10 rounded-[32px] border border-border bg-surface">
             <Controller
               name="preferred_time"
               control={control}
@@ -334,7 +335,7 @@ export default function CreateHifzPlan() {
             />
 
             <View className="mb-8">
-              <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-4 ml-1">
+              <Text className="text-muted text-[10px] uppercase tracking-widest mb-4 ml-1">
                 Weekly Commitment
               </Text>
               <Controller
@@ -359,7 +360,7 @@ export default function CreateHifzPlan() {
             </View>
 
             <View className="mb-4">
-              <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-4 ml-1">
+              <Text className="text-muted text-[10px] uppercase tracking-widest mb-4 ml-1">
                 Weekly Evaluation Day <Text className="text-red-500">*</Text>
               </Text>
               <Controller
@@ -376,14 +377,14 @@ export default function CreateHifzPlan() {
               {errors.evaluation_day && (
                 <Text className="text-[10px] text-red-500 mt-2 uppercase tracking-tight">{errors.evaluation_day.message}</Text>
               )}
-              <Text className="text-[10px] text-slate-400 mt-4 ml-1 italic leading-relaxed">
+              <Text className="text-[10px] text-muted mt-4 ml-1 italic leading-relaxed">
                 Your progress will be evaluated every {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][selectedEvalDay ?? 4]}.
               </Text>
             </View>
           </View>
 
           <SectionHeader title="Plan Summary" />
-          <View className="p-5 mb-10 rounded-[32px] border border-slate-100 bg-white">
+          <View className="p-5 mb-10 rounded-[32px] border border-border bg-surface">
             <StatsSummary control={control} />
           </View>
         </ScreenContent>
@@ -392,10 +393,10 @@ export default function CreateHifzPlan() {
           <View className="flex-row gap-3">
              <Button
               variant="outline"
-              className="flex-1 h-14 border-slate-200"
+              className="flex-1 h-14 border-border"
               onPress={() => router.back()}
             >
-              <Text className="text-slate-500 uppercase text-[11px] tracking-widest ">
+              <Text className="text-muted uppercase text-[11px] tracking-widest ">
                 Cancel
               </Text>
             </Button>
@@ -405,11 +406,11 @@ export default function CreateHifzPlan() {
               className="flex-[2] bg-primary h-14 rounded-2xl shadow-lg shadow-primary/20"
             >
               {isSaving ? (
-                <ActivityIndicator color="white" size="small" />
+                <ActivityIndicator color="#276359" size="small" />
               ) : (
                 <View className="flex-row items-center justify-center gap-2">
                    <Ionicons name="sparkles-outline" size={18} color="#fff" />
-                   <Text className="text-white uppercase tracking-widest text-[11px] ">
+                   <Text className="text-primary-foreground uppercase tracking-widest text-[11px] ">
                     {existingPlan ? "Update Plan" : "Launch Plan"}
                   </Text>
                 </View>
@@ -427,14 +428,14 @@ export default function CreateHifzPlan() {
           try {
             await togglePreference(true);
             setShowNotificationModal(false);
-            router.replace("/(app)");
+            router.back();
           } finally {
             setNotificationModalLoading(false);
           }
         }}
         onSkip={() => {
           setShowNotificationModal(false);
-          router.replace("/(app)");
+          router.back();
         }}
       />
     </>

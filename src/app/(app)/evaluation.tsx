@@ -56,13 +56,13 @@ export default function EvaluationScreen() {
         <View style={{ paddingTop: insets.top }} />
         <ScreenContent>
           <View className="flex-1 items-center justify-center py-24">
-            <Text className="text-[10px] uppercase tracking-[1.8px] text-slate-400">
+            <Text className="text-[10px] uppercase tracking-[1.8px] text-muted">
               {format(new Date(), "EEEE")} Evaluation
             </Text>
-            <Text className="mt-3 text-center text-2xl text-slate-900">
+            <Text className="mt-3 text-center text-2xl text-text">
               Unable to load evaluation
             </Text>
-            <Text className="mt-3 max-w-[280px] text-center text-sm leading-6 text-slate-500">
+            <Text className="mt-3 max-w-[280px] text-center text-sm leading-6 text-muted">
               {screenError ??
                 "This evaluation could not be resolved right now."}
             </Text>

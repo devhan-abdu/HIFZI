@@ -62,7 +62,7 @@ export function NotificationPermissionModal({
         <Animated.View
           entering={FadeIn.duration(300)}
           style={[scaleStyle]}
-          className="w-full rounded-3xl bg-white overflow-hidden shadow-2xl"
+          className="w-full rounded-3xl bg-surface overflow-hidden shadow-2xl"
         >
           {/* Header Icon */}
           <View className="pt-8 pb-6 items-center">
@@ -70,25 +70,25 @@ export function NotificationPermissionModal({
               <Ionicons name="notifications" size={32} color="#276359" />
             </View>
 
-            <Text className="text-xl text-slate-900 text-center px-6">
+            <Text className="text-xl text-text text-center px-6">
               Never Miss a Review
             </Text>
-            <Text className="text-slate-500 text-sm text-center mt-3 px-6 leading-5">
+            <Text className="text-muted text-sm text-center mt-3 px-6 leading-5">
               Enable reminders to stay consistent with your Quran goals. We'll
               send gentle nudges at your chosen habit time.
             </Text>
           </View>
 
           {/* Feature List */}
-          <View className="px-6 py-5 bg-slate-50 border-t border-slate-100">
+          <View className="px-6 py-5 bg-background border-t border-border">
             <View className="gap-y-3.5">
               <View className="flex-row items-start gap-x-3">
                 <View className="w-5 h-5 rounded-full bg-primary/20 items-center justify-center mt-0.5 flex-shrink-0">
                   <Ionicons name="checkmark" size={12} color="#276359" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-slate-800 text-sm">Perfect Timing</Text>
-                  <Text className="text-slate-500 text-xs mt-1">
+                  <Text className="text-text text-sm">Perfect Timing</Text>
+                  <Text className="text-muted text-xs mt-1">
                     After your chosen daily habit
                   </Text>
                 </View>
@@ -99,8 +99,8 @@ export function NotificationPermissionModal({
                   <Ionicons name="checkmark" size={12} color="#276359" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-slate-800 text-sm">Protect Your Streak</Text>
-                  <Text className="text-slate-500 text-xs mt-1">
+                  <Text className="text-text text-sm">Protect Your Streak</Text>
+                  <Text className="text-muted text-xs mt-1">
                     Never lose progress accidentally
                   </Text>
                 </View>
@@ -111,8 +111,8 @@ export function NotificationPermissionModal({
                   <Ionicons name="checkmark" size={12} color="#276359" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-slate-800 text-sm">Stay Accountable</Text>
-                  <Text className="text-slate-500 text-xs mt-1">
+                  <Text className="text-text text-sm">Stay Accountable</Text>
+                  <Text className="text-muted text-xs mt-1">
                     Consistent reminders build lasting habits
                   </Text>
                 </View>
@@ -143,7 +143,7 @@ export function NotificationPermissionModal({
               disabled={loading}
               className="rounded-2xl px-6 h-12 items-center justify-center"
             >
-              <Text className="text-slate-500 text-sm">Maybe Later</Text>
+              <Text className="text-muted text-sm">Maybe Later</Text>
             </Pressable>
           </View>
         </Animated.View>

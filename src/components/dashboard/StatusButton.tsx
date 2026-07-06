@@ -17,7 +17,7 @@ export const StatusButton = ({
     isActive ?
       isSkip ? "bg-red-50 border-red-100 shadow-sm"
       : `${activeColor} border-transparent shadow-md shadow-slate-200`
-    : "bg-white border-slate-100";
+    : "bg-surface border-border";
 
   const contentColor =
     isActive ?

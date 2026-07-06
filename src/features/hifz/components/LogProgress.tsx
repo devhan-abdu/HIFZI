@@ -32,7 +32,7 @@ export default function LogProgress({ plan, onClose }: LogProgressType) {
   };
 
   return (
-    <View className="flex-1 bg-white p-6 rounded-t-[40px]">
+    <View className="flex-1 bg-surface p-6 rounded-t-[40px]">
       <View className="bg-[#2D6A4F] p-6 rounded-[32px] mb-8">
         <Text className="text-white/70   text-xs uppercase mb-1">
           Today's Target
@@ -77,12 +77,12 @@ export default function LogProgress({ plan, onClose }: LogProgressType) {
           }}
         />
       </View>
-      <View className="bg-gray-50 p-6 rounded-3xl flex-row items-center justify-between mb-6">
+      <View className="bg-surface p-6 rounded-3xl flex-row items-center justify-between mb-6">
         <View>
           <Text className=" text-lg">Pages Memorized</Text>
-          <Text className="text-gray-400 text-xs">Target: {target} pages</Text>
+          <Text className="text-muted text-xs">Target: {target} pages</Text>
         </View>
-        <View className="flex-row items-center bg-white rounded-2xl p-2 border border-gray-100">
+        <View className="flex-row items-center bg-surface rounded-2xl p-2 border border-border">
           <Pressable onPress={() => updatePages(pages - 1)} className="p-2">
             <Ionicons name="remove" size={24} color="#2D6A4F" />
           </Pressable>
@@ -92,13 +92,13 @@ export default function LogProgress({ plan, onClose }: LogProgressType) {
           </Pressable>
         </View>
       </View>
-      <Text className="  text-gray-400 uppercase text-xs mb-2">
+      <Text className="  text-muted uppercase text-xs mb-2">
         Optional Notes
       </Text>
       <TextInput
         multiline
         placeholder="Any difficulties with specific ayahs?"
-        className="bg-gray-50 p-4 rounded-3xl h-32 text-start"
+        className="bg-surface p-4 rounded-3xl h-32 text-start"
         textAlignVertical="top"
         value={notes}
         onChangeText={setNotes}
@@ -120,7 +120,7 @@ function StatusTab({ label, icon, active, onPress }: StatusTabType) {
     <Pressable
       onPress={onPress}
       className={`items-center justify-center p-4 rounded-3xl w-[31%] border-2 ${
-        active ? "bg-white border-[#2D6A4F]" : "bg-gray-50 border-transparent"
+        active ? "bg-surface border-[#2D6A4F]" : "bg-surface border-transparent"
       }`}
     >
       <Ionicons
@@ -128,7 +128,7 @@ function StatusTab({ label, icon, active, onPress }: StatusTabType) {
         size={24}
         color={active ? "#2D6A4F" : "#9CA3AF"}
       />
-      <Text className={`  mt-2 ${active ? "text-[#2D6A4F]" : "text-gray-400"}`}>
+      <Text className={`  mt-2 ${active ? "text-[#2D6A4F]" : "text-muted"}`}>
         {label}
       </Text>
     </Pressable>

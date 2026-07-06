@@ -128,9 +128,9 @@ export function HeatmapSlide() {
 
       {/* Heatmap Card matching the real app layout style */}
       <Animated.View style={cardStyle} className="my-6">
-        <View className="bg-white rounded-[32px] p-5 shadow-lg border border-slate-100">
+        <View className="bg-surface rounded-[32px] p-5 shadow-lg border border-border">
           <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-slate-400 uppercase tracking-[1.5px] text-[9px] ">
+            <Text className="text-muted uppercase tracking-[1.5px] text-[9px] ">
               Heatmap of the Heart (604 Pages)
             </Text>
             <View className="bg-emerald-50 px-2 py-0.5 rounded-full flex-row items-center">
@@ -149,7 +149,7 @@ export function HeatmapSlide() {
           </View>
 
           {/* Real app legend items */}
-          <View className="mt-5 pt-4 border-t border-slate-50 flex-row justify-between items-center">
+          <View className="mt-5 pt-4 border-t border-border flex-row justify-between items-center">
             <LegendItem color="#f1f5f9" border="#e2e8f0" label="Not Started" />
             <LegendItem color="#fee2e2" border="#ef4444" label="Weak" />
             <LegendItem color="#fef3c7" border="#f59e0b" label="Partial" />
@@ -166,7 +166,7 @@ export function HeatmapSlide() {
       {/* Info Bullet Points */}
       <Animated.View style={infoStyle} className="gap-y-4 mb-2">
         <View className="flex-row items-start gap-x-3.5">
-          <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center mt-0.5">
+          <View className="w-8 h-8 rounded-full bg-surface/10 items-center justify-center mt-0.5">
             <Ionicons name="heart" size={16} color="#FFFFFF" />
           </View>
           <View className="flex-1">
@@ -179,7 +179,7 @@ export function HeatmapSlide() {
         </View>
 
         <View className="flex-row items-start gap-x-3.5">
-          <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center mt-0.5">
+          <View className="w-8 h-8 rounded-full bg-surface/10 items-center justify-center mt-0.5">
             <Ionicons name="alert-circle" size={16} color="#FFFFFF" />
           </View>
           <View className="flex-1">
@@ -192,7 +192,7 @@ export function HeatmapSlide() {
         </View>
 
         <View className="flex-row items-start gap-x-3.5">
-          <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center mt-0.5">
+          <View className="w-8 h-8 rounded-full bg-surface/10 items-center justify-center mt-0.5">
             <Ionicons name="analytics" size={16} color="#FFFFFF" />
           </View>
           <View className="flex-1">
@@ -226,7 +226,7 @@ const LegendItem = ({
       }}
       className="w-2 h-2 rounded-[1.5px] mr-1"
     />
-    <Text className="text-[7.5px] text-slate-400  uppercase tracking-tighter">
+    <Text className="text-[7.5px] text-muted  uppercase tracking-tighter">
       {label}
     </Text>
   </View>

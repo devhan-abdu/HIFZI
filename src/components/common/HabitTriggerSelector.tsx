@@ -45,7 +45,7 @@ export const HabitTriggerSelector = ({ value, onChange, isCustom, setIsCustom, e
   return (
     <View className="mb-6">
       <View className="flex-row items-center mb-4 ml-1">
-        <Text className="text-slate-400 text-[10px] uppercase  tracking-[2px]">
+        <Text className="text-muted text-[10px] uppercase  tracking-[2px]">
           Habit Trigger
         </Text>
       </View>
@@ -68,7 +68,7 @@ export const HabitTriggerSelector = ({ value, onChange, isCustom, setIsCustom, e
                 className={`flex-row items-center px-5 py-3.5 rounded-full ${
                   isSelected 
                     ? 'bg-primary' 
-                    : 'bg-slate-100'
+                    : 'bg-surface'
                 }`}
               >
                 <Ionicons 
@@ -77,7 +77,7 @@ export const HabitTriggerSelector = ({ value, onChange, isCustom, setIsCustom, e
                   color={isSelected ? '#ffffff' : '#64748b'} 
                 />
                 <Text className={`ml-2 text-sm  tracking-tight ${
-                  isSelected ? 'text-white' : 'text-slate-600'
+                  isSelected ? 'text-white' : 'text-muted'
                 }`}>
                   {trigger.id === 'custom' && isCustom && value && !TRIGGERS.find(t => t.id === value) 
                     ? value 

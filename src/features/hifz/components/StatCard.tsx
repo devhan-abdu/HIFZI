@@ -21,18 +21,18 @@ export default function StatCard({
   category,
 }: StatCardProps) {
   const themes: any = {
-    success: { bg: "bg-emerald-50", icon: "#276359", text: "text-emerald-600" },
-    danger: { bg: "bg-rose-50", icon: "#e11d48", text: "text-rose-600" },
-    info: { bg: "bg-blue-50", icon: "#2563eb", text: "text-blue-600" },
-    warning: { bg: "bg-amber-50", icon: "#d97706", text: "text-amber-600" },
-    hifz: { bg: "bg-emerald-50", icon: "#276359", text: "text-emerald-600" },
-    muraja: { bg: "bg-emerald-50", icon: "#276359", text: "text-emerald-600" },
+    success: { bg: "bg-primary/10", icon: "#276359", text: "text-primary" },
+    danger: { bg: "bg-rose-500/10", icon: "#e11d48", text: "text-rose-500" },
+    info: { bg: "bg-blue-500/10", icon: "#2563eb", text: "text-blue-500" },
+    warning: { bg: "bg-amber-500/10", icon: "#d97706", text: "text-amber-500" },
+    hifz: { bg: "bg-primary/10", icon: "#276359", text: "text-primary" },
+    muraja: { bg: "bg-primary/10", icon: "#276359", text: "text-primary" },
   };
 
   const theme = themes[type] || themes.success;
 
   return (
-    <View className="w-[48%] bg-white rounded-xl px-4 py-5 mb-4 border border-slate-100 shadow-sm relative">
+    <View className="w-[48%] bg-surface rounded-xl px-4 py-5 mb-4 border border-border shadow-sm relative">
       {category && (
         <Text
           className={`absolute top-3 right-3 text-[7px]  uppercase tracking-[1px] ${theme.text}`}
@@ -49,16 +49,16 @@ export default function StatCard({
         </View>
 
         <View className="flex-1">
-          <Text className="text-slate-400 text-xs  uppercase tracking-widest mb-0.5">
+          <Text className="text-muted text-xs  uppercase tracking-widest mb-0.5">
             {title}
           </Text>
 
           <View className="flex-row items-baseline">
-            <Text className="text-slate-900 text-xl  tracking-tight">
+            <Text className="text-text text-xl  tracking-tight">
               {value}
             </Text>
             {unit && (
-              <Text className="text-slate-400 text-[9px]   ml-1 uppercase">
+              <Text className="text-muted text-[9px]   ml-1 uppercase">
                 {unit}
               </Text>
             )}

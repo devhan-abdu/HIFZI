@@ -4,13 +4,12 @@ import { View } from "react-native";
 
 export default function HifzLayout() {
   return (
-    <View className="flex-1 bg-white">
-        <Header title="Hifz Al-Quran" />
+    <View className="flex-1 bg-background">
+        <Header title="Hifz" />
 
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: "white" },
         }}
       >
         <Stack.Screen

@@ -22,7 +22,7 @@ export function HeroCard({
   return (
     <View className="bg-primary rounded-3xl p-6 mb-8 shadow-sm">
       <View className="flex-row justify-between items-center mb-4">
-        <View className="bg-white/10 px-2.5 py-1 rounded-lg border border-white/10">
+        <View className="bg-surface/10 px-2.5 py-1 rounded-lg border border-white/10">
           <Text className="text-white text-[10px] uppercase tracking-[2px]">
             {hasReviewPrefill ?
               "Revision Session"

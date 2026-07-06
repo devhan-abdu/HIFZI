@@ -40,12 +40,12 @@ export function ExistingProgressCard({
           className={`flex-1 py-2 px-3 rounded-xl border ${
             sessionMode === "append" ?
               "bg-primary border-primary"
-            : "bg-white border-slate-200"
+            : "bg-surface border-border"
           }`}
         >
           <Text
             className={`text-center text-xs ${
-              sessionMode === "append" ? "text-white" : "text-slate-600"
+              sessionMode === "append" ? "text-white" : "text-muted"
             }`}
           >
             Add (Continue)
@@ -57,12 +57,12 @@ export function ExistingProgressCard({
           className={`flex-1 py-2 px-3 rounded-xl border ${
             sessionMode === "overwrite" ?
               "bg-primary border-primary"
-            : "bg-white border-slate-200"
+            : "bg-surface border-border"
           }`}
         >
           <Text
             className={`text-center text-xs ${
-              sessionMode === "overwrite" ? "text-white" : "text-slate-600"
+              sessionMode === "overwrite" ? "text-white" : "text-muted"
             }`}
           >
             Overwrite (New)

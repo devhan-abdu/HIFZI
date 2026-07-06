@@ -17,7 +17,7 @@ export const SegmentedControl = ({
   className,
 }: SegmentedControlProps) => {
   return (
-    <View className={cn("flex-row bg-slate-100/80 p-1 rounded-2xl border border-slate-200/50", className)}>
+    <View className={cn("flex-row bg-surface/80 p-1 rounded-2xl border border-border/50", className)}>
       {options.map((option) => {
         const isSelected = selectedOption === option;
         return (
@@ -26,13 +26,13 @@ export const SegmentedControl = ({
             onPress={() => onOptionPress(option)}
             className={cn(
               "flex-1 py-2.5 rounded-xl items-center justify-center",
-              isSelected ? "bg-white shadow-sm" : "bg-transparent"
+              isSelected ? "bg-surface shadow-sm" : "bg-transparent"
             )}
           >
             <Text
               className={cn(
                 "text-[11px]  uppercase tracking-widest",
-                isSelected ? "text-primary" : "text-slate-500"
+                isSelected ? "text-primary" : "text-muted"
               )}
             >
               {option}

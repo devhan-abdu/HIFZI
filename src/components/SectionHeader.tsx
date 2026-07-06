@@ -14,7 +14,7 @@ export const SectionHeader = ({
 }: SectionHeaderProps) => (
   <View className="flex-row justify-between items-end mb-5 px-1">
     <View className="flex-1">
-      <Text className=" text-gray-900 tracking-tight">{title}</Text>
+      <Text className=" text-text tracking-tight">{title}</Text>
     </View>
 
     {badge ?

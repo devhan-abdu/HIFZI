@@ -42,11 +42,11 @@ export default function WeeklyPlanCard({
   const containerStyle =
     isHero ?
       "bg-primary rounded-[32px] p-6 shadow-xl shadow-primary/30 border border-white/10 mb-6"
-    : "bg-white rounded-[24px] p-5 border border-gray-200 mb-4 shadow-xs ";
+    : "bg-surface rounded-[24px] p-5 border border-border mb-4 shadow-xs ";
 
-  const textPrimary = isHero ? "text-white" : "text-gray-900";
-  const textSecondary = isHero ? "text-white/60" : "text-gray-500";
-  const dividerColor = isHero ? "bg-white/10" : "bg-gray-100";
+  const textPrimary = isHero ? "text-white" : "text-text";
+  const textSecondary = isHero ? "text-white/60" : "text-muted";
+  const dividerColor = isHero ? "bg-surface/10" : "bg-surface";
   const iconColor = isHero ? "#ffffff" : "#4b5563";
 
   return (
@@ -69,7 +69,7 @@ export default function WeeklyPlanCard({
 
       <View
         className={`flex-row items-center border-t ${
-          isHero ? "border-white/10" : "border-gray-100"
+          isHero ? "border-white/10" : "border-border"
         } pt-5`}
       >
         <View className="flex-1">
@@ -124,7 +124,7 @@ export default function WeeklyPlanCard({
       {date <= today && (
         <Button
           className={`mt-6 h-12 rounded-2xl ${
-            isHero ? "bg-white shadow-none" : ""
+            isHero ? "bg-surface shadow-none" : ""
           }`}
           onPress={handlePress}
           variant={

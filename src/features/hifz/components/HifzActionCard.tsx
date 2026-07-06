@@ -56,8 +56,8 @@ export const HifzActionCard = ({
 
   if (!task) {
     return (
-      <View className="bg-slate-50 border border-dashed border-slate-200 rounded-[24px] p-6 items-center">
-        <Text className="text-slate-400 text-[10px] uppercase tracking-widest">
+      <View className="bg-background border border-dashed border-border rounded-[24px] p-6 items-center">
+        <Text className="text-muted text-[10px] uppercase tracking-widest">
           Rest Day (No Hifz)
         </Text>
       </View>

@@ -1,3 +1,4 @@
+import { useColorScheme } from "nativewind";
 import React, { useState, useEffect } from "react";
 import { Pressable, TextInput, View, ActivityIndicator } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
@@ -38,6 +39,8 @@ import { useNotificationPermissions } from "@/src/hooks/useNotificationPermissio
 import { NotificationPermissionModal } from "@/src/components/common/NotificationPermissionModal";
 
 export default function CreateWeeklyPlan() {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [notificationModalLoading, setNotificationModalLoading] =
@@ -227,7 +230,7 @@ export default function CreateWeeklyPlan() {
           if (!existingPlan && !isFullyEnabled) {
             setShowNotificationModal(true);
           } else {
-            router.replace("/(app)");
+            router.back();
           }
         },
       );
@@ -264,22 +267,22 @@ export default function CreateWeeklyPlan() {
     <>
       <View className="h-16 px-4 flex-row items-center">
         <Pressable
-          onPress={() => router.replace("/(app)/muraja")}
-          className="w-10 h-10 items-center justify-center rounded-full active:bg-slate-100"
+          onPress={() => router.back()}
+          className="w-10 h-10 items-center justify-center rounded-full active:bg-surface"
         >
-          <Ionicons name="arrow-back" size={24} color="#0f172a" />
+          <Ionicons name="arrow-back" size={24} color={isDark ? "#ecedee" : "#11181c"} />
         </Pressable>
 
         <View className="flex-1 ml-2">
-          <Text className="text-lg  text-primary leading-tight">
+          <Text className="text-lg  text-text leading-tight">
             {existingPlan ? "Edit Muraja Plan" : "Create Muraja Plan"}
           </Text>
         </View>
       </View>
       <Screen>
         <ScreenContent>
-          <View className="mb-10 p-5  rounded-[32px] border border-slate-100">
-            <Text className="text-slate-400 text-[10px] uppercase mb-4 ml-1 tracking-widest ">
+          <View className="mb-10 p-5  rounded-[32px] border border-border">
+            <Text className="text-muted text-[10px] uppercase mb-4 ml-1 tracking-widest ">
               Plan Focus
             </Text>
             <Controller
@@ -302,8 +305,8 @@ export default function CreateWeeklyPlan() {
                       <View>
                         <Text
                           className={`text-base  ${
-                            formattedWeekStart ? "text-slate-900" : (
-                              "text-slate-600"
+                            formattedWeekStart ? "text-text" : (
+                              "text-muted"
                             )
                           }`}
                         >
@@ -314,7 +317,7 @@ export default function CreateWeeklyPlan() {
                     <Ionicons
                       name="chevron-forward"
                       size={18}
-                      color="#0f172a"
+                      color={isDark ? "#ecedee" : "#11181c"}
                     />
                   </Pressable>
                   <ErrorMessage error={errors.week_start_date} />
@@ -334,7 +337,7 @@ export default function CreateWeeklyPlan() {
           </View>
 
           <SectionHeader title="Target Range" />
-          <View className="p-5 mb-10  rounded-[32px] border border-slate-100 gap-y-4">
+          <View className="p-5 mb-10  rounded-[32px] border border-border gap-y-4">
             <Controller
               control={control}
               name="start_surah"
@@ -417,9 +420,8 @@ export default function CreateWeeklyPlan() {
             />
           </View>
 
-          {/* STEP 3: TIME & SCHEDULE */}
           <SectionHeader title="Daily Routine" />
-          <View className="p-5 mb-10  rounded-[32px] border border-slate-100">
+          <View className="p-5 mb-10  rounded-[32px] border border-border">
             <Controller
               name="preferred_time"
               control={control}
@@ -438,7 +440,7 @@ export default function CreateWeeklyPlan() {
               control={control}
               render={({ field: { value, onChange } }) => (
                 <View className="mb-8">
-                  <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-4 ml-1 ">
+                  <Text className="text-muted text-[10px] uppercase tracking-widest mb-4 ml-1 ">
                     Weekly Commitment
                   </Text>
                   <SelectDays
@@ -453,7 +455,7 @@ export default function CreateWeeklyPlan() {
             />
 
             <View className="mb-4">
-              <Text className="text-slate-400 text-[10px] uppercase mb-4 ml-1 tracking-widest ">
+              <Text className="text-muted text-[10px] uppercase mb-4 ml-1 tracking-widest ">
                 Weekly Evaluation Day <Text className="text-red-500">*</Text>
               </Text>
               <Controller
@@ -468,7 +470,7 @@ export default function CreateWeeklyPlan() {
                 )}
               />
               <ErrorMessage error={errors.evaluation_day} />
-              <Text className="text-[10px] text-slate-400 mt-4 ml-1 italic leading-relaxed">
+              <Text className="text-[10px] text-muted mt-4 ml-1 italic leading-relaxed">
                 Your weekly progress will be evaluated every{" "}
                 {
                   [
@@ -487,7 +489,7 @@ export default function CreateWeeklyPlan() {
           </View>
 
           <SectionHeader title="Duration & Details" />
-          <View className="p-5 mb-10  rounded-[32px] border border-slate-100 gap-y-5">
+          <View className="p-5 mb-10  rounded-[32px] border border-border gap-y-5">
             <Controller
               control={control}
               name="estimated_time_min"
@@ -502,7 +504,7 @@ export default function CreateWeeklyPlan() {
                       <Ionicons name="time-outline" size={18} color="#94a3b8" />
                     }
                     rightIcon={
-                      <Text className="text-slate-400 text-[10px] uppercase">
+                      <Text className="text-muted text-[10px] uppercase">
                         min
                       </Text>
                     }
@@ -534,7 +536,7 @@ export default function CreateWeeklyPlan() {
               )}
             />
             <View className="mb-4">
-              <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-2 ml-1 ">
+              <Text className="text-muted text-[10px] uppercase tracking-widest mb-2 ml-1 ">
                 Personal Intentions
               </Text>
               <Controller
@@ -546,8 +548,8 @@ export default function CreateWeeklyPlan() {
                       style={{
                         fontFamily: "Rosemary",
                       }}
-                      className={`bg-white rounded-2xl p-4 min-h-[100px] text-slate-900 border ${
-                        errors.note ? "border-red-500" : "border-slate-100"
+                      className={`bg-surface rounded-2xl p-4 min-h-[100px] text-text border ${
+                        errors.note ? "border-red-500" : "border-border"
                       } focus:border-primary/40`}
                       onChangeText={onChange}
                       value={value ?? ""}
@@ -563,7 +565,7 @@ export default function CreateWeeklyPlan() {
           </View>
 
           <SectionHeader title="Plan Summary" />
-          <View className="p-5 mb-10 rounded-[32px] border border-slate-100 bg-white">
+          <View className="p-5 mb-10 rounded-[32px] border border-border bg-surface">
             <MurajaStatsSummary control={control} />
           </View>
         </ScreenContent>
@@ -572,10 +574,10 @@ export default function CreateWeeklyPlan() {
           <View className="flex-row gap-3 ">
             <Button
               variant="outline"
-              className="flex-1 h-14 border-slate-200"
+              className="flex-1 h-14 border-border"
               onPress={() => router.back()}
             >
-              <Text className="text-slate-500  uppercase text-[11px] tracking-widest">
+              <Text className="text-muted  uppercase text-[11px] tracking-widest">
                 Cancel
               </Text>
             </Button>
@@ -585,10 +587,10 @@ export default function CreateWeeklyPlan() {
               disabled={isCreating}
             >
               {isCreating ?
-                <ActivityIndicator color="white" size="small" />
+                <ActivityIndicator color="#276359" size="small" />
               : <View className="flex-row items-center justify-center gap-2">
                   <Ionicons name="rocket-outline" size={18} color="#fff" />
-                  <Text className="text-white  uppercase text-[11px] tracking-widest">
+                  <Text className="text-primary-foreground uppercase text-[11px] tracking-widest">
                     Launch Plan
                   </Text>
                 </View>
@@ -607,14 +609,14 @@ export default function CreateWeeklyPlan() {
           try {
             await togglePreference(true);
             setShowNotificationModal(false);
-            router.replace("/(app)");
+            router.back();
           } finally {
             setNotificationModalLoading(false);
           }
         }}
         onSkip={() => {
           setShowNotificationModal(false);
-          router.replace("/(app)");
+          router.back();
         }}
       />
     </>

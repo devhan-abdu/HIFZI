@@ -27,13 +27,13 @@ export function HifzSection({ surahData }: { surahData: ISurah[] }) {
   return (
     <>
       <SectionHeader title="Hifz Progress" />
-      <View className="bg-white rounded-[32px] p-6 shadow-md shadow-slate-200 border border-slate-100">
+      <View className="bg-surface rounded-[32px] p-6 shadow-md shadow-slate-200 border border-border">
         <View className="flex-row items-center justify-between mb-6">
           <View className="flex-1">
-            <Text className="text-slate-400  uppercase tracking-[2px] text-[9px] mb-1.5">
+            <Text className="text-muted  uppercase tracking-[2px] text-[9px] mb-1.5">
               Current Goal
             </Text>
-            <Text className="text-slate-900 text-3xl  mb-3 tracking-tighter">
+            <Text className="text-text text-3xl  mb-3 tracking-tighter">
               Daily Hifz
             </Text>
 
@@ -60,21 +60,21 @@ export function HifzSection({ surahData }: { surahData: ISurah[] }) {
           />
         </View>
 
-        <View className="flex-row items-center border-t border-gray-100 pt-5">
-          <View className="pr-6 mr-6 border-r border-slate-100">
-            <Text className="text-slate-900 text-3xl  tracking-tighter">
+        <View className="flex-row items-center border-t border-border pt-5">
+          <View className="pr-6 mr-6 border-r border-border">
+            <Text className="text-text text-3xl  tracking-tighter">
               {hifzAnalytics.todayTarget}
             </Text>
-            <Text className="text-slate-400 text-[9px]  uppercase tracking-widest">
+            <Text className="text-muted text-[9px]  uppercase tracking-widest">
               Daily Pages
             </Text>
           </View>
 
           <View>
-            <Text className="text-slate-900 text-lg  tracking-tight">
+            <Text className="text-text text-lg  tracking-tight">
               {hifzAnalytics.targetEndDate}
             </Text>
-            <Text className="text-slate-400 text-[9px]  uppercase tracking-widest">
+            <Text className="text-muted text-[9px]  uppercase tracking-widest">
               Target End Date
             </Text>
           </View>

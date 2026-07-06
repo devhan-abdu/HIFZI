@@ -39,7 +39,7 @@ export const Switch = ({ value, onValueChange }: SwitchProps) => {
       >
         <Animated.View
           style={thumbStyle}
-          className="w-4 h-4 bg-white rounded-full shadow-sm"
+          className="w-4 h-4 bg-surface rounded-full shadow-sm"
         />
       </Animated.View>
     </Pressable>

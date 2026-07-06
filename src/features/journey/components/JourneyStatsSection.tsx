@@ -19,10 +19,10 @@ export function JourneyStatsSection({
 
   return (
     <View>
-      <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-1 px-1">
+      <Text className="text-muted uppercase tracking-[2px] text-[10px] mb-1 px-1">
         Insights
       </Text>
-      <Text className="text-xl text-gray-900 mb-4 px-1">Your progress</Text>
+      <Text className="text-xl text-text mb-4 px-1">Your progress</Text>
 
       <View className="flex-row flex-wrap justify-between">
         <StatCard
@@ -55,10 +55,10 @@ export function JourneyStatsSection({
         />
       </View>
 
-      <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-1 px-1 mt-2">
+      <Text className="text-muted uppercase tracking-[2px] text-[10px] mb-1 px-1 mt-2">
         Tests
       </Text>
-      <Text className="text-xl text-gray-900 mb-4 px-1">Exam performance</Text>
+      <Text className="text-xl text-text mb-4 px-1">Exam performance</Text>
 
       <View className="flex-row flex-wrap justify-between">
         <StatCard
@@ -97,7 +97,7 @@ export function JourneyStatsSection({
           <MiniTag label={`Muraja ${testStats.murajaTests}`} />
         </View>
       ) : (
-        <Text className="text-slate-500 text-sm px-1 mt-1">
+        <Text className="text-muted text-sm px-1 mt-1">
           Complete weekly evaluations to build your test history.
         </Text>
       )}
@@ -107,8 +107,8 @@ export function JourneyStatsSection({
 
 function MiniTag({ label }: { label: string }) {
   return (
-    <View className="bg-slate-100 px-2.5 py-1 rounded-full">
-      <Text className="text-slate-600 text-[10px] uppercase tracking-wide">{label}</Text>
+    <View className="bg-surface px-2.5 py-1 rounded-full">
+      <Text className="text-muted text-[10px] uppercase tracking-wide">{label}</Text>
     </View>
   );
 }

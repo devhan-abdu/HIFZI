@@ -51,11 +51,11 @@ const StatsSummary = ({
 
   return (
     <View className="px-1 py-2">
-      <View className="flex-row justify-between items-center py-3 border-b border-slate-100">
-        <Text className="text-slate-400 text-[10px] uppercase tracking-widest">
+      <View className="flex-row justify-between items-center py-3 border-b border-border">
+        <Text className="text-muted text-[10px] uppercase tracking-widest">
           Est. Completion
         </Text>
-        <Text className="text-slate-700 ">
+        <Text className="text-muted ">
           {stats.finishDate.toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
@@ -64,29 +64,29 @@ const StatsSummary = ({
         </Text>
       </View>
 
-      <View className="flex-row justify-between items-center py-3 border-b border-slate-100">
-        <Text className="text-slate-400 text-[10px] uppercase tracking-widest">
+      <View className="flex-row justify-between items-center py-3 border-b border-border">
+        <Text className="text-muted text-[10px] uppercase tracking-widest">
           Range
         </Text>
         <View className="flex-row items-center">
-          <Text className="text-slate-700 ">{startSurahName}</Text>
+          <Text className="text-muted ">{startSurahName}</Text>
           <Ionicons name="arrow-forward" size={10} color="#94a3b8" className="mx-2" />
-          <Text className="text-slate-700 ">{stats.targetSurah}</Text>
+          <Text className="text-muted ">{stats.targetSurah}</Text>
         </View>
       </View>
 
-      <View className="flex-row justify-between items-center py-3 border-b border-slate-100">
-        <Text className="text-slate-400 text-[10px] uppercase tracking-widest">
+      <View className="flex-row justify-between items-center py-3 border-b border-border">
+        <Text className="text-muted text-[10px] uppercase tracking-widest">
           Volume
         </Text>
-        <Text className="text-slate-700 ">{stats.totalPages} Pages</Text>
+        <Text className="text-muted ">{stats.totalPages} Pages</Text>
       </View>
 
       <View className="flex-row justify-between items-center py-3">
-        <Text className="text-slate-400 text-[10px] uppercase tracking-widest">
+        <Text className="text-muted text-[10px] uppercase tracking-widest">
           Total Duration
         </Text>
-        <Text className="text-slate-700 ">
+        <Text className="text-muted ">
           {stats.daysNeeded >= 30 ?
             `~${Math.round(stats.daysNeeded / 30)} Months`
           : `${stats.daysNeeded} Days`}

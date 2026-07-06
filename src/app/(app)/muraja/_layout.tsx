@@ -4,13 +4,12 @@ import { View } from "react-native";
 
 export default function MurajaLayout() {
   return (
-    <View className="flex-1 bg-white">
-        <Header title="Muraja Al-Quran" />
+    <View className="flex-1 bg-background">
+        <Header title="Muraja" />
 
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: "white" },
         }}
       >
         <Stack.Screen

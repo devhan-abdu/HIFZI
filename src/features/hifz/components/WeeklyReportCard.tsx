@@ -17,7 +17,7 @@ export const WeeklyReportCard = ({
 }: WeeklyReport) => {
   return (
     <View className="bg-primary rounded-[32px] mb-8 overflow-hidden shadow-xl shadow-primary/20 border border-white/10">
-      <View className="bg-white/10 px-6 py-3 flex-row items-center justify-between border-b border-white/5">
+      <View className="bg-surface/10 px-6 py-3 flex-row items-center justify-between border-b border-white/5">
         <View className="flex-row items-center gap-2">
           <Ionicons
             name="calendar-outline"
@@ -44,7 +44,7 @@ export const WeeklyReportCard = ({
             </View>
           </View>
 
-          <View className="bg-white/15 p-4 rounded-[24px] border border-white/10">
+          <View className="bg-surface/15 p-4 rounded-[24px] border border-white/10">
             <Ionicons
               name={rate >= 80 ? "trophy" : "ribbon-outline"}
               size={32}

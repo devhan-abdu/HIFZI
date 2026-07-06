@@ -8,7 +8,7 @@ interface ScreenProps {
 
 export default function Screen({ children, className = "" }: ScreenProps) {
   return (
-    <View className={`flex-1 bg-white px-4 ${className}`}>
+    <View className={`flex-1 bg-background px-4 ${className}`}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}

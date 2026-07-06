@@ -20,7 +20,7 @@ import { useAppActiveRefresh } from "@/src/hooks/useAppActiveRefresh";
 
 function SectionTitle({ children }: { children: string }) {
   return (
-    <Text className="text-slate-900 text-lg mb-3 mt-8">{children}</Text>
+    <Text className="text-text text-lg mb-3 mt-8">{children}</Text>
   );
 }
 
@@ -61,13 +61,13 @@ export default function JourneyScreen() {
           <View className="flex-row items-center mb-6 px-4">
             <Pressable
               onPress={() => back()}
-              className="w-10 h-10 rounded-full items-center justify-center bg-slate-100 mr-3"
+              className="w-10 h-10 rounded-full items-center justify-center bg-surface mr-3"
             >
               <Ionicons name="arrow-back" size={18} color="#0f172a" />
             </Pressable>
             <View className="flex-1">
-              <Text className="text-slate-900 text-xl">Journey</Text>
-              <Text className="text-slate-500 text-xs">
+              <Text className="text-text text-xl">Journey</Text>
+              <Text className="text-muted text-xs">
                 Your Hifz & Muraja progress
               </Text>
               <View className="mt-2">
@@ -80,17 +80,17 @@ export default function JourneyScreen() {
           {loading ? (
             <View className="py-24 items-center px-4">
               <ActivityIndicator size="large" color="#276359" />
-              <Text className="text-slate-500 text-sm mt-4">
+              <Text className="text-muted text-sm mt-4">
                 Loading journey…
               </Text>
             </View>
 
           ) : !data ? (
-            <View className="mx-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 items-center">
-              <Text className="text-slate-900 text-base text-center">
+            <View className="mx-4 rounded-2xl border border-dashed border-border bg-background p-8 items-center">
+              <Text className="text-text text-base text-center">
                 Start your journey
               </Text>
-              <Text className="text-slate-500 text-sm mt-2 text-center">
+              <Text className="text-muted text-sm mt-2 text-center">
                 Create a Hifz or Muraja plan to track progress, streaks, and
                 milestones.
               </Text>
@@ -161,9 +161,9 @@ export default function JourneyScreen() {
               {/* ── Real achievements from local DB (same as dashboard) ── */}
               <SectionTitle>Achievements</SectionTitle>
               {badges.length === 0 ? (
-                <View className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 mb-4">
-                  <Text className="text-slate-900">No achievements yet</Text>
-                  <Text className="text-slate-500 text-sm mt-1">
+                <View className="rounded-2xl border border-dashed border-border bg-background p-6 mb-4">
+                  <Text className="text-text">No achievements yet</Text>
+                  <Text className="text-muted text-sm mt-1">
                     Keep logging sessions and passing evaluations to earn
                     badges.
                   </Text>

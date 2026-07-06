@@ -9,7 +9,7 @@ export function DayByDay({ progress }: { progress: IMurajaDayStatus[] | null}) {
   const todayStr = new Date().toISOString().slice(0, 10);
 
   return (
-    <View className="flex-row justify-between bg-white p-5 rounded-[32px] border border-gray-100">
+    <View className="flex-row justify-between bg-surface p-5 rounded-[32px] border border-border">
       {progress.map((day) => {
 
         const isCompleted = day.status === "completed";
@@ -24,8 +24,8 @@ export function DayByDay({ progress }: { progress: IMurajaDayStatus[] | null}) {
                 ${day.isToday && !isCompleted && !isMissed ? "border-2 border-primary border-dashed" : ""}
                 ${isCompleted ? "bg-primary" : ""}
                 ${isMissed ? "bg-red-50 border border-red-100" : ""}
-                ${isRest ? "bg-gray-50 border border-gray-200" : ""}
-                ${isPending ? "bg-primary/5 border border-gray-200" : ""}
+                ${isRest ? "bg-surface border border-border" : ""}
+                ${isPending ? "bg-primary/5 border border-border" : ""}
               `}
             >
               {isCompleted ? (
@@ -42,7 +42,7 @@ export function DayByDay({ progress }: { progress: IMurajaDayStatus[] | null}) {
             </View>
 
             <Text
-              className={`text-[10px] ${day.isToday ? "text-primary " : "text-gray-400"}`}
+              className={`text-[10px] ${day.isToday ? "text-primary " : "text-muted"}`}
             >
               {day.dayName}
             </Text>

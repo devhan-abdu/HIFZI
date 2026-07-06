@@ -102,7 +102,7 @@ export const ReinforcementCard = ({
   }
 
   return (
-    <View className="bg-slate-50 border border-slate-100 rounded-[28px] p-5">
+    <View className="bg-background border border-border rounded-[28px] p-5">
       <View className="flex-row justify-between items-start mb-4">
         <View className="flex-1">
           <View className="flex-row items-center mb-1">
@@ -117,14 +117,14 @@ export const ReinforcementCard = ({
                 </Text>
               </View>
             )}
-            <Text className="text-slate-400 text-[10px] uppercase tracking-widest">
+            <Text className="text-muted text-[10px] uppercase tracking-widest">
               {task.label || "Optional Review"}
             </Text>
           </View>
-          <Text className="text-lg text-slate-900">
+          <Text className="text-lg text-text">
             {task.displaySurah || "Quran Review"}
           </Text>
-          <Text className="text-slate-500 text-xs">
+          <Text className="text-muted text-xs">
             Pages {task.startPage} – {task.endPage}
           </Text>
         </View>
@@ -132,7 +132,7 @@ export const ReinforcementCard = ({
         <Pressable
           onPress={() => setQualityModalVisible(true)}
           disabled={isLogging}
-          className="h-10 w-10 rounded-2xl bg-white border border-slate-200 items-center justify-center active:scale-95 shadow-sm"
+          className="h-10 w-10 rounded-2xl bg-surface border border-border items-center justify-center active:scale-95 shadow-sm"
         >
           {isLogging ? (
             <ActivityIndicator size="small" color="#276359" />
@@ -142,7 +142,7 @@ export const ReinforcementCard = ({
         </Pressable>
       </View>
 
-      <View className="flex-row items-center justify-between mt-4 pt-4 border-t border-slate-50">
+      <View className="flex-row items-center justify-between mt-4 pt-4 border-t border-border">
         <Pressable
           onPress={onStart}
           disabled={isLogging}

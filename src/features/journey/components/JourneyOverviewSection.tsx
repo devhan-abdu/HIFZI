@@ -15,14 +15,14 @@ export function JourneyOverviewSection({ overview }: { overview: JourneyOverview
 
   return (
     <View className="bg-primary rounded-[40px] p-7 shadow-2xl shadow-primary/40 overflow-hidden relative border border-white/5">
-      <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
+      <View className="absolute -top-10 -right-10 w-40 h-40 bg-surface/5 rounded-full" />
 
       <View className="flex-row justify-between items-end mb-6">
         <View className="flex-1">
           <Text className="text-white/50 uppercase tracking-[2px] text-[9px] mb-1.5">
             Hifz memorization
           </Text>
-          <View className="bg-white/10 px-3 py-1 rounded-full self-start border border-white/10">
+          <View className="bg-surface/10 px-3 py-1 rounded-full self-start border border-white/10">
             <Text className="text-white text-[10px] tracking-wider">
               {overview.uniquePagesMemorized} unique pages
             </Text>
@@ -50,9 +50,9 @@ export function JourneyOverviewSection({ overview }: { overview: JourneyOverview
         </Text>
       </View>
 
-      <View className="w-full h-[2px] bg-white/10 rounded-full mb-6 overflow-hidden">
+      <View className="w-full h-[2px] bg-surface/10 rounded-full mb-6 overflow-hidden">
         <View
-          className="h-full bg-white rounded-full"
+          className="h-full bg-surface rounded-full"
           style={{ width: `${overview.quranPercent}%` }}
         />
       </View>

@@ -30,26 +30,26 @@ export default function NotificationsScreen() {
           <View className="flex-row items-center">
             <Pressable
               onPress={() => router.back()}
-              className="w-10 h-10 rounded-full items-center justify-center bg-slate-100 mr-3"
+              className="w-10 h-10 rounded-full items-center justify-center bg-surface mr-3"
             >
               <Ionicons name="arrow-back" size={18} color="#0f172a" />
             </Pressable>
             <View>
-              <Text className="text-slate-900 text-xl">Notifications</Text>
-              <Text className="text-slate-500 text-xs">
+              <Text className="text-text text-xl">Notifications</Text>
+              <Text className="text-muted text-xs">
                 {unreadCount} unread
               </Text>
             </View>
           </View>
-          <Pressable onPress={() => markAllAsRead()} className="px-3 py-2 rounded-xl bg-slate-100">
-            <Text className="text-slate-700 text-xs">Mark all as read</Text>
+          <Pressable onPress={() => markAllAsRead()} className="px-3 py-2 rounded-xl bg-surface">
+            <Text className="text-muted text-xs">Mark all as read</Text>
           </Pressable>
         </View>
 
         {notifications.length === 0 ? (
           <View className="flex-1 items-center justify-center py-20">
             <Ionicons name="notifications-off-outline" size={28} color="#94a3b8" />
-            <Text className="text-slate-500 mt-3">No notifications yet</Text>
+            <Text className="text-muted mt-3">No notifications yet</Text>
           </View>
         ) : (
           <View className="gap-y-3">
@@ -69,23 +69,23 @@ export default function NotificationsScreen() {
                   onPress={() => markAsRead(item.id)}
                   className={`rounded-2xl border p-4 ${
                     item.isRead === 0
-                      ? "bg-white border-slate-200"
-                      : "bg-slate-50 border-slate-100"
+                      ? "bg-surface border-border"
+                      : "bg-background border-border"
                   }`}
                 >
                   <View className="flex-row items-start">
-                    <View className="w-9 h-9 rounded-full bg-white items-center justify-center mr-3 border border-slate-100">
+                    <View className="w-9 h-9 rounded-full bg-surface items-center justify-center mr-3 border border-border">
                       <Ionicons name={icon as never} size={16} color={iconColor} />
                     </View>
                     <View className="flex-1">
                       <View className="flex-row items-center justify-between">
-                        <Text className={`text-sm ${item.isRead === 0 ? "text-slate-900" : "text-slate-700"}`}>
+                        <Text className={`text-sm ${item.isRead === 0 ? "text-text" : "text-muted"}`}>
                           {item.title}
                         </Text>
                         {item.isRead === 0 && <View className="w-2.5 h-2.5 rounded-full bg-red-500" />}
                       </View>
-                      <Text className="text-xs text-slate-600 mt-1">{item.message}</Text>
-                      <Text className="text-[10px] text-slate-400 mt-2">{formatTime(item.createdAt)}</Text>
+                      <Text className="text-xs text-muted mt-1">{item.message}</Text>
+                      <Text className="text-[10px] text-muted mt-2">{formatTime(item.createdAt)}</Text>
                     </View>
                   </View>
                 </Pressable>

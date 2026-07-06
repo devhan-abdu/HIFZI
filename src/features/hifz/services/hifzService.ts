@@ -170,7 +170,7 @@ export const hifzService = {
   const isEvaluationDay = todayDay === (localPlan.evaluationDay ?? 5);
   const evaluationDue = isEvaluationDay && activityPlan?.lastEvaluationDate !== todayStr;
 
-    const totalCompleted = logs.reduce((acc, l) => acc + (l.actualPagesCompleted ?? 0), 0);
+    const totalCompleted = localPlan.completedPages ?? 0;
     const planFinished = totalCompleted >= localPlan.totalPages;
 
 
@@ -248,6 +248,19 @@ export const hifzService = {
           await PerformanceService.recomputeAllPerformance(tx, userId);
 
           await notificationService.removeHabitEvent(userId, 'hifz', todayLog.date);
+
+          const wasCompleted = existing.status === 'completed';
+          const wasMissed = existing.status === 'missed';
+          await tx.update(hifzPlans)
+            .set({
+              completedPages: sql`MAX(0, completed_pages - ${existing.actualPagesCompleted ?? 0})`,
+              perfectDaysCount: wasCompleted ? sql`MAX(0, perfect_days_count - 1)` : sql`perfect_days_count`,
+              missedDaysCount: wasMissed ? sql`MAX(0, missed_days_count - 1)` : sql`missed_days_count`,
+              syncStatus: 0,
+              updatedAt: sql`CURRENT_TIMESTAMP`,
+            })
+            .where(eq(hifzPlans.id, todayLog.hifzPlanId));
+
           changed = true;
         }
         return;
@@ -307,7 +320,6 @@ export const hifzService = {
           localId = newLog.id;
           created = true;
         } catch (insertErr) {
-          // Robust fallback: if a race condition inserted the row concurrently, update it instead of throwing
           const raceExisting = await tx.query.hifzLogs.findFirst({
             where: and(
               eq(hifzLogs.userId, userId),
@@ -325,6 +337,24 @@ export const hifzService = {
       }
 
       changed = true;
+
+      const pagesNow = todayLog.actualPagesCompleted ?? 0;
+      const pagesBefore = existing?.actualPagesCompleted ?? 0;
+      const pageDelta = pagesNow - pagesBefore;
+      const statusNow = todayLog.status;
+      const statusBefore = existing?.status ?? null;
+      const perfectDelta = (statusNow === 'completed' ? 1 : 0) - (statusBefore === 'completed' ? 1 : 0);
+      const missedDelta = (statusNow === 'missed' ? 1 : 0) - (statusBefore === 'missed' ? 1 : 0);
+
+      await tx.update(hifzPlans)
+        .set({
+          completedPages: sql`MAX(0, completed_pages + ${pageDelta})`,
+          perfectDaysCount: sql`MAX(0, perfect_days_count + ${perfectDelta})`,
+          missedDaysCount: sql`MAX(0, missed_days_count + ${missedDelta})`,
+          syncStatus: 0,
+          updatedAt: sql`CURRENT_TIMESTAMP`,
+        })
+        .where(eq(hifzPlans.id, todayLog.hifzPlanId));
 
       const normalizedUnits = Math.max(0, Math.round(todayLog.actualPagesCompleted ?? 0));
       const isMissed = todayLog.status === "missed" || normalizedUnits === 0;

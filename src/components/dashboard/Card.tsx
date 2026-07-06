@@ -175,7 +175,7 @@ export default function Card({
 
   return (
     <View className="bg-primary rounded-[40px] p-7 shadow-2xl shadow-primary/40 overflow-hidden relative w-full">
-      <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
+      <View className="absolute -top-10 -right-10 w-40 h-40 bg-surface/5 rounded-full" />
 
       <View className="flex-row justify-between items-end mb-6">
         <View className="flex-1">
@@ -207,9 +207,9 @@ export default function Card({
                   <Text className="text-white/80 text-[10px] mb-1 tracking-wide">
                     {currentRank.title} {currentRank.titleAr}
                   </Text>
-                  <View className="h-1 bg-white/10 rounded-full overflow-hidden">
+                  <View className="h-1 bg-surface/10 rounded-full overflow-hidden">
                     <View
-                      className="h-full bg-white"
+                      className="h-full bg-surface"
                       style={{ width: `${(userStats.totalXp % 1000) / 10}%` }}
                     />
                   </View>
@@ -240,7 +240,7 @@ export default function Card({
         )}
       </View>
 
-      <View className="w-full h-[2px] bg-white/10 rounded-full mb-6" />
+      <View className="w-full h-[2px] bg-surface/10 rounded-full mb-6" />
 
       <View className={dualPlan ? "flex-row w-full " : "flex-col w-full"}>
         {hasHifz && (

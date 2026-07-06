@@ -1,3 +1,4 @@
+import { useColorScheme } from "nativewind";
 import React, { useEffect, useState } from "react";
 import { View, Pressable, TextInput } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
@@ -26,6 +27,8 @@ import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionS
 import { ExistingProgressCard } from "@/src/features/hifz/components/hifz-log/ExistingProgressCard";
 import { HeroCard } from "@/src/features/hifz/components/hifz-log/HeroCard";
 export default function LogProgress() {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const router = useRouter();
   const params = useLocalSearchParams<{
     reviewStartPage?: string;
@@ -171,7 +174,7 @@ export default function LogProgress() {
     return (
       <Screen>
         <View className="flex-1 items-center justify-center p-6">
-          <Text className="text-xl text-slate-900 text-center">
+          <Text className="text-xl text-text text-center">
             No Active Plan Found
           </Text>
           <Button className="mt-4" onPress={() => router.back()}>
@@ -256,23 +259,23 @@ export default function LogProgress() {
 
   return (
     <>
-      <View className="bg-white px-4 pt-4 pb-4 flex-row items-center border-b border-slate-50">
+      <View className="bg-surface px-4 pt-4 pb-4 flex-row items-center border-b border-border">
         <Pressable
-          onPress={() => router.replace("/(app)/hifz")}
-          className="w-10 h-10 items-center justify-center rounded-full active:bg-slate-100"
+          onPress={() => router.back()}
+          className="w-10 h-10 items-center justify-center rounded-full active:bg-surface"
         >
-          <Ionicons name="arrow-back" size={22} color="#0f172a" />
+          <Ionicons name="arrow-back" size={22} color={isDark ? "#ecedee" : "#11181c"} />
         </Pressable>
-        <Text className="text-lg text-slate-900 ml-2">{formattedDate}</Text>
+        <Text className="text-lg text-text ml-2">{formattedDate}</Text>
       </View>
       <Screen>
         <ScreenContent>
           {isLocked && (
-            <View className="bg-red-50 border border-red-100 p-4 rounded-2xl mb-8 flex-row items-center gap-3">
+            <View className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl mb-8 flex-row items-center gap-3">
               <Ionicons name="lock-closed" size={24} color="#ef4444" />
               <View className="flex-1">
-                <Text className="text-red-900 text-sm">Logging Locked</Text>
-                <Text className="text-red-700/70 text-xs">
+                <Text className="text-red-400 text-sm">Logging Locked</Text>
+                <Text className="text-red-400/70 text-xs">
                   {planState === "EVALUATION_DUE" ?
                     "Please complete your evaluation exam to unlock logging."
                   : "This plan is completed. Start a new plan to resume logging."
@@ -303,10 +306,10 @@ export default function LogProgress() {
           />
 
           {!isRestDay && !hasReviewPrefill && (
-            <View className="bg-slate-50/50 border border-slate-100 p-4 rounded-2xl mb-8 flex-row items-center justify-between">
+            <View className="bg-background/50 border border-border p-4 rounded-2xl mb-8 flex-row items-center justify-between">
               <View className="flex-row items-center gap-3">
                 <View
-                  className={`w-8 h-8 rounded-full items-center justify-center ${reviewed ? "bg-primary/10" : "bg-slate-100"}`}
+                  className={`w-8 h-8 rounded-full items-center justify-center ${reviewed ? "bg-primary/10" : "bg-surface"}`}
                 >
                   <Ionicons
                     name="refresh"
@@ -315,8 +318,8 @@ export default function LogProgress() {
                   />
                 </View>
                 <View>
-                  <Text className="text-slate-900">Revision Done</Text>
-                  <Text className="text-slate-400 text-[10px]">
+                  <Text className="text-text">Revision Done</Text>
+                  <Text className="text-muted text-[10px]">
                     Verified previous 5 pages
                   </Text>
                 </View>
@@ -327,7 +330,7 @@ export default function LogProgress() {
 
           {!isLocked && !isRestDay && (
             <View className="mb-8">
-              <Text className="text-slate-900 text-base mb-4 ml-1">
+              <Text className="text-text text-base mb-4 ml-1">
                 How did it go?
               </Text>
               <View className="flex-row justify-between">
@@ -355,55 +358,55 @@ export default function LogProgress() {
 
           {status !== "missed" && !isLocked && (
             <View className="mb-8">
-              <Text className="text-slate-900 text-base mb-4 ml-1">
+              <Text className="text-text text-base mb-4 ml-1">
                 Reading Quality
               </Text>
               <View className="flex-row gap-4">
-                <View className="flex-1 bg-white border border-slate-100 p-4 rounded-2xl">
+                <View className="flex-1 bg-surface border border-border p-4 rounded-2xl">
                   <View className="flex-row items-center gap-2 mb-3">
                     <Ionicons
                       name="alert-circle-outline"
                       size={16}
                       color="#ef4444"
                     />
-                    <Text className="text-slate-700 text-xs">Mistakes</Text>
+                    <Text className="text-muted text-xs">Mistakes</Text>
                   </View>
                   <View className="flex-row items-center justify-between">
                     <Pressable
                       onPress={() => setMistakes(Math.max(0, mistakes - 1))}
-                      className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
+                      className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
                     >
                       <Ionicons name="remove" size={16} color="#64748b" />
                     </Pressable>
-                    <Text className="text-lg text-slate-900">{mistakes}</Text>
+                    <Text className="text-lg text-text">{mistakes}</Text>
                     <Pressable
                       onPress={() => setMistakes(mistakes + 1)}
-                      className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
+                      className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
                     >
                       <Ionicons name="add" size={16} color="#ef4444" />
                     </Pressable>
                   </View>
                 </View>
-                <View className="flex-1 bg-white border border-slate-100 p-4 rounded-2xl">
+                <View className="flex-1 bg-surface border border-border p-4 rounded-2xl">
                   <View className="flex-row items-center gap-2 mb-3">
                     <Ionicons name="timer-outline" size={16} color="#eab308" />
-                    <Text className="text-slate-700 text-xs">Hesitations</Text>
+                    <Text className="text-muted text-xs">Hesitations</Text>
                   </View>
                   <View className="flex-row items-center justify-between">
                     <Pressable
                       onPress={() =>
                         setHesitations(Math.max(0, hesitations - 1))
                       }
-                      className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
+                      className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
                     >
                       <Ionicons name="remove" size={16} color="#64748b" />
                     </Pressable>
-                    <Text className="text-lg text-slate-900">
+                    <Text className="text-lg text-text">
                       {hesitations}
                     </Text>
                     <Pressable
                       onPress={() => setHesitations(hesitations + 1)}
-                      className="w-8 h-8 items-center justify-center bg-slate-50 rounded-lg active:bg-slate-100"
+                      className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
                     >
                       <Ionicons name="add" size={16} color="#eab308" />
                     </Pressable>
@@ -415,42 +418,42 @@ export default function LogProgress() {
 
           {!isLocked && (
             <View className="mb-8">
-              <Text className="text-slate-900 text-base mb-4 ml-1">
+              <Text className="text-text text-base mb-4 ml-1">
                 Actual Progress
               </Text>
-              <View className="bg-white border border-slate-100 p-5 rounded-3xl">
+              <View className="bg-surface border border-border p-5 rounded-3xl">
                 <View className="flex-row items-center justify-between mb-6">
                   <View>
-                    <Text className="text-slate-900">Pages Completed</Text>
-                    <Text className="text-slate-400 text-[10px]">
+                    <Text className="text-text">Pages Completed</Text>
+                    <Text className="text-muted text-[10px]">
                       Adjust if you did more/less
                     </Text>
                   </View>
-                  <View className="flex-row items-center bg-slate-50 rounded-xl p-1 border border-slate-100">
+                  <View className="flex-row items-center bg-background rounded-xl p-1 border border-border">
                     <Pressable
                       onPress={() => {
                         const newPages = Math.max(0, pages - 1);
                         setPages(newPages);
                         if (newPages === 0) setStatus("missed");
                       }}
-                      className="w-9 h-9 items-center justify-center active:bg-white rounded-lg"
+                      className="w-9 h-9 items-center justify-center active:bg-surface rounded-lg"
                     >
                       <Ionicons name="remove" size={18} color="#276359" />
                     </Pressable>
-                    <Text className="text-xl text-slate-900 px-4">{pages}</Text>
+                    <Text className="text-xl text-text px-4">{pages}</Text>
                     <Pressable
                       onPress={() => {
                         const newPages = pages + 1;
                         setPages(newPages);
                         if (status === "missed") setStatus("partial");
                       }}
-                      className="w-9 h-9 items-center justify-center active:bg-white rounded-lg"
+                      className="w-9 h-9 items-center justify-center active:bg-surface rounded-lg"
                     >
                       <Ionicons name="add" size={18} color="#276359" />
                     </Pressable>
                   </View>
                 </View>
-                <Text className="text-slate-400 text-[10px] uppercase tracking-widest mb-2 ml-1">
+                <Text className="text-muted text-[10px] uppercase tracking-widest mb-2 ml-1">
                   Notes & Reflection
                 </Text>
                 <TextInput
@@ -459,7 +462,7 @@ export default function LogProgress() {
                   placeholderTextColor="#cbd5e1"
                   value={notes}
                   onChangeText={setNotes}
-                  className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 h-24 text-slate-900 text-sm"
+                  className="bg-background/50 p-4 rounded-2xl border border-border h-24 text-text text-sm"
                   textAlignVertical="top"
                 />
               </View>
@@ -474,10 +477,10 @@ export default function LogProgress() {
             className="bg-primary h-14 rounded-2xl shadow-sm"
           >
             <View className="flex-row items-center justify-center">
-              <Text className="text-white text-base mr-2">
+              <Text className="text-primary-foreground text-base mr-2">
                 {isLocked ? "Logging Locked" : "Save Progress"}
               </Text>
-              <Ionicons name="arrow-forward" size={18} color="white" />
+              <Ionicons name="arrow-forward" size={18} color={isDark ? "#ecedee" : "#ffffff"} />
             </View>
           </Button>
         </ScreenFooter>

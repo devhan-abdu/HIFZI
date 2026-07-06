@@ -53,8 +53,8 @@ export default function SelectDays({ value, onChange, disabledDay, mode = 'multi
                         isSelected ?
                           "border-primary bg-primary"
                         : isEvaluationDay ?
-                          "border-amber-200 border-dashed bg-white "
-                        : "border-slate-100 bg-white"
+                          "border-amber-200 border-dashed bg-surface "
+                        : "border-border bg-surface"
                       }
                     items-center justify-center
                  active:opacity-90
@@ -63,7 +63,7 @@ export default function SelectDays({ value, onChange, disabledDay, mode = 'multi
             <View className="items-center">
                 <Text
                 className={` text-sm ${
-                    isSelected ? "text-white" : isEvaluationDay ? "text-amber-700/60 " : "text-slate-600"
+                    isSelected ? "text-white" : isEvaluationDay ? "text-amber-700/60 " : "text-muted"
                 }`}
                 >
                 {day.name}

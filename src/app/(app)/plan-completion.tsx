@@ -113,7 +113,7 @@ export default function PlanCompletionScreen() {
 
     if (isLoading) {
         return (
-            <View className="flex-1 items-center justify-center bg-white">
+            <View className="flex-1 items-center justify-center bg-surface">
                 <ActivityIndicator size="large" color={PRIMARY} />
             </View>
         );
@@ -143,10 +143,10 @@ export default function PlanCompletionScreen() {
                             </Text>
                         </View>
 
-                        <Text className="text-[22px]  text-center text-slate-900 leading-snug px-4">
+                        <Text className="text-[22px]  text-center text-text leading-snug px-4">
                             {isHifz ? 'Hifz milestone reached' : 'Revision cycle complete'}
                         </Text>
-                        <Text className="text-[13px] text-slate-500 text-center mt-2 px-6 leading-relaxed">
+                        <Text className="text-[13px] text-muted text-center mt-2 px-6 leading-relaxed">
                             {report?.planStartDate && report?.planEndDate
                               ? `${report.planStartDate} → ${report.planEndDate} · `
                               : ""}
@@ -173,10 +173,10 @@ export default function PlanCompletionScreen() {
                     </View>
 
                     <SectionCard>
-                        <View className="flex-row items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                        <View className="flex-row items-center justify-between mb-4 pb-3 border-b border-border">
                             <View className="flex-row items-center gap-2">
                                 <Ionicons name="bar-chart" size={15} color={PRIMARY} />
-                                <Text className="text-[14px]  text-slate-900">Plan consistency</Text>
+                                <Text className="text-[14px]  text-text">Plan consistency</Text>
                             </View>
                             <View
                                 className="px-2.5 py-0.5 rounded-md border"
@@ -190,38 +190,38 @@ export default function PlanCompletionScreen() {
 
                         <View className="flex-row">
                             <View className="flex-1 items-center">
-                                <Text className="text-[18px]  text-slate-800">{report?.avgRate}%</Text>
-                                <Text className="text-[9px] text-slate-400 uppercase tracking-wider mt-1">Completion</Text>
+                                <Text className="text-[18px]  text-text">{report?.avgRate}%</Text>
+                                <Text className="text-[9px] text-muted uppercase tracking-wider mt-1">Completion</Text>
                             </View>
-                            <View className="w-[0.5px] bg-slate-100 self-stretch" />
+                            <View className="w-[0.5px] bg-surface self-stretch" />
                             <View className="flex-1 items-center">
-                                <Text className="text-[18px]  text-slate-800">{report?.consistencyRate}%</Text>
-                                <Text className="text-[9px] text-slate-400 uppercase tracking-wider mt-1">Consistency</Text>
+                                <Text className="text-[18px]  text-text">{report?.consistencyRate}%</Text>
+                                <Text className="text-[9px] text-muted uppercase tracking-wider mt-1">Consistency</Text>
                             </View>
-                            <View className="w-[0.5px] bg-slate-100 self-stretch" />
+                            <View className="w-[0.5px] bg-surface self-stretch" />
                             <View className="flex-1 items-center">
-                                <Text className="text-[18px]  text-slate-800">{report?.totalCompletedPages}</Text>
-                                <Text className="text-[9px] text-slate-400 uppercase tracking-wider mt-1">Pages done</Text>
+                                <Text className="text-[18px]  text-text">{report?.totalCompletedPages}</Text>
+                                <Text className="text-[9px] text-muted uppercase tracking-wider mt-1">Pages done</Text>
                             </View>
-                            <View className="w-[0.5px] bg-slate-100 self-stretch" />
+                            <View className="w-[0.5px] bg-surface self-stretch" />
                             <View className="flex-1 items-center">
-                                <Text className="text-[18px]  text-slate-800">{report?.completedDays}</Text>
-                                <Text className="text-[9px] text-slate-400 uppercase tracking-wider mt-1">Perfect days</Text>
+                                <Text className="text-[18px]  text-text">{report?.completedDays}</Text>
+                                <Text className="text-[9px] text-muted uppercase tracking-wider mt-1">Perfect days</Text>
                             </View>
                         </View>
                     </SectionCard>
 
                     <SectionCard>
-                        <View className="flex-row items-center gap-2 mb-3 pb-3 border-b border-slate-100">
+                        <View className="flex-row items-center gap-2 mb-3 pb-3 border-b border-border">
                             <Ionicons name="sparkles" size={15} color={PRIMARY} />
-                            <Text className="text-[14px]  text-slate-900">AI page retention</Text>
+                            <Text className="text-[14px]  text-text">AI page retention</Text>
                         </View>
 
                         {report?.isSingleSurah ? (
                             <View>
-                                <Text className="text-[12px] text-slate-500 mb-4 leading-relaxed">
+                                <Text className="text-[12px] text-muted mb-4 leading-relaxed">
                                     Based on your FSRS memory model, here is your page-level status for Surah{' '}
-                                    <Text className=" text-slate-700">{report?.surahName}</Text>:
+                                    <Text className=" text-muted">{report?.surahName}</Text>:
                                 </Text>
 
                                 <ChipGroup
@@ -236,7 +236,7 @@ export default function PlanCompletionScreen() {
                                             </PageChip>
                                         ))
                                     ) : (
-                                        <Text className="text-[12px] text-slate-400 italic">
+                                        <Text className="text-[12px] text-muted italic">
                                             No mastered pages yet — keep up the consistent review!
                                         </Text>
                                     )}
@@ -268,16 +268,16 @@ export default function PlanCompletionScreen() {
                             </View>
                         ) : (
                             <View>
-                                <Text className="text-[12px] text-slate-500 mb-3 leading-relaxed">
+                                <Text className="text-[12px] text-muted mb-3 leading-relaxed">
                                     Your plan spanned multiple surahs. Here's the retention status by surah:
                                 </Text>
                                 {report?.surahAnalysis?.map((s: any) => {
                                     const isExcellent = s.status === 'excellent';
                                     const isPolish = s.status === 'polish';
                                     return (
-                                        <View key={s.name} className="mb-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                        <View key={s.name} className="mb-3 p-3 rounded-xl bg-background border border-border">
                                             <View className="flex-row justify-between items-center mb-3">
-                                                <Text className=" text-slate-800 text-[13px]">Surah {s.name}</Text>
+                                                <Text className=" text-text text-[13px]">Surah {s.name}</Text>
                                                 <View
                                                     className="px-2 py-0.5 rounded-md"
                                                     style={{
@@ -304,9 +304,9 @@ export default function PlanCompletionScreen() {
                     </SectionCard>
 
                     <SectionCard>
-                        <View className="flex-row items-center gap-2 mb-3 pb-3 border-b border-slate-100">
+                        <View className="flex-row items-center gap-2 mb-3 pb-3 border-b border-border">
                             <Ionicons name="ribbon" size={15} color={PRIMARY} />
-                            <Text className="text-[14px]  text-slate-900">Achievements unlocked</Text>
+                            <Text className="text-[14px]  text-text">Achievements unlocked</Text>
                         </View>
 
                         {report?.achievedBadges && report.achievedBadges.length > 0 ? (
@@ -332,8 +332,8 @@ export default function PlanCompletionScreen() {
                                             <Ionicons name={badgeDef.icon as any} size={18} color={badgeDef.color} />
                                         </View>
                                         <View className="flex-1">
-                                            <Text className="text-[13px]  text-slate-800">{badgeDef.title}</Text>
-                                            <Text className="text-[12px] text-slate-500 mt-0.5 leading-snug">{badgeDef.description}</Text>
+                                            <Text className="text-[13px]  text-text">{badgeDef.title}</Text>
+                                            <Text className="text-[12px] text-muted mt-0.5 leading-snug">{badgeDef.description}</Text>
                                         </View>
                                     </View>
                                 );
@@ -344,20 +344,20 @@ export default function PlanCompletionScreen() {
                                 style={{ backgroundColor: '#f8faf9', borderWidth: 0.5, borderColor: '#e2ede9' }}
                             >
                                 <Ionicons name="sparkles" size={16} color={PRIMARY} />
-                                <Text className="text-[12px] text-slate-500 flex-1 leading-relaxed">
+                                <Text className="text-[12px] text-muted flex-1 leading-relaxed">
                                     No milestones unlocked this plan. Stay consistent on your next cycle to earn streak badges!
                                 </Text>
                             </View>
                         )}
                     </SectionCard>
 
-                    <Text className="text-[10px] text-slate-400 uppercase tracking-[2px] mb-3 mt-2 px-0.5">
+                    <Text className="text-[10px] text-muted uppercase tracking-[2px] mb-3 mt-2 px-0.5">
                         Choose next path
                     </Text>
 
                     <Pressable
                         onPress={handleRecycle}
-                        className="bg-white rounded-2xl border border-slate-100 flex-row items-center justify-between p-4 mb-2 active:bg-slate-50"
+                        className="bg-surface rounded-2xl border border-border flex-row items-center justify-between p-4 mb-2 active:bg-background"
                     >
                         <View className="flex-row items-center gap-3">
                             <View
@@ -370,7 +370,7 @@ export default function PlanCompletionScreen() {
                                 <Text className="text-[14px] " style={{ color: PRIMARY }}>
                                     {isHifz ? 'Review & strengthen range' : 'Restart same cycle'}
                                 </Text>
-                                <Text className="text-[12px] text-slate-400 mt-0.5">Maintain and solidify current progress</Text>
+                                <Text className="text-[12px] text-muted mt-0.5">Maintain and solidify current progress</Text>
                             </View>
                         </View>
                         <Ionicons name="chevron-forward" size={18} color={PRIMARY} />
@@ -382,7 +382,7 @@ export default function PlanCompletionScreen() {
                         style={{ backgroundColor: PRIMARY }}
                     >
                         <View className="flex-row items-center gap-3">
-                            <View className="w-10 h-10 rounded-xl items-center justify-center bg-white/15">
+                            <View className="w-10 h-10 rounded-xl items-center justify-center bg-surface/15">
                                 <Ionicons name="add" size={20} color="white" />
                             </View>
                             <View>
@@ -396,7 +396,7 @@ export default function PlanCompletionScreen() {
                     </Pressable>
 
                     <TouchableOpacity onPress={() => back()} className="items-center py-4">
-                        <Text className="text-[13px] text-slate-400">Dismiss for now</Text>
+                        <Text className="text-[13px] text-muted">Dismiss for now</Text>
                     </TouchableOpacity>
                 </ScrollView>
             </ScreenContent>
@@ -407,16 +407,16 @@ export default function PlanCompletionScreen() {
 
 function StatCard({ value, label, valueColor }: { value: string; label: string; valueColor: string }) {
     return (
-        <View className="flex-1 bg-white rounded-2xl border border-slate-100 p-4 items-center">
+        <View className="flex-1 bg-surface rounded-2xl border border-border p-4 items-center">
             <Text className="text-[18px] " style={{ color: valueColor }}>{value}</Text>
-            <Text className="text-[10px] text-slate-400 uppercase tracking-wider mt-1 text-center">{label}</Text>
+            <Text className="text-[10px] text-muted uppercase tracking-wider mt-1 text-center">{label}</Text>
         </View>
     );
 }
 
 function SectionCard({ children }: { children: React.ReactNode }) {
     return (
-        <View className="bg-white rounded-3xl border border-slate-100 p-4 mb-3">
+        <View className="bg-surface rounded-3xl border border-border p-4 mb-3">
             {children}
         </View>
     );
@@ -437,8 +437,8 @@ function ChipGroup({
         <View className="mb-4 last:mb-0">
             <View className="flex-row items-center gap-2 mb-2">
                 <View className="w-2 h-2 rounded-full" style={{ backgroundColor: dotColor }} />
-                <Text className="text-[12px]  text-slate-700">{label}</Text>
-                <Text className="text-[11px] text-slate-400">({count})</Text>
+                <Text className="text-[12px]  text-muted">{label}</Text>
+                <Text className="text-[11px] text-muted">({count})</Text>
             </View>
             <View className="flex-row flex-wrap" style={{ margin: -3 }}>
                 {children}
@@ -479,10 +479,10 @@ function ProgressRow({
     return (
         <View>
             <View className="flex-row justify-between items-center mb-1">
-                <Text className="text-[10px] text-slate-400">{label}</Text>
+                <Text className="text-[10px] text-muted">{label}</Text>
                 <Text className="text-[11px] " style={{ color: textColor }}>{percent}%</Text>
             </View>
-            <View className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+            <View className="w-full h-1.5 bg-surface rounded-full overflow-hidden">
                 <View className="h-full rounded-full" style={{ width: `${percent}%`, backgroundColor: color }} />
             </View>
         </View>

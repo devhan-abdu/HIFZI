@@ -69,22 +69,22 @@ export function TrustSlide() {
 
       {/* Cloud Sync Status Card */}
       <Animated.View style={cardStyle} className="my-6">
-        <View className="bg-white rounded-[32px] p-6 shadow-lg border border-slate-100 items-center">
+        <View className="bg-surface rounded-[32px] p-6 shadow-lg border border-border items-center">
           <View className="w-16 h-16 rounded-full bg-primary/10 items-center justify-center mb-4">
             <Ionicons name="cloud-upload" size={32} color="#276359" />
           </View>
-          <Text className="text-slate-800  text-lg text-center mb-1">
+          <Text className="text-text  text-lg text-center mb-1">
             Keep Your Streak Safe
           </Text>
-          <Text className="text-slate-500 text-xs text-center leading-5 px-4">
+          <Text className="text-muted text-xs text-center leading-5 px-4">
             All your daily targets, quality scores, and custom badges are backed
             up in real time to the secure cloud.
           </Text>
 
-          <View className="mt-5 pt-4 border-t border-slate-100 w-full flex-row justify-around">
+          <View className="mt-5 pt-4 border-t border-border w-full flex-row justify-around">
             <View className="items-center">
               <Ionicons name="phone-portrait" size={20} color="#64748b" />
-              <Text className="text-[9px] text-slate-400  uppercase mt-1">
+              <Text className="text-[9px] text-muted  uppercase mt-1">
                 Mobile
               </Text>
             </View>
@@ -93,7 +93,7 @@ export function TrustSlide() {
             </View>
             <View className="items-center">
               <Ionicons name="laptop" size={20} color="#64748b" />
-              <Text className="text-[9px] text-slate-400  uppercase mt-1">
+              <Text className="text-[9px] text-muted  uppercase mt-1">
                 Tablet
               </Text>
             </View>
@@ -104,7 +104,7 @@ export function TrustSlide() {
       {/* Feature Bullet Points */}
       <Animated.View style={listStyle} className="gap-y-4 mb-4">
         <View className="flex-row items-start gap-x-3.5">
-          <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center mt-0.5">
+          <View className="w-8 h-8 rounded-full bg-surface/10 items-center justify-center mt-0.5">
             <Ionicons name="shield-checkmark" size={16} color="#FFFFFF" />
           </View>
           <View className="flex-1">
@@ -117,7 +117,7 @@ export function TrustSlide() {
         </View>
 
         <View className="flex-row items-start gap-x-3.5">
-          <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center mt-0.5">
+          <View className="w-8 h-8 rounded-full bg-surface/10 items-center justify-center mt-0.5">
             <Ionicons name="sync" size={16} color="#FFFFFF" />
           </View>
           <View className="flex-1">

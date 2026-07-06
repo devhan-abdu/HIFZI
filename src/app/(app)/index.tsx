@@ -166,11 +166,11 @@ export default function Dashboard() {
           </View>
 
           <View className="mb-8">
-            <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2 px-1">
+            <Text className="text-muted uppercase tracking-[2px] text-[10px] mb-2 px-1">
               Focus
             </Text>
             <View className="flex-row justify-between items-end mb-4 px-1">
-              <Text className="text-xl text-gray-900">Today's Checklist</Text>
+              <Text className="text-xl text-text">Today's Checklist</Text>
             </View>
             <TodayTasksSection
               onLogHifz={() => push("/(app)/hifz/log")}
@@ -179,10 +179,10 @@ export default function Dashboard() {
           </View>
 
           <View className="mb-8">
-            <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2 px-1">
-              Consistency
-            </Text>
-            <View className="bg-slate-50 border border-slate-100 rounded-3xl p-5 mb-4 items-center">
+            <View className="flex-row justify-between items-end mb-4 px-1">
+              <Text className="text-text  text-xl mb-2 px-1">Consistency</Text>
+            </View>
+            <View className="bg-surface border border-border rounded-3xl p-5 mb-4 items-center">
               <HabitProgressRing
                 completedPages={habitProgress.todayStats.completedPages}
                 goalPages={dynamicGoalPages}
@@ -193,10 +193,10 @@ export default function Dashboard() {
           </View>
 
           <View className="mb-10 px-1">
-            <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
+            <Text className="text-muted uppercase tracking-[2px] text-[10px] mb-2">
               Insights
             </Text>
-            <Text className="text-2xl text-slate-900 mb-6">Plan Analytics</Text>
+            <Text className="text-2xl text-text mb-6">Plan Analytics</Text>
             <View className="flex-row flex-wrap justify-between">
               <StatCard
                 category="Hifz"

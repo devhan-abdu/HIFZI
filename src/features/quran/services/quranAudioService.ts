@@ -18,9 +18,7 @@ export type ChapterAudioSegment = {
 export type ChapterAudioResponse = {
   audio_file?: {
     audio_url?: string;
-    // API returns timestamps array (not segments)
     timestamps?: ChapterAudioSegment[];
-    // some environments may return segments
     segments?: ChapterAudioSegment[];
   };
   audio_url?: string;
@@ -28,10 +26,7 @@ export type ChapterAudioResponse = {
   segments?: ChapterAudioSegment[];
 };
 
-/**
- * Fetches and caches the list of available chapter reciters.
- * Endpoint: GET /resources/chapter_reciters
- */
+
 export async function getRecitationsCached(): Promise<Reciter[]> {
   const CACHE_KEY = "chapter_reciters_v6";
   try {
@@ -79,10 +74,7 @@ export function normalizeSegments(segments: ChapterAudioSegment[]) {
   }));
 }
 
-/**
- * Fetches audio metadata for a chapter.
- * Endpoint: GET /chapter_recitations/{reciter_id}/{chapter_number}
- */
+
 export async function fetchChapterAudioMetadata(
   chapterId: number,
   reciterId: number,
@@ -94,7 +86,6 @@ export async function fetchChapterAudioMetadata(
     throw new Error(`INVALID_RECITER_ID: ${reciterId}. Expected a positive integer.`);
   }
 
-  // Route audio through the configured QF environment
   const endpoint = `/${QF_ENV}/content/api/v4/chapter_recitations/${Number(String(reciterId))}/${String(chapterId)}`;
   return (await callQF(endpoint, {
     params: { segments: true },

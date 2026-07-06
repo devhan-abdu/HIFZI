@@ -152,10 +152,10 @@ export default function MurajaIndex() {
 
           {/* Weekly Consistency */}
           <View className="mt-10 mb-2 px-1">
-            <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
+            <Text className="text-muted uppercase tracking-[2px] text-[10px] mb-2">
               Activity
             </Text>
-            <Text className="text-xl text-gray-900 mb-5">
+            <Text className="text-xl text-text mb-5">
               Weekly Consistency
             </Text>
             <DayByDay progress={dayProgress ?? null} />
@@ -163,10 +163,10 @@ export default function MurajaIndex() {
 
           {/* Stats */}
           <View className="mt-10">
-            <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2 px-1">
+            <Text className="text-muted uppercase tracking-[2px] text-[10px] mb-2 px-1">
               Insights
             </Text>
-            <Text className="text-xl text-gray-900 mb-4 px-1">
+            <Text className="text-xl text-text mb-4 px-1">
               Muraja Analytics
             </Text>
             <View className="flex-row flex-wrap justify-between">

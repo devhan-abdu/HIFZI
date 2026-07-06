@@ -87,19 +87,19 @@ export default function Hifz() {
         )}
 
         <View className="mt-10 px-1">
-          <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
+          <Text className="text-muted uppercase tracking-[2px] text-[10px] mb-2">
             Active Task
           </Text>
-          <Text className="text-xl text-gray-900 mb-4 px-1">Today Hifz</Text>
+          <Text className="text-xl text-text mb-4 px-1">Today Hifz</Text>
           <HifzCard onLog={() => push("/(app)/hifz/log")} />
         </View>
 
         {reinforcementTask && (
           <View className="mt-10 px-1">
-            <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
+            <Text className="text-muted uppercase tracking-[2px] text-[10px] mb-2">
               Memory Refresh
             </Text>
-            <Text className="text-xl text-gray-900 mb-4">Keep it Fresh</Text>
+            <Text className="text-xl text-text mb-4">Keep it Fresh</Text>
             <ReinforcementCard
               task={{ ...reinforcementTask, label: "Memory refresh" }}
               isCompleted={isReinforcementDone ?? false}
@@ -114,10 +114,10 @@ export default function Hifz() {
 
         {(dailyReviews?.length ?? 0) > 0 && (
           <View className="mt-10 px-1">
-            <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
+            <Text className="text-muted uppercase tracking-[2px] text-[10px] mb-2">
               Priority Review
             </Text>
-            <Text className="text-xl text-gray-900 mb-4">
+            <Text className="text-xl text-text mb-4">
               Strengthen Your Heart
             </Text>
             <View className="gap-y-4">
@@ -158,19 +158,19 @@ export default function Hifz() {
         )}
 
         <View className="mt-10 mb-2 px-1">
-          <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2">
+          <Text className="text-muted uppercase tracking-[2px] text-[10px] mb-2">
             Activity
           </Text>
-          <Text className="text-xl text-gray-900 mb-5">Weekly Consistency</Text>
+          <Text className="text-xl text-text mb-5">Weekly Consistency</Text>
           <DayByDay plan={hifz as IHifzPlan} />
         </View>
 
         {analytics && (
           <View className="mt-10">
-            <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-2 px-1">
+            <Text className="text-muted uppercase tracking-[2px] text-[10px] mb-2 px-1">
               Insights
             </Text>
-            <Text className="text-xl text-gray-900 mb-4 px-1">
+            <Text className="text-xl text-text mb-4 px-1">
               Plan Analytics
             </Text>
             <View className="flex-row flex-wrap justify-between">

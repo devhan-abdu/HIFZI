@@ -29,25 +29,25 @@ export default function ExamIndex() {
     <Screen>
       <ScreenContent>
         <View className="mb-12">
-          <Text className="text-4xl  text-slate-900 mb-1">Test</Text>
-          <Text className="text-slate-500 text-lg">
+          <Text className="text-4xl  text-text mb-1">Test</Text>
+          <Text className="text-muted text-lg">
             Select your revision range to begin.
           </Text>
         </View>
 
-        <View className="bg-white border border-slate-100 rounded-[32px] p-8 shadow-sm shadow-slate-200/50">
+        <View className="bg-surface border border-border rounded-[32px] p-8 shadow-sm">
           <View className="flex-row items-center justify-between mb-8">
             <View className="bg-primary/10 p-2 rounded-full">
               <Ionicons name="book-outline" size={24} color="#276359" />
             </View>
-            <Text className="text-black uppercase text-[10px] tracking-widest">
+            <Text className="text-text uppercase text-[10px] tracking-widest">
               Custom Range
             </Text>
           </View>
 
           <View className="flex-col gap-8">
             <View className="flex-1">
-              <Text className=" text-black text-[11px] uppercase mb-2 ml-1">
+              <Text className=" text-text text-[11px] uppercase mb-2 ml-1">
                 From Page
               </Text>
               <CustomDropdown page={fromPage} setPage={setFromPage} />
@@ -55,17 +55,17 @@ export default function ExamIndex() {
 
         
             <View className="flex-1">
-              <Text className="text-black  text-[11px] uppercase mb-2 ml-1">
+              <Text className="text-text  text-[11px] uppercase mb-2 ml-1">
                 To Page
               </Text>
               <CustomDropdown page={toPage} setPage={setToPage} />
             </View>
           </View>
 
-          <View className="mt-8 pt-6 border-t border-slate-50 flex-row justify-between items-center">
+          <View className="mt-8 pt-6 border-t border-border flex-row justify-between items-center">
             <Text className=" text-sm">Total Pages:</Text>
-            <View className="bg-slate-900 px-3 py-1 rounded-full">
-              <Text className="text-white  text-xs">
+            <View className="bg-primary px-3 py-1 rounded-full">
+              <Text className="text-primary-foreground  text-xs">
                 {toPage - fromPage + 1} Pages
               </Text>
             </View>
@@ -75,7 +75,7 @@ export default function ExamIndex() {
 
       <ScreenFooter>
         <Button onPress={startTest} className="bg-primary h-14 rounded-2xl ">
-          <Text className="text-white text-xl  mr-2">Start Exam</Text>
+          <Text className="text-primary-foreground text-xl  mr-2">Start Exam</Text>
         </Button>
       </ScreenFooter>
     </Screen>

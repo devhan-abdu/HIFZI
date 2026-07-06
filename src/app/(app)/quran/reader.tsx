@@ -1,23 +1,17 @@
 import React, { useRef, useCallback, useEffect, useState } from "react";
 import { View, FlatList, useWindowDimensions } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import {
-  useFocusEffect,
-  useLocalSearchParams,
-} from "expo-router";
-import { StatusBar } from "expo-status-bar";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
 
 import { MushafPage } from "@/src/features/mushaf/components/MushafPage";
 import { TranslationPage } from "@/src/features/quran/components/TranslationPage";
 import { ReaderBottomSheet } from "@/src/features/quran/components/ReaderBottomSheet";
 import ReaderHeader from "@/src/features/quran/components/ReaderHeader";
 import {
-  MushafPageSkeleton,
   TranslationPageSkeleton,
 } from "@/src/features/quran/components/QuranPageSkeletons";
 import { useReaderStore } from "@/src/features/quran/hooks/useReaderStore";
 import { useFullscreenSystemUI } from "@/src/hooks/useFullscreenSystemUI";
-import { PageMetaOverlay } from "@/src/features/quran/components/PageMetaOverlay";
 
 import {
   getAyahPage,
@@ -72,7 +66,9 @@ export default function QuranReaderScreen() {
   });
 
   const [pageMeta, setPageMeta] = useState<Record<number, PageData>>({});
-  const [pageChapters, setPageChapters] = useState<Record<number, number[]>>({});
+  const [pageChapters, setPageChapters] = useState<Record<number, number[]>>(
+    {},
+  );
 
   const {
     selectedAyah,
@@ -134,7 +130,6 @@ export default function QuranReaderScreen() {
           animated: false,
         });
       } catch {
-        /* FlatList may not be ready on some platforms */
       }
     });
     return () => cancelAnimationFrame(id);
@@ -200,18 +195,22 @@ export default function QuranReaderScreen() {
       const chaptersUpdates: Record<number, number[]> = {};
 
       await Promise.all(
-        Array.from({ length: end - start + 1 }, (_, i) => start + i).map(async (p) => {
-          const needsMeta = !pageMeta[p];
-          const needsChapters = !pageChapters[p];
-          if (needsMeta || needsChapters) {
-            const [data, chapters] = await Promise.all([
-              needsMeta ? getPageData(p, db) : Promise.resolve(null),
-              needsChapters ? getChaptersForPage(p, db) : Promise.resolve(null),
-            ]);
-            if (data) metaUpdates[p] = data;
-            if (chapters) chaptersUpdates[p] = chapters;
-          }
-        }),
+        Array.from({ length: end - start + 1 }, (_, i) => start + i).map(
+          async (p) => {
+            const needsMeta = !pageMeta[p];
+            const needsChapters = !pageChapters[p];
+            if (needsMeta || needsChapters) {
+              const [data, chapters] = await Promise.all([
+                needsMeta ? getPageData(p, db) : Promise.resolve(null),
+                needsChapters ?
+                  getChaptersForPage(p, db)
+                : Promise.resolve(null),
+              ]);
+              if (data) metaUpdates[p] = data;
+              if (chapters) chaptersUpdates[p] = chapters;
+            }
+          },
+        ),
       );
 
       if (isMounted) {
@@ -243,7 +242,11 @@ export default function QuranReaderScreen() {
         return;
       }
 
-      const ayahHomePage = await getAyahPage(selectedAyah.sura, selectedAyah.ayah, db);
+      const ayahHomePage = await getAyahPage(
+        selectedAyah.sura,
+        selectedAyah.ayah,
+        db,
+      );
       if (ayahHomePage !== newPage) {
         const bboxes = await getAyahBBoxesByPage(newPage, db);
         if (!ayahExistsOnPage(bboxes, selectedAyah.sura, selectedAyah.ayah)) {
@@ -280,7 +283,7 @@ export default function QuranReaderScreen() {
       }
       return (
         <View style={{ width, height }}>
-          <MushafPage pageNumber={item} isActive={item === currentPage} />
+          <MushafPage pageNumber={item} isActive={item === currentPage} pageData={pageMeta[item]} />
         </View>
       );
     },
@@ -293,17 +296,16 @@ export default function QuranReaderScreen() {
 
   if (!bootstrapDone) {
     return (
-      <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#fff" }}>
-        <StatusBar style="dark" />
-        {viewMode === "translation" ? <TranslationPageSkeleton /> : <View style={{ flex: 1 }} />}
+      <GestureHandlerRootView className="flex-1 bg-background">
+        {viewMode === "translation" ?
+          <TranslationPageSkeleton />
+        : <View className="flex-1" />}
       </GestureHandlerRootView>
     );
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#fff" }}>
-      <StatusBar style="dark" hidden={!uiVisible} animated />
-
+    <GestureHandlerRootView className="flex-1 bg-background">
       <ReaderHeader pageData={pageMeta[currentPage]} />
 
       <FlatList
@@ -327,8 +329,6 @@ export default function QuranReaderScreen() {
         initialNumToRender={1}
         removeClippedSubviews
       />
-
-      <PageMetaOverlay pageData={pageMeta[currentPage]} />
 
       <ReaderBottomSheet chapterIds={currentChapterIds} />
     </GestureHandlerRootView>

@@ -112,7 +112,7 @@ export default function AIChatScreen() {
   const footerPadding = keyboardHeight > 0 ? 12 : tabBarOffset;
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-surface">
       <Header title="HIFZI" />
 
       <KeyboardAvoidingView
@@ -120,7 +120,7 @@ export default function AIChatScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={0}
       >
-        <View className="flex-1 bg-slate-50">
+        <View className="flex-1 bg-background">
           <ScrollView
             ref={scrollRef}
             className="flex-1"
@@ -144,7 +144,6 @@ export default function AIChatScreen() {
                   key={`${message.role}-${index}-${message.timestamp.getTime()}`}
                   className={`mb-4 flex-row ${isUser ? "justify-end" : "justify-start"}`}
                 >
-                  {/* AI avatar */}
                   {!isUser && (
                     <View className="w-8 h-8 rounded-full bg-emerald-100 items-center justify-center mr-2 mt-1 shrink-0">
                       <Ionicons name="sparkles" size={16} color="#047857" />
@@ -158,28 +157,25 @@ export default function AIChatScreen() {
                       className={`rounded-2xl px-4 py-3 ${
                         isUser
                           ? "bg-emerald-700 rounded-tr-sm"
-                          : "bg-white shadow-sm border border-slate-100 rounded-tl-sm"
+                          : "bg-surface shadow-sm border border-border rounded-tl-sm"
                       }`}
                     >
                       {isUser ? (
-                        // User messages: plain text, white
                         <Text className="text-[15px] leading-6 text-white">
                           {message.text}
                         </Text>
                       ) : (
-                        // AI messages: rich formatted output
                         <FormattedMessage text={message.text} />
                       )}
                     </View>
 
-                    <Text className="text-[10px] text-slate-400 mt-1 px-1">
+                    <Text className="text-[10px] text-muted mt-1 px-1">
                       {formatTime(message.timestamp)}
                     </Text>
                   </View>
 
-                  {/* User avatar */}
                   {isUser && (
-                    <View className="w-8 h-8 rounded-full bg-slate-200 items-center justify-center ml-2 mt-1 shrink-0">
+                    <View className="w-8 h-8 rounded-full bg-surface items-center justify-center ml-2 mt-1 shrink-0">
                       <Ionicons name="person" size={16} color="#64748b" />
                     </View>
                   )}
@@ -187,14 +183,13 @@ export default function AIChatScreen() {
               );
             })}
 
-            {/* Loading dots */}
             {loading && (
               <View className="mb-4 flex-row justify-start">
                 <View className="w-8 h-8 rounded-full bg-emerald-100 items-center justify-center mr-2 mt-1">
                   <Ionicons name="sparkles" size={16} color="#047857" />
                 </View>
-                <View className="rounded-2xl rounded-tl-sm bg-white shadow-sm border border-slate-100 px-4 py-3">
-                  <Text className="text-[15px] text-slate-400 italic">
+                <View className="rounded-2xl rounded-tl-sm bg-surface shadow-sm border border-border px-4 py-3">
+                  <Text className="text-[15px] text-muted italic">
                     Thinking…
                   </Text>
                 </View>
@@ -202,22 +197,21 @@ export default function AIChatScreen() {
             )}
           </ScrollView>
 
-          {/* Input bar */}
           <View
-            className="bg-white border-t border-slate-100 px-4 pt-3"
+            className="bg-surface border-t border-border px-4 pt-3"
             style={{
               marginBottom: footerLift,
               paddingBottom: footerPadding,
             }}
           >
-            <View className="flex-row items-end bg-slate-50 border border-slate-200 rounded-3xl px-3 py-1.5 min-h-[48px]">
+            <View className="flex-row items-end bg-background border border-border rounded-3xl px-3 py-1.5 min-h-[48px]">
               <TextInput
                 ref={inputRef}
                 value={question}
                 onChangeText={setQuestion}
                 placeholder="Ask me anything about Quran…"
                 placeholderTextColor="#94a3b8"
-                className="flex-1 text-slate-900 text-base px-1 py-2 mr-2"
+                className="flex-1 text-text text-base px-1 py-2 mr-2"
                 multiline
                 maxLength={2000}
                 blurOnSubmit={false}
@@ -230,7 +224,7 @@ export default function AIChatScreen() {
                 disabled={loading || !question.trim()}
                 className={`w-10 h-10 rounded-full items-center justify-center mb-0.5 shrink-0 ${
                   loading || !question.trim()
-                    ? "bg-slate-200"
+                    ? "bg-surface"
                     : "bg-emerald-700"
                 }`}
               >
@@ -241,7 +235,7 @@ export default function AIChatScreen() {
                 />
               </Pressable>
             </View>
-            <Text className="text-center text-[10px] text-slate-400 mt-2">
+            <Text className="text-center text-[10px] text-muted mt-2">
               Hifzi AI can make mistakes. Verify important information.
             </Text>
           </View>

@@ -12,6 +12,7 @@ import { Text } from './ui/Text';
 import { useCelebrationStore } from '@/src/hooks/useCelebrationStore';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from 'nativewind';
 
 const { width } = Dimensions.get('window');
 
@@ -50,6 +51,8 @@ export const CelebrationOverlay = () => {
   const { isVisible, message, type, hide } = useCelebrationStore();
   const scale = useSharedValue(0);
   const opacity = useSharedValue(0);
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const animatedContainerStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -90,8 +93,9 @@ export const CelebrationOverlay = () => {
     <Animated.View 
       style={[styles.container, animatedContainerStyle]} 
       pointerEvents={isVisible ? "auto" : "none"}
+      className="bg-black/40"
     >
-      <Animated.View style={styles.card}>
+      <Animated.View className="bg-surface py-8 px-10 rounded-[32px] items-center border border-border shadow-2xl shadow-black/10" style={{ width: width * 0.8 }}>
         <View style={styles.iconContainer}>
           <Ionicons 
             name={type === 'badge' ? "ribbon-outline" : "checkmark-circle-outline"} 
@@ -100,10 +104,10 @@ export const CelebrationOverlay = () => {
           />
           {particles}
         </View>
-        <Text className="text-xl text-slate-900 mt-4 text-center tracking-tight">
+        <Text className="text-xl text-text mt-4 text-center tracking-tight">
           {message}
         </Text>
-        <Text className="text-slate-400 text-[10px] uppercase tracking-[2px] text-center mt-2">
+        <Text className="text-muted text-[10px] uppercase tracking-[2px] text-center mt-2">
           {type === 'badge' ? 'Achievement Unlocked' : 'Session Recorded'}
         </Text>
       </Animated.View>
@@ -117,22 +121,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 9999,
-    backgroundColor: 'rgba(15, 23, 42, 0.1)',
-  },
-  card: {
-    backgroundColor: 'white',
-    paddingVertical: 32,
-    paddingHorizontal: 40,
-    borderRadius: 32,
-    alignItems: 'center',
-    width: width * 0.8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.08,
-    shadowRadius: 24,
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
   },
   iconContainer: {
     justifyContent: 'center',

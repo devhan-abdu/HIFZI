@@ -38,12 +38,12 @@ export function NotificationCard({
   return (
     <View className={`rounded-2xl border p-4 shadow-sm ${theme.bg} ${theme.border}`}>
       <View className="flex-row items-start">
-        <View className="w-8 h-8 rounded-full bg-white items-center justify-center mr-3">
+        <View className="w-8 h-8 rounded-full bg-surface items-center justify-center mr-3">
           <Ionicons name={theme.icon as never} size={16} color={theme.iconColor} />
         </View>
         <View className="flex-1">
-          <Text className="text-slate-900 text-sm">{title}</Text>
-          <Text className="text-slate-600 text-xs mt-1">{message}</Text>
+          <Text className="text-text text-sm">{title}</Text>
+          <Text className="text-muted text-xs mt-1">{message}</Text>
         </View>
       </View>
     </View>

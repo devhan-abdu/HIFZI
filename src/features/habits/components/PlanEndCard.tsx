@@ -21,7 +21,7 @@ export const PlanEndCard: React.FC<PlanEndCardProps> = ({ activityType, localRef
             onPress={() => push(`/(app)/plan-completion?type=${activityType}&id=${localRefId}`)}
             className="mb-6 overflow-hidden"
         >
-            <View className="p-7 rounded-[40px] bg-white relative shadow-2xl shadow-slate-200 border border-slate-200 overflow-hidden">
+            <View className="p-7 rounded-[40px] bg-surface relative shadow-2xl shadow-slate-200 border border-border overflow-hidden">
                 <View className="absolute -right-6 -bottom-6 w-32 h-32 bg-amber-400/20 border border-amber-300 rounded-full" />
                 <View className="absolute -right-12 -bottom-12 w-48 h-48 bg-amber-50/50 rounded-full" />
 
@@ -35,25 +35,25 @@ export const PlanEndCard: React.FC<PlanEndCardProps> = ({ activityType, localRef
                         <Pressable onPress={(e) => {
                             e.stopPropagation();
                             onClose();
-                        }} className="p-2 bg-slate-100 rounded-full">
+                        }} className="p-2 bg-surface rounded-full">
                             <Ionicons name="close" size={16} color="#64748b" />
                         </Pressable>
                     )}
                 </View>
 
                 <View className="flex-row items-center gap-4 mb-4">
-                    <View className="w-14 h-14 bg-white border border-amber-200 rounded-full items-center justify-center shadow-lg shadow-amber-200/40">
+                    <View className="w-14 h-14 bg-surface border border-amber-200 rounded-full items-center justify-center shadow-lg shadow-amber-200/40">
                          <Ionicons name={isHifz ? "ribbon" : "trophy"} size={28} color="#d97706" />
                     </View>
                     <View className="flex-1">
-                        <Text className="text-slate-900 text-2xl  tracking-tight">
+                        <Text className="text-text text-2xl  tracking-tight">
                             {isHifz ? 'Mubarak! Hifz Goal' : 'Alhamdulillah! Complete'}
                         </Text>
-                        <Text className="text-slate-400 text-xs uppercase tracking-widest mt-1">Journey Achievement</Text>
+                        <Text className="text-muted text-xs uppercase tracking-widest mt-1">Journey Achievement</Text>
                     </View>
                 </View>
                 
-                <Text className="text-slate-600 text-sm leading-6 mb-8 max-w-[90%]">
+                <Text className="text-muted text-sm leading-6 mb-8 max-w-[90%]">
                     {isHifz 
                         ? `You've successfully reached your target for ${title || 'this range'}. Your consistency has been exceptional.`
                         : `Your revision journey is complete. Let's see your final performance insights.`}

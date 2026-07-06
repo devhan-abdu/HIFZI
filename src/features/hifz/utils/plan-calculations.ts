@@ -107,7 +107,7 @@ export const getPerformance = (val: number) => {
     label: "Ahead", color: "text-emerald-700", bg: "bg-emerald-50", dot: "bg-emerald-500", sign: "+", value: val 
   };
   if (val > 0) return { 
-    label: "Behind", color: "text-amber-700", bg: "bg-white", dot: "bg-amber-500", sign: "-", value: val 
+    label: "Behind", color: "text-amber-700", bg: "bg-surface", dot: "bg-amber-500", sign: "-", value: val 
   };
   return { 
     label: "On Track", color: "text-blue-700", bg: "bg-blue-50", dot: "bg-blue-500", sign: "", value: val 

@@ -22,7 +22,7 @@ export function AchievementSection({ badges }: AchievementSectionProps) {
 
   return (
     <View className="mb-6">
-      <Text className="text-gray-400 uppercase tracking-[2px] text-[10px] mb-8 px-1">
+      <Text className="text-muted uppercase tracking-[2px] text-[10px] mb-8 px-1">
         Your Achievements
       </Text>
       <ScrollView 
@@ -42,7 +42,7 @@ export function AchievementSection({ badges }: AchievementSectionProps) {
             <Pressable 
               key={badge.badgeId}
               onPress={() => setSelectedBadge(badge)}
-              className="mr-3 bg-white border border-slate-100 rounded-xl p-3 flex-row items-center shadow-sm"
+              className="mr-3 bg-surface border border-border rounded-xl p-3 flex-row items-center shadow-sm"
             >
               <View 
                 className="w-8 h-8 rounded-full items-center justify-center mr-3"
@@ -51,10 +51,10 @@ export function AchievementSection({ badges }: AchievementSectionProps) {
                 <Ionicons name={badgeDef.icon as any} size={16} color={badgeDef.color} />
               </View>
               <View>
-                <Text className="text-slate-900 text-xs capitalize ">
+                <Text className="text-text text-xs capitalize ">
                   {badgeDef.title}
                 </Text>
-                <Text className="text-slate-400 text-[9px] uppercase tracking-tighter mt-0.5">
+                <Text className="text-muted text-[9px] uppercase tracking-tighter mt-0.5">
                   Unlocked
                 </Text>
               </View>
@@ -85,7 +85,7 @@ export function AchievementSection({ badges }: AchievementSectionProps) {
             return (
               <TouchableOpacity 
                 activeOpacity={1} 
-                className="bg-white w-full rounded-3xl p-8 items-center shadow-2xl"
+                className="bg-surface w-full rounded-3xl p-8 items-center shadow-2xl"
               >
                 <View 
                   className="w-20 h-20 rounded-full items-center justify-center mb-6"
@@ -94,11 +94,11 @@ export function AchievementSection({ badges }: AchievementSectionProps) {
                   <Ionicons name={def.icon as any} size={40} color={def.color} />
                 </View>
                 
-                <Text className="text-2xl  text-slate-900 mb-2 text-center">
+                <Text className="text-2xl  text-text mb-2 text-center">
                   {def.title}
                 </Text>
                 
-                <Text className="text-slate-500 text-center text-sm leading-6 mb-8">
+                <Text className="text-muted text-center text-sm leading-6 mb-8">
                   {def.description}
                 </Text>
 
@@ -106,7 +106,7 @@ export function AchievementSection({ badges }: AchievementSectionProps) {
                   onPress={() => setSelectedBadge(null)}
                   className="w-full bg-primary  py-4 rounded-xl items-center"
                 >
-                  <Text className="text-white ">Continue</Text>
+                  <Text className="text-primary-foreground ">Continue</Text>
                 </Pressable>
               </TouchableOpacity>
             );

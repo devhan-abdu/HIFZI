@@ -34,9 +34,9 @@ export interface IHifzPlan {
   isReinforcementEnabled?: boolean;
   evaluationDay?: number;
   hifzDailyLogs?: IHifzLog[],
-  todayLog: IHifzLog | null,
-  evaluationDue: boolean;
-  planFinished: boolean;
+  todayLog?: IHifzLog | null,
+  evaluationDue?: boolean;
+  planFinished?: boolean;
 }
 export interface HifzQuestion {
   type: 'SEQUENCE' | 'BOUNDARY' | 'CHOICE';

@@ -16,11 +16,11 @@ export function EvaluationHeader({
 }) {
   return (
     <View className="mb-8">
-      <Text className="text-[10px] uppercase tracking-[1.8px] text-slate-500">
+      <Text className="text-[10px] uppercase tracking-[1.8px] text-muted">
         {eyebrow}
       </Text>
-      <Text className="mt-2 text-3xl text-slate-900">{title}</Text>
-      <Text className="mt-2 text-sm leading-6 text-slate-500">{description}</Text>
+      <Text className="mt-2 text-3xl text-text">{title}</Text>
+      <Text className="mt-2 text-sm leading-6 text-muted">{description}</Text>
     </View>
   );
 }
@@ -32,7 +32,7 @@ export function SectionCard({
   children: ReactNode;
   className?: string;
 }) {
-  return <View className={cn("rounded-[32px] border border-slate-100 bg-white p-6", className)}>{children}</View>;
+  return <View className={cn("rounded-[32px] border border-border bg-surface p-6", className)}>{children}</View>;
 }
 
 export function MetricTile({
@@ -45,15 +45,15 @@ export function MetricTile({
   accent?: "slate" | "primary" | "amber" | "rose";
 }) {
   const accents = {
-    slate: "text-slate-900",
+    slate: "text-text",
     primary: "text-primary",
     amber: "text-amber-700",
     rose: "text-rose-700",
   } as const;
 
   return (
-    <View className="min-w-[46%] flex-1 rounded-3xl border border-slate-100 bg-slate-50 px-4 py-5">
-      <Text className="text-[10px] uppercase tracking-[1.5px] text-slate-400">{label}</Text>
+    <View className="min-w-[46%] flex-1 rounded-3xl border border-border bg-background px-4 py-5">
+      <Text className="text-[10px] uppercase tracking-[1.5px] text-muted">{label}</Text>
       <Text className={cn("mt-2 text-2xl", accents[accent])}>{value}</Text>
     </View>
   );
@@ -96,7 +96,7 @@ export function ExamGateCard({
       badge: "bg-primary",
       icon: "#276359",
       title: "text-primary",
-      body: "text-slate-600",
+      body: "text-muted",
     },
   } as const;
 
@@ -116,7 +116,7 @@ export function ExamGateCard({
 
       <Text className={cn("mb-5 text-sm leading-6", tone.body)}>{description}</Text>
 
-      <Button onPress={onPress} className="h-14 bg-white" variant="outline" disabled={disabled}>
+      <Button onPress={onPress} className="h-14 bg-surface" variant="outline" disabled={disabled}>
         {buttonLabel}
       </Button>
 
@@ -128,10 +128,10 @@ export function ExamGateCard({
 export function LockedRecommendationCard({ message }: { message: string }) {
   return (
     <SectionCard className="items-center border-dashed py-8">
-      <View className="mb-4 h-12 w-12 items-center justify-center rounded-full bg-slate-50">
+      <View className="mb-4 h-12 w-12 items-center justify-center rounded-full bg-background">
         <Ionicons name="lock-closed" size={22} color="#94a3b8" />
       </View>
-      <Text className="max-w-[280px] text-center text-sm leading-6 text-slate-500">{message}</Text>
+      <Text className="max-w-[280px] text-center text-sm leading-6 text-muted">{message}</Text>
     </SectionCard>
   );
 }
@@ -156,8 +156,8 @@ export function RecommendationCard({
   return (
     <SectionCard className="border-emerald-100">
       <Text className="text-[10px] uppercase tracking-[1.6px] text-emerald-700">Recommendation</Text>
-      <Text className="mt-2 text-2xl text-slate-900">{title}</Text>
-      <Text className="mt-2 text-sm leading-6 text-slate-500">{description}</Text>
+      <Text className="mt-2 text-2xl text-text">{title}</Text>
+      <Text className="mt-2 text-sm leading-6 text-muted">{description}</Text>
 
       <View className="mt-6 gap-4">{children}</View>
 
@@ -186,8 +186,8 @@ export function TargetRow({
   return (
     <View className="flex-row items-center justify-between rounded-2xl border border-primary/10 px-4 py-4">
       <View className="pr-4">
-        <Text className="text-lg text-slate-900">{label}</Text>
-        <Text className="text-xs text-slate-500">{detail}</Text>
+        <Text className="text-lg text-text">{label}</Text>
+        <Text className="text-xs text-muted">{detail}</Text>
       </View>
       <Text className="text-2xl text-primary">{value}</Text>
     </View>

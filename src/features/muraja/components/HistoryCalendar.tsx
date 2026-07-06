@@ -66,7 +66,7 @@ export const HistoryCalendar = ({
   }, [userHistory]);
 
   return (
-    <View className="border border-slate-300 rounded-xl shadow-xl bg-white shadow-white mb-8">
+    <View className="border border-border rounded-xl shadow-xl bg-surface shadow-white mb-8">
       <View className="p-2">
         <Calendar
           onMonthChange={(month) =>
@@ -81,7 +81,7 @@ export const HistoryCalendar = ({
           }}
         />
       </View>
-      <View className="flex-row items-center justify-center gap-6 border-t border-slate-200 py-5">
+      <View className="flex-row items-center justify-center gap-6 border-t border-border py-5">
         <View className="flex-row items-center gap-2">
           <Text className="bg-green-200 rounded-full w-3 h-3" />
 

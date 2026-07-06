@@ -178,7 +178,7 @@ export const murajaService = {
     const isEvaluationDay = todayDay === plan.evaluationDay
     const evaluationDue = isEvaluationDay && activityPlan?.lastEvaluationDate !== todayStr
 
-    const totalCompleted = logs.reduce((acc, l) => acc + (l.completedPages ?? 0), 0);
+    const totalCompleted = plan.completedPages ?? 0;
     const totalTarget = (plan.endPage ?? 1) - (plan.startPage ?? 1) + 1;
     const planFinished = totalCompleted >= totalTarget;
     const mapLog = (l: any):IDailyMurajaLog=> ({
@@ -387,6 +387,20 @@ export const murajaService = {
           await PerformanceService.recomputeAllPerformance(tx, userId);
           
           await notificationService.removeHabitEvent(userId, 'muraja', log.date ?? '');
+
+          if (log.plan_id) {
+            const wasCompleted = existing.status === 'completed';
+            const wasMissed = existing.status === 'missed';
+            await tx.update(weeklyMurajaPlans)
+              .set({
+                completedPages: sql`MAX(0, completed_pages - ${existing.completedPages ?? 0})`,
+                perfectDaysCount: wasCompleted ? sql`MAX(0, perfect_days_count - 1)` : sql`perfect_days_count`,
+                missedDaysCount: wasMissed ? sql`MAX(0, missed_days_count - 1)` : sql`missed_days_count`,
+                syncStatus: 0,
+              })
+              .where(eq(weeklyMurajaPlans.id, log.plan_id));
+          }
+
           changed = true;
         }
         await this.syncUserAnalytics(tx, userId, log.plan_id, displayName);
@@ -433,6 +447,25 @@ export const murajaService = {
         localLogId = newLog.id;
         changed = true;
         created = true;
+      }
+
+      if (log.plan_id) {
+        const pagesNow = log.completed_pages ?? 0;
+        const pagesBefore = existing?.completedPages ?? 0;
+        const pageDelta = pagesNow - pagesBefore;
+        const statusNow = log.status;
+        const statusBefore = existing?.status ?? null;
+        const perfectDelta = (statusNow === 'completed' ? 1 : 0) - (statusBefore === 'completed' ? 1 : 0);
+        const missedDelta = (statusNow === 'missed' ? 1 : 0) - (statusBefore === 'missed' ? 1 : 0);
+
+        await tx.update(weeklyMurajaPlans)
+          .set({
+            completedPages: sql`MAX(0, completed_pages + ${pageDelta})`,
+            perfectDaysCount: sql`MAX(0, perfect_days_count + ${perfectDelta})`,
+            missedDaysCount: sql`MAX(0, missed_days_count + ${missedDelta})`,
+            syncStatus: 0,
+          })
+          .where(eq(weeklyMurajaPlans.id, log.plan_id));
       }
 
       currentStatus = log.status as any;
@@ -499,10 +532,9 @@ export const murajaService = {
     let localLogId: number | null = null;
     
     await db.transaction(async (tx) => {
-      // 1. Save to daily_muraja_logs as an extra session (planId = null)
       const [newLog] = await tx.insert(dailyMurajaLogs).values({
         date,
-        planId: null, // explicit null
+        planId: null, 
         startPage,
         completedPages,
         syncStatus: 0,
@@ -517,7 +549,6 @@ export const murajaService = {
       
       localLogId = newLog.id;
 
-      // 2. Save to activity logs
       await upsertHabitProgressLog(tx as any, {
         userId,
         date,
@@ -535,7 +566,6 @@ export const murajaService = {
         })
       });
 
-      // 3. Save to page performance
       const finalQualityScore = qualityScore ?? PerformanceService.deriveQualityScore(mistakesCount, hesitationCount);
       const quality: 'perfect' | 'medium' | 'low' = finalQualityScore >= 5 ? 'perfect' : finalQualityScore <= 2 ? 'low' : 'medium';
       
@@ -551,7 +581,6 @@ export const murajaService = {
         hesitationCount
       );
 
-      // 4. Update overall stats
       await PerformanceService.recomputeAllPerformance(tx, userId);
     });
     
@@ -634,7 +663,6 @@ export const murajaService = {
 
     const today = new Date().toISOString().split('T')[0];
     
-    // Calculate new estimated end date based on same range and rate
     const totalPages = Math.max(1, (oldPlan.endPage ?? 0) - (oldPlan.startPage ?? 1) + 1);
     const parsedDays = typeof oldPlan.selectedDays === "string"
       ? JSON.parse(oldPlan.selectedDays)

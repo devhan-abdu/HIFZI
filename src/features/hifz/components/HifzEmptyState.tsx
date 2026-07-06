@@ -9,12 +9,12 @@ export default function HifzEmptyState() {
 
   return (
     <Screen>
-      <View className="flex-1 px-8 justify-center bg-white">
+      <View className="flex-1 px-8 justify-center bg-background">
         <View className="items-center mb-12">
-          <Text className="text-2xl text-slate-900 text-center">
+          <Text className="text-2xl text-text text-center">
             Start Your Hifz Journey
           </Text>
-          <Text className="text-slate-500 text-center mt-3 text-sm leading-relaxed px-4">
+          <Text className="text-muted text-center mt-3 text-sm leading-relaxed px-4">
             "The best of you are those who learn the Quran and teach it."
           </Text>
         </View>
@@ -42,11 +42,11 @@ export default function HifzEmptyState() {
             onPress={() => push("/(app)/hifz/create-hifz-plan")}
             className="bg-primary h-14 rounded-xl flex-row items-center justify-center shadow-sm active:opacity-90 active:scale-[0.98]"
           >
-            <Text className="text-white text-base mr-2">Create My Plan</Text>
-            <Ionicons name="arrow-forward" size={18} color="white" />
+            <Text className="text-primary-foreground text-base mr-2">Create My Plan</Text>
+            <Ionicons name="arrow-forward" size={18} color="#fff" />
           </Pressable>
 
-          <Text className="text-center text-slate-400 text-[10px] mt-4 uppercase tracking-[2px]">
+          <Text className="text-center text-muted text-[10px] mt-4 uppercase tracking-[2px]">
             It only takes 30 seconds
           </Text>
         </View>

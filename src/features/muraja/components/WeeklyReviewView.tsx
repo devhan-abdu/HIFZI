@@ -79,16 +79,16 @@ export function WeeklyReviewView({
         {metrics.map((m, i) => (
           <View
             key={i}
-            className="w-[47%] bg-white rounded-[24px] p-4 border border-slate-100 flex-row items-center gap-3 shadow-sm shadow-slate-200/50"
+            className="w-[47%] bg-surface rounded-[24px] p-4 border border-border flex-row items-center gap-3 shadow-sm shadow-slate-200/50"
           >
-            <View className="p-2 rounded-xl bg-slate-50">
+            <View className="p-2 rounded-xl bg-background">
               <Ionicons name={m.icon as any} size={18} color="#276359" />
             </View>
             <View>
-              <Text className="text-slate-400  text-[9px] uppercase tracking-widest">
+              <Text className="text-muted  text-[9px] uppercase tracking-widest">
                 {m.label}
               </Text>
-              <Text className="text-sm   text-slate-900">{m.value}</Text>
+              <Text className="text-sm   text-text">{m.value}</Text>
             </View>
           </View>
         ))}

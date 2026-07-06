@@ -11,14 +11,13 @@ export function Text({ className, ...props }: TextProps) {
   return (
     <RNText
       {...props}
-      className={cn("text-foreground", className)}
+      className={cn("text-text", className)}
       style={{
         fontFamily: "Rosemary",
       }}
     />
   );
 }
-
 
 interface ButtonProps extends PressableProps {
   className?: string;

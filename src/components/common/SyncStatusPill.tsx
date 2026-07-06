@@ -27,9 +27,9 @@ export function SyncStatusPill() {
 
   if (isSyncing) {
     return (
-      <View className="flex-row items-center bg-slate-100 rounded-full px-3 py-1 self-start">
+      <View className="flex-row items-center bg-surface rounded-full px-3 py-1 self-start">
         <Ionicons name="sync-outline" size={12} color="#64748b" />
-        <Text className="text-slate-600 text-[10px] ml-1.5">Syncing…</Text>
+        <Text className="text-muted text-[10px] ml-1.5">Syncing…</Text>
       </View>
     );
   }
