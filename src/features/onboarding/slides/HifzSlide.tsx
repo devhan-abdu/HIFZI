@@ -4,12 +4,10 @@ import { Text } from "@/src/components/common/ui/Text";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withDelay,
-  withTiming,
-  withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useColorScheme } from "nativewind";
 
 const { width, height } = Dimensions.get("window");
 
@@ -18,6 +16,8 @@ const SAMPLE_AYAH =
 
 export function HifzSlide() {
   const insets = useSafeAreaInsets();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const headingOpacity = useSharedValue(1);
   const headingY = useSharedValue(0);
   const cardOpacity = useSharedValue(1);
@@ -63,8 +63,8 @@ export function HifzSlide() {
       </Animated.View>
 
       <Animated.View style={cardStyle} className="my-6">
-        <View className="bg-surface rounded-[32px] p-6 shadow-lg border border-border">
-          <View className="flex-row justify-between items-center pb-4 border-b border-border mb-4">
+        <View className="bg-surface dark:bg-surface rounded-[32px] p-6 shadow-lg border border-border dark:border-white/10">
+          <View className="flex-row justify-between items-center pb-4 border-b border-border dark:border-white/10 mb-4">
             <View className="flex-row items-center gap-x-2">
               <View className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
               <Text className="text-text  text-xs">Al-Hijr • Ayah 9</Text>
@@ -85,7 +85,7 @@ export function HifzSlide() {
                 fontFamily: "Uthman",
                 fontSize: 24,
                 lineHeight: 42,
-                color: "#0f172a",
+                color: isDark ? "#e8ede8" : "#0f172a",
                 textAlign: "center",
                 writingDirection: "rtl",
               }}
@@ -93,28 +93,33 @@ export function HifzSlide() {
               {SAMPLE_AYAH}
             </Text>
             <Text className="text-muted text-xs text-center mt-3 leading-5 px-2">
-              "Indeed, it is We who sent down the Quran and indeed, We will be
-              its guardian."
+              &quot;Indeed, it is We who sent down the Quran and indeed, We will be
+              its guardian.&quot;
             </Text>
           </View>
 
-          <View className="mt-5 bg-surface rounded-2xl p-3 flex-row items-center justify-between border border-border shadow-sm">
+          <View className="mt-5 bg-surface dark:bg-surface rounded-2xl p-3 flex-row items-center justify-between border border-border dark:border-white/10 shadow-sm">
             <View className="flex-row items-center gap-x-2 flex-1 mr-2">
-              <View className="w-7 h-7 rounded-full bg-primary items-center justify-center">
+              <View
+                style={{
+                  backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+                }}
+                className="w-7 h-7 rounded-full items-center justify-center"
+              >
                 <Ionicons
                   name="chatbubble-ellipses"
                   size={14}
-                  color="#FFFFFF"
+                  color={isDark ? "#94a3b8" : "#64748b"}
                 />
               </View>
               <Text
-                className="text-[11px] text-text flex-1"
+                className="text-[11px] text-muted flex-1"
                 numberOfLines={1}
               >
                 Quran AI: Ask context, Tafsir, or lessons...
               </Text>
             </View>
-            <Ionicons name="arrow-forward" size={12} color="#64748b" />
+            <Ionicons name="arrow-forward" size={12} color={isDark ? "#6b7280" : "#64748b"} />
           </View>
         </View>
       </Animated.View>

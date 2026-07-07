@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { View, Dimensions, Pressable } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
 import Animated, {
@@ -7,14 +7,15 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { notificationManager } from "@/src/features/notifications/services/notificationManager";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
 import { useNotificationPermissions } from "@/src/hooks/useNotificationPermissions";
+import { useColorScheme } from "nativewind";
+
 
 const { width, height } = Dimensions.get("window");
 
 export function NotificationSlide({ onNext }: { onNext: () => void }) {
+   const { colorScheme } = useColorScheme();
+    const isDark = colorScheme === "dark";
   const { togglePreference } = useNotificationPermissions();
   const insets = useSafeAreaInsets();
   const headingOpacity = useSharedValue(1);
@@ -74,7 +75,7 @@ export function NotificationSlide({ onNext }: { onNext: () => void }) {
       </Animated.View>
 
       <Animated.View style={cardStyle} className="my-6">
-        <View className="bg-surface rounded-[32px] p-6 shadow-lg border border-border items-center">
+        <View className="bg-surface dark:bg-surface rounded-[32px] p-6 shadow-lg border border-border dark:border-white/10 items-center">
           <View className="w-16 h-16 rounded-full bg-primary/10 items-center justify-center mb-4">
             <Ionicons name="notifications" size={32} color="#276359" />
           </View>
@@ -85,13 +86,13 @@ export function NotificationSlide({ onNext }: { onNext: () => void }) {
             The secret to consistency is tying Quran review to something you already do every day.
           </Text>
 
-          <View className="mt-5 pt-4 border-t border-border w-full">
+          <View className="mt-5 pt-4 border-t border-border dark:border-white/10 w-full">
             <View className="flex-row items-center justify-center gap-x-2">
-              <View className="bg-surface px-3 py-1.5 rounded-lg">
+              <View className="bg-surface dark:bg-surface px-3 py-1.5 rounded-lg border border-border dark:border-white/10">
                 <Text className="text-xs text-muted font-medium">1. Finish Fajr</Text>
               </View>
               <Ionicons name="arrow-forward" size={14} color="#94a3b8" />
-              <View className="bg-surface border border-border px-3 py-1.5 rounded-lg">
+              <View className="bg-surface dark:bg-surface border border-border dark:border-white/10 px-3 py-1.5 rounded-lg">
                 <Text className="text-xs text-text font-medium">2. Read Quran</Text>
               </View>
             </View>
@@ -107,7 +108,7 @@ export function NotificationSlide({ onNext }: { onNext: () => void }) {
           <View className="flex-1">
             <Text className="text-white text-base">Perfect Timing</Text>
             <Text className="text-white/70 text-xs mt-0.5 leading-5">
-              We'll send a gentle reminder exactly when your chosen habit is done (e.g. after dinner).
+              We&apos;ll send a gentle reminder exactly when your chosen habit is done (e.g. after dinner).
             </Text>
           </View>
         </View>
@@ -128,9 +129,9 @@ export function NotificationSlide({ onNext }: { onNext: () => void }) {
       <Animated.View style={btnStyle} className="w-full gap-y-3">
         <Pressable
           onPress={handleEnable}
-          className="w-full h-14 bg-surface rounded-xl items-center justify-center shadow-sm"
+          className="w-full h-14 bg-surface rounded-xl items-center justify-center shadow-sm border border-border "
         >
-          <Text className="text-primary text-base font-semibold">Enable Reminders</Text>
+          <Text className={`text-text text-base ${isDark ? 'text-text' : 'text-primary'} `}>Enable Reminders</Text>
         </Pressable>
         <Pressable
           onPress={handleSkip}

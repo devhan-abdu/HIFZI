@@ -4,17 +4,17 @@ import { Text } from "@/src/components/common/ui/Text";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withDelay,
-  withTiming,
-  withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useColorScheme } from "nativewind";
 
 const { width, height } = Dimensions.get("window");
 
 export function ProblemSlide() {
   const insets = useSafeAreaInsets();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const headingOpacity = useSharedValue(1);
   const headingY = useSharedValue(0);
   const cardOpacity = useSharedValue(1);
@@ -60,56 +60,89 @@ export function ProblemSlide() {
       </Animated.View>
 
       <Animated.View style={cardStyle} className="my-6">
-        <View className="bg-surface rounded-[32px] p-6 shadow-lg border border-border">
+        <View className="bg-surface dark:bg-surface rounded-[32px] p-6 shadow-lg border border-border dark:border-white/10">
           <View className="flex-row justify-between items-start">
             <View className="flex-1 pr-4">
               <View className="flex-row items-center mb-3 gap-2">
-                <View className="bg-surface px-2.5 py-1 rounded-full border border-border">
-                  <Text className="text-text text-[9px] uppercase tracking-widest ">
+                <View
+                  style={{
+                    backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)",
+                    borderWidth: 0.5,
+                    borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
+                  }}
+                  className="px-2.5 py-1 rounded-full"
+                >
+                  <Text className="text-muted text-[9px] uppercase tracking-widest">
                     Hifz Task
                   </Text>
                 </View>
-                <View className="bg-amber-50 px-2.5 py-1 rounded-full flex-row items-center">
-                  <Ionicons name="flame" size={10} color="#d97706" />
-                  <Text className="text-amber-600 text-[9px] uppercase tracking-widest  ml-1">
+                <View
+                  style={{
+                    backgroundColor: isDark ? "rgba(217,119,6,0.18)" : "#fef3c7",
+                    borderWidth: 0.5,
+                    borderColor: isDark ? "rgba(217,119,6,0.4)" : "#fbbf24",
+                  }}
+                  className="px-2.5 py-1 rounded-full flex-row items-center"
+                >
+                  <Ionicons name="flame" size={10} color={isDark ? "#fbbf24" : "#d97706"} />
+                  <Text
+                    style={{ color: isDark ? "#fbbf24" : "#92400e" }}
+                    className="text-[9px] uppercase tracking-widest ml-1"
+                  >
                     SRS Due
                   </Text>
                 </View>
               </View>
 
-              <Text className="text-2xl  tracking-tight mb-1 text-text">
+              <Text className="text-2xl tracking-tight mb-1 text-text">
                 Surat Al-Baqarah
               </Text>
-              <Text className="text-xs text-muted ">
+              <Text className="text-xs text-muted">
                 Pages 2 – 3 • Target: 2 pages • Juz 1
               </Text>
             </View>
 
-            <View className="w-10 h-10 rounded-2xl items-center justify-center bg-background border border-border">
-              <Ionicons name="ellipsis-horizontal" size={18} color="#94a3b8" />
+            <View
+              style={{
+                backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                borderWidth: 0.5,
+                borderColor: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)",
+              }}
+              className="w-10 h-10 rounded-2xl items-center justify-center"
+            >
+              <Ionicons name="ellipsis-horizontal" size={18} color={isDark ? "#6b7280" : "#94a3b8"} />
             </View>
           </View>
 
-          <View className="mt-6 flex-row items-center justify-between pt-4 border-t border-border">
+          <View className="mt-6 flex-row items-center justify-between pt-4 border-t border-border dark:border-white/10">
             <View className="flex-row items-center">
-              <Text className="text-text uppercase tracking-widest text-[10px] ">
+              <Text className="text-muted uppercase tracking-widest text-[10px]">
                 Open Mushaf
               </Text>
               <Ionicons
                 name="chevron-forward"
                 size={12}
-                color="#64748b"
+                color={isDark ? "#6b7280" : "#94a3b8"}
                 style={{ marginLeft: 4 }}
               />
             </View>
 
-            <View className="h-10 px-4 rounded-xl flex-row items-center bg-surface border border-border shadow-sm">
+            <View
+              style={{
+                backgroundColor: isDark ? "rgba(39,99,89,0.25)" : "#276359",
+                borderWidth: 0.8,
+                borderColor: isDark ? "rgba(39,99,89,0.6)" : "rgba(39,99,89,0.25)",
+              }}
+              className="h-10 px-4 rounded-xl flex-row items-center shadow-sm"
+            >
               <Ionicons
                 name="checkmark-circle-outline"
                 size={16}
-                color="#64748b"
+                color={isDark ? "#4ade80" : "#fff"}
               />
-              <Text className="text-text uppercase tracking-widest text-[9px]  ml-2">
+              <Text
+                className="uppercase tracking-widest text-[9px] ml-2 text-white"
+              >
                 Mark Done
               </Text>
             </View>

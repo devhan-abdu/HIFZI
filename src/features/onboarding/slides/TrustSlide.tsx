@@ -4,9 +4,6 @@ import { Text } from "@/src/components/common/ui/Text";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withDelay,
-  withTiming,
-  withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -69,7 +66,7 @@ export function TrustSlide() {
 
       {/* Cloud Sync Status Card */}
       <Animated.View style={cardStyle} className="my-6">
-        <View className="bg-surface rounded-[32px] p-6 shadow-lg border border-border items-center">
+        <View className="bg-surface dark:bg-surface rounded-[32px] p-6 shadow-lg border border-border dark:border-white/10 items-center">
           <View className="w-16 h-16 rounded-full bg-primary/10 items-center justify-center mb-4">
             <Ionicons name="cloud-upload" size={32} color="#276359" />
           </View>
@@ -81,7 +78,7 @@ export function TrustSlide() {
             up in real time to the secure cloud.
           </Text>
 
-          <View className="mt-5 pt-4 border-t border-border w-full flex-row justify-around">
+          <View className="mt-5 pt-4 border-t border-border dark:border-white/10 w-full flex-row justify-around">
             <View className="items-center">
               <Ionicons name="phone-portrait" size={20} color="#64748b" />
               <Text className="text-[9px] text-muted  uppercase mt-1">
@@ -123,7 +120,7 @@ export function TrustSlide() {
           <View className="flex-1">
             <Text className="text-white text-base ">Always Connected</Text>
             <Text className="text-white/70 text-xs mt-0.5 leading-5">
-              When a plan ends, the connection doesn't. We recycle plans so you
+              When a plan ends, the connection doesn&apos;t. We recycle plans so you
               stay building active habits for life.
             </Text>
           </View>

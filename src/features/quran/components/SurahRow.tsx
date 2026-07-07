@@ -10,7 +10,7 @@ interface SurahRowProps {
 
 export const SurahRow = memo(({ surah, onPress }: SurahRowProps) => {
   return (
-    <Pressable onPress={() => onPress(surah)} className="px-6 py-4  active:bg-primary/5">
+    <Pressable onPress={() => onPress(surah)} className="px-6 py-4 active:bg-primary/5 dark:active:bg-white/5">
       <View className="flex-row justify-between items-center">
         <View className="flex-1 flex-row items-center gap-5">
           <Text className="text-xl text-text opacity-70 w-8">{surah.number}</Text>
