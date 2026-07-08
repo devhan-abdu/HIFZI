@@ -35,10 +35,10 @@ export default function ExamIndex() {
           </Text>
         </View>
 
-        <View className="bg-surface border border-border rounded-[32px] p-8 shadow-sm">
+        <View className="bg-surface-muted border border-border rounded-[32px] p-8 shadow-sm">
           <View className="flex-row items-center justify-between mb-8">
-            <View className="bg-primary/10 p-2 rounded-full">
-              <Ionicons name="book-outline" size={24} color="#276359" />
+            <View className="bg-primary p-2 rounded-full">
+              <Ionicons name="book-outline" size={20} color="#fff" />
             </View>
             <Text className="text-text uppercase text-[10px] tracking-widest">
               Custom Range

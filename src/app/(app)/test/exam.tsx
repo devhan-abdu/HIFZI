@@ -137,7 +137,7 @@ export default function Test() {
             </Text>
 
             <View className="flex-row items-end gap-1">
-              <Text className="text-5xl text-primary">{pct}</Text>
+              <Text className="text-5xl text-text">{pct}</Text>
               <Text className="text-xl text-muted mb-1">%</Text>
             </View>
             <Text className="text-muted text-sm mt-1">
@@ -160,10 +160,9 @@ export default function Test() {
             ))}
           </View>
 
-          {/* ── Review Answers (hidden by default) ────────────────────── */}
           <Pressable
             onPress={() => setShowReview((v) => !v)}
-            className="flex-row items-center justify-between bg-background border border-border px-5 py-4 rounded-2xl mb-4"
+            className="flex-row items-center justify-between bg-background border border-border dark:border-white/10 px-5 py-4 rounded-2xl mb-4"
           >
             <Text className="text-muted">Review Answers</Text>
             <Ionicons
@@ -196,10 +195,9 @@ export default function Test() {
                 const answerB = isBoundary ? res.question.answer.end : res.question.answer.previous;
 
                 return (
-                  <View key={i} className={`bg-surface p-5 rounded-3xl border ${borderColor}`}>
-                    {/* Header row */}
+                  <View key={i} className={`bg-surface dark:bg-surface-muted p-5 rounded-3xl border ${borderColor}`}>
                     <View className="flex-row justify-between items-center mb-4">
-                      <View className="bg-background px-3 py-1 rounded-lg border border-border">
+                      <View className="bg-background px-3 py-1 rounded-lg border border-border dark:border-white/10">
                         <Text className="text-muted text-[10px] uppercase tracking-widest">
                           {res.question.type}
                         </Text>
@@ -209,21 +207,19 @@ export default function Test() {
                       </Text>
                     </View>
 
-                    {/* Question Ayah */}
                     <QuranText
+                      className="text-text"
                       style={{
                         fontFamily: "Uthman",
                         textAlign: "right",
                         fontSize: 22,
                         lineHeight: 50,
-                        color: "#1e293b",
                         marginBottom: 16,
                       }}
                     >
                       {res.question.question}
                     </QuranText>
 
-                    {/* Two answers */}
                     {res.question.type !== "CHOICE" ? (
                       <View className="gap-y-3">
                         {[
@@ -232,16 +228,16 @@ export default function Test() {
                         ].map((ans) =>
                           ans.text ? (
                             <View key={ans.label} className="bg-primary/5 p-4 rounded-2xl border border-primary/10">
-                              <Text className="text-primary text-[10px] uppercase tracking-widest mb-2">
+                              <Text className="text-muted text-[10px] uppercase tracking-widest mb-2">
                                 {ans.label}
                               </Text>
                               <QuranText
+                                className="text-text"
                                 style={{
                                   fontFamily: "Uthman",
                                   textAlign: "right",
                                   fontSize: 20,
                                   lineHeight: 40,
-                                  color: "#276359",
                                 }}
                               >
                                 {ans.text}
@@ -252,16 +248,16 @@ export default function Test() {
                       </View>
                     ) : (
                       <View className="bg-primary/5 p-4 rounded-2xl border border-primary/10">
-                        <Text className="text-primary text-[10px] uppercase tracking-widest mb-2">
+                        <Text className="text-muted text-[10px] uppercase tracking-widest mb-2">
                           Correct
                         </Text>
                         <QuranText
+                          className="text-text"
                           style={{
                             fontFamily: "Uthman",
                             textAlign: "right",
                             fontSize: 20,
                             lineHeight: 40,
-                            color: "#276359",
                           }}
                         >
                           {res.question.answer.correct}
@@ -274,13 +270,12 @@ export default function Test() {
             </View>
           )}
 
-          {/* ── Actions ───────────────────────────────────────────────── */}
           <View className="gap-y-3 pb-24">
             <Pressable
               onPress={handleReturn}
               disabled={isSaving}
               className={`py-4 rounded-2xl items-center justify-center ${
-                isSaving ? "bg-surface" : "bg-primary"
+                isSaving ? "bg-surface dark:bg-surface-muted" : "bg-primary"
               }`}
             >
               <View className="flex-row items-center gap-x-2">
@@ -294,13 +289,13 @@ export default function Test() {
             <View className="flex-row gap-3">
               <Pressable
                 onPress={() => { resetUI(); refresh(); }}
-                className="flex-1 bg-surface border border-border py-3.5 rounded-2xl items-center justify-center"
+                className="flex-1 bg-surface dark:bg-surface-muted border border-border dark:border-white/10 py-3.5 rounded-2xl items-center justify-center"
               >
                 <Text className="text-muted">New Test</Text>
               </Pressable>
               <Pressable
                 onPress={resetUI}
-                className="flex-1 bg-background border border-border py-3.5 rounded-2xl items-center justify-center"
+                className="flex-1 bg-background border border-border dark:border-white/10 py-3.5 rounded-2xl items-center justify-center"
               >
                 <Text className="text-muted">Retake</Text>
               </Pressable>
@@ -311,19 +306,17 @@ export default function Test() {
     );
   }
 
-  // ─── Active Question Screen ───────────────────────────────────────────────────
   return (
     <Screen>
       <ScreenContent>
-        {/* Progress bar */}
         <View className="mb-6">
           <View className="flex-row justify-between items-center mb-3">
             <Text className="text-muted text-[10px] uppercase tracking-widest">
               Question {currentIndex + 1} of {questions.length}
             </Text>
-            <Text className="text-primary text-sm">Score: {score}</Text>
+            <Text className="text-text text-sm">Score: {score}</Text>
           </View>
-          <View className="h-1.5 bg-surface rounded-full overflow-hidden">
+          <View className="h-1.5 bg-border dark:bg-white/10 rounded-full overflow-hidden">
             <View
               className="h-full bg-primary rounded-full"
               style={{ width: `${((currentIndex) / questions.length) * 100}%` }}
@@ -331,9 +324,8 @@ export default function Test() {
           </View>
         </View>
 
-        {/* Question card */}
-        <View className="bg-surface border border-border rounded-3xl p-6 mb-6">
-          <View className="bg-background border border-border px-3 py-1.5 rounded-lg self-start mb-4">
+        <View className="bg-surface dark:bg-surface-muted border border-border dark:border-white/10 rounded-3xl p-6 mb-6">
+          <View className="bg-background border border-border dark:border-white/10 px-3 py-1.5 rounded-lg self-start mb-4">
             <Text className="text-muted text-[10px] uppercase tracking-widest">
               {currentQuestion.type === "BOUNDARY"
                 ? "Boundary"
@@ -345,20 +337,19 @@ export default function Test() {
 
           <Text className="text-muted text-xs mb-3">Based on this Ayah:</Text>
           <QuranText
+            className="text-text"
             style={{
               fontFamily: "Uthman",
               textAlign: "right",
               fontSize: 24,
               lineHeight: 64,
-              color: "#0f172a",
             }}
           >
             {currentQuestion.question}
           </QuranText>
         </View>
 
-        {/* Prompt */}
-        <View className="bg-background py-3 px-4 rounded-xl border border-border mb-6">
+        <View className="bg-background py-3 px-4 rounded-xl border border-border dark:border-white/10 mb-6">
           <Text className="text-muted text-sm text-center leading-relaxed">
             {currentQuestion.type === "BOUNDARY"
               ? currentQuestion.crossesSurah
@@ -368,22 +359,21 @@ export default function Test() {
           </Text>
         </View>
 
-        {/* CHOICE options */}
         {currentQuestion.type === "CHOICE" && (
           <View className="gap-y-3">
             {currentQuestion.answer.options.map((opt: string, idx: number) => (
               <Pressable
                 key={idx}
                 onPress={() => handleGrade(opt === currentQuestion.answer.correct ? 1 : 0)}
-                className="bg-surface border-2 border-border p-4 rounded-2xl active:bg-primary/5 active:border-primary/30"
+                className="bg-surface dark:bg-surface-muted border-2 border-border dark:border-white/10 p-4 rounded-2xl active:bg-primary/5 active:border-primary/30"
               >
                 <QuranText
+                  className="text-text"
                   style={{
                     fontFamily: "Uthman",
                     textAlign: "right",
                     fontSize: 20,
                     lineHeight: 36,
-                    color: "#0f172a",
                   }}
                 >
                   {opt}
@@ -393,7 +383,6 @@ export default function Test() {
           </View>
         )}
 
-        {/* SEQUENCE / BOUNDARY revealed answers — two-part layout */}
         {currentQuestion.type !== "CHOICE" && revealed && (() => {
           const isBoundary = currentQuestion.type === "BOUNDARY";
           const labelA = isBoundary ? "Start" : "Next";
@@ -403,9 +392,8 @@ export default function Test() {
 
           return (
             <View className="gap-y-3">
-              {/* Surah boundary badges */}
               {!isBoundary && currentQuestion.answer.nextSoraid !== currentQuestion.currentSoraid && (
-                <View className="bg-surface py-1.5 px-3 self-end rounded-lg border border-border">
+                <View className="bg-surface dark:bg-surface-muted py-1.5 px-3 self-end rounded-lg border border-border dark:border-white/10">
                   <Text className="text-muted text-[10px] uppercase tracking-widest">— End of Surah —</Text>
                 </View>
               )}
@@ -414,17 +402,17 @@ export default function Test() {
                 { label: labelB, text: answerB },
               ].map((ans) =>
                 ans.text ? (
-                  <View key={ans.label} className="bg-primary/5 p-5 rounded-2xl border border-primary/10">
-                    <Text className="text-primary text-[10px] uppercase tracking-widest mb-3">
+                  <View key={ans.label} className="bg-surface-muted p-5 rounded-2xl border border-border">
+                    <Text className="text-muted text-[10px] uppercase tracking-widest mb-3">
                       {ans.label}
                     </Text>
                     <QuranText
+                      className="text-text"
                       style={{
                         fontFamily: "Uthman",
                         textAlign: "right",
                         fontSize: 22,
                         lineHeight: 46,
-                        color: "#276359",
                       }}
                     >
                       {ans.text}
@@ -433,7 +421,7 @@ export default function Test() {
                 ) : null
               )}
               {!isBoundary && currentQuestion.answer.prevSoraid !== currentQuestion.currentSoraid && (
-                <View className="bg-surface py-1.5 px-3 self-end rounded-lg border border-border">
+                <View className="bg-surface dark:bg-surface-muted py-1.5 px-3 self-end rounded-lg border border-border dark:border-white/10">
                   <Text className="text-muted text-[10px] uppercase tracking-widest">— Start of Surah —</Text>
                 </View>
               )}
