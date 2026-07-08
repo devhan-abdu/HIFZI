@@ -7,9 +7,9 @@ const STATUS_STYLES: Record<
   JourneyPlanStatus,
   { bg: string; text: string; label: string }
 > = {
-  active: { bg: "bg-emerald-100", text: "text-emerald-800", label: "Active" },
-  paused: { bg: "bg-amber-100", text: "text-amber-800", label: "Paused" },
-  finished: { bg: "bg-surface", text: "text-muted", label: "Finished" },
+  active: { bg: "bg-", text: "text-emerald-800 dark:text-emerald-400", label: "Active" },
+  paused: { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-800 dark:text-amber-400", label: "Paused" },
+  finished: { bg: "bg-surface dark:bg-white/5", text: "text-muted", label: "Finished" },
 };
 
 const TYPE_ICONS = {
@@ -28,6 +28,9 @@ export function JourneyPlansSection({
   hasMore: boolean;
   onLoadMore: () => void;
 }) {
+  const { colorScheme } = require("react-native").useColorScheme();
+  const isDark = colorScheme === "dark";
+
   if (totalCount === 0) {
     return (
       <View className="rounded-2xl border border-dashed border-border bg-background p-6">
@@ -46,14 +49,14 @@ export function JourneyPlansSection({
         return (
           <View
             key={`${plan.type}-${plan.activityPlanId}-${plan.id}-${idx}`}
-            className="bg-surface border border-border rounded-2xl p-4 shadow-sm"
+            className=" bg-surface dark:bg-surface-muted border border-border rounded-2xl p-6 shadow-sm"
           >
             <View className="flex-row items-start mb-3">
-              <View className="w-10 h-10 rounded-full bg-emerald-50 items-center justify-center mr-3">
+              <View className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/20 items-center justify-center mr-3">
                 <Ionicons
                   name={TYPE_ICONS[plan.type]}
                   size={18}
-                  color="#276359"
+                  color={isDark ? "#4ade80" : "#276359"}
                 />
               </View>
               <View className="flex-1 pr-2">
@@ -100,12 +103,12 @@ export function JourneyPlansSection({
       {hasMore ?
         <Pressable
           onPress={onLoadMore}
-          className="flex-row items-center justify-center py-3 border border-border rounded-xl bg-surface"
+          className="flex-row items-center justify-center py-3 border border-border rounded-xl bg-surface dark:bg-surface-muted"
         >
-          <Text className="text-primary text-sm mr-1">
+          <Text className="text-primary dark:text-emerald-400 text-sm mr-1">
             Show more plans ({totalCount - plans.length} remaining)
           </Text>
-          <Ionicons name="chevron-down" size={16} color="#276359" />
+          <Ionicons name="chevron-down" size={16} color={isDark ? "#4ade80" : "#276359"} />
         </Pressable>
       : null}
     </View>

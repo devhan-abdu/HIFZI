@@ -1,14 +1,23 @@
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { InfiniteData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useMemo, useState, useCallback } from "react";
 import { useSession } from "@/src/hooks/useSession";
 import { useLoadSurahData } from "@/src/hooks/useFetchQuran";
 import {
   journeyService,
   SESSION_PAGE_SIZE,
 } from "../services/journeyService";
-import type { JourneyData, JourneySessionEntry } from "../types";
+import type {
+  JourneyData,
+  JourneySessionEntry,
+} from "../types";
+import type { JourneyOverviewResult } from "../services/journeyService";
 
 const PLAN_PAGE_SIZE = 4;
+
+type JourneySessionsPage = {
+  sessions: JourneySessionEntry[];
+  totalSessions: number;
+};
 
 export function useJourney() {
   const { user } = useSession();
@@ -16,82 +25,69 @@ export function useJourney() {
   const userId = user?.id;
 
   const [visiblePlanCount, setVisiblePlanCount] = useState(PLAN_PAGE_SIZE);
-  const [sessionOffset, setSessionOffset] = useState(0);
-  const [loadedSessions, setLoadedSessions] = useState<JourneySessionEntry[]>([]);
 
-  const overviewQuery = useQuery({
+  const overviewQuery = useQuery<JourneyOverviewResult, Error>({
     queryKey: ["journey-overview", userId, surah.length],
-    queryFn: async () => {
-      if (!userId || surah.length === 0) return null;
-      return journeyService.getOverview(userId, surah);
-    },
+    queryFn: async () => journeyService.getOverview(userId!, surah),
     enabled: !!userId && surah.length > 0,
-    
     staleTime: 0,
   });
 
-  const sessionsQuery = useQuery({
+  const sessionsQuery = useInfiniteQuery<
+    JourneySessionsPage,
+    Error,
+    InfiniteData<JourneySessionsPage>,
+    readonly (string | number | undefined)[],
+    number
+  >({
     queryKey: [
       "journey-sessions",
       userId,
       surah.length,
-      sessionOffset,
       overviewQuery.data?.plans.length,
     ],
-    queryFn: async () => {
-      if (!userId || surah.length === 0 || !overviewQuery.data) return null;
-      return journeyService.getSessionsPage(
-        userId,
-        overviewQuery.data.plans,
-        sessionOffset,
-      );
-    },
+    queryFn: async ({ pageParam = 0 }) =>
+      journeyService.getSessionsPage(userId!, overviewQuery.data!.plans, pageParam),
     enabled: !!userId && surah.length > 0 && !!overviewQuery.data,
     staleTime: 0,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, pages) => {
+      const loadedCount = pages.reduce(
+        (sum, page) => sum + page.sessions.length,
+        0,
+      );
+      return loadedCount < lastPage.totalSessions ? loadedCount : undefined;
+    },
   });
 
-  const totalSessions = sessionsQuery.data?.totalSessions ?? 0;
+  const sessions = useMemo(() => {
+    return sessionsQuery.data?.pages.flatMap((page) => page.sessions) ?? [];
+  }, [sessionsQuery.data?.pages]);
 
-  useEffect(() => {
-    if (!sessionsQuery.data) {
-      if (sessionOffset === 0) setLoadedSessions([]);
-      return;
-    }
-    if (sessionOffset === 0) {
-      setLoadedSessions(sessionsQuery.data.sessions);
-    } else {
-      setLoadedSessions((prev) => {
-        const existing = new Set(prev.map((s) => s.id));
-        const next = sessionsQuery.data!.sessions.filter((s) => !existing.has(s.id));
-        return [...prev, ...next];
-      });
-    }
-  }, [sessionsQuery.data, sessionOffset]);
+  const totalSessions = sessionsQuery.data?.pages?.[0]?.totalSessions ?? 0;
 
   const data: JourneyData | null = useMemo(() => {
     if (!overviewQuery.data) return null;
     return {
       ...overviewQuery.data,
       plans: overviewQuery.data.plans.slice(0, visiblePlanCount),
-      sessions: loadedSessions,
+      sessions,
       totalSessions,
     };
-  }, [overviewQuery.data, visiblePlanCount, loadedSessions, totalSessions]);
+  }, [overviewQuery.data, visiblePlanCount, sessions, totalSessions]);
 
   const totalPlans = overviewQuery.data?.plans.length ?? 0;
   const hasMorePlans = totalPlans > visiblePlanCount;
-  const hasMoreSessions = loadedSessions.length < totalSessions;
+  const hasMoreSessions = sessionsQuery.hasNextPage ?? false;
 
-  const loadMoreSessions = useCallback(() => {
-    setSessionOffset((o) => o + SESSION_PAGE_SIZE);
-  }, []);
+  const loadMoreSessions = sessionsQuery.fetchNextPage;
 
-  const refetch = useCallback(() => {
-    setSessionOffset(0);
-    setLoadedSessions([]);
-    overviewQuery.refetch();
-    sessionsQuery.refetch();
-  }, [overviewQuery, sessionsQuery]);
+  const refetchOverview = overviewQuery.refetch;
+  const refetchSessions = sessionsQuery.refetch;
+
+  const refetch = useCallback(async () => {
+    await Promise.all([refetchOverview(), refetchSessions()]);
+  }, [refetchOverview, refetchSessions]);
 
   const loadMorePlans = useCallback(() => {
     setVisiblePlanCount((c) => c + PLAN_PAGE_SIZE);
@@ -100,7 +96,7 @@ export function useJourney() {
   return {
     data,
     loading: overviewQuery.isLoading || surahLoading,
-    sessionsLoading: sessionsQuery.isLoading && sessionOffset > 0,
+    sessionsLoading: sessionsQuery.isFetchingNextPage,
     error: overviewQuery.isError || sessionsQuery.isError,
     refetch,
     loadMorePlans,

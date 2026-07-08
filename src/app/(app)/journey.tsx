@@ -12,11 +12,11 @@ import { JourneyActivePlanHero } from "@/src/features/journey/components/Journey
 import { JourneyStatsSection } from "@/src/features/journey/components/JourneyStatsSection";
 import { JourneyPlansSection } from "@/src/features/journey/components/JourneyPlansSection";
 import { JourneyTimelineSection } from "@/src/features/journey/components/JourneyTimelineSection";
-import { SyncStatusPill } from "@/src/components/common/SyncStatusPill";
 import { AchievementSection } from "@/src/components/dashboard/AchievementSection";
 import { useUserBadges } from "@/src/hooks/useUserBadges";
 import { useNavigate } from "@/src/hooks/useNavigate";
 import { useAppActiveRefresh } from "@/src/hooks/useAppActiveRefresh";
+import { useColorScheme } from "nativewind";
 
 function SectionTitle({ children }: { children: string }) {
   return (
@@ -37,6 +37,8 @@ export default function JourneyScreen() {
     totalPlans,
     refetch,
   } = useJourney();
+    const { colorScheme } = useColorScheme();
+    const isDark = colorScheme === "dark";
 
   const { data: badges = [] } = useUserBadges();
 
@@ -57,26 +59,22 @@ export default function JourneyScreen() {
       <Header title="Journey" />
       <Screen className="px-0">
         <ScreenContent>
-          {/* Page header */}
           <View className="flex-row items-center mb-6 px-4">
             <Pressable
               onPress={() => back()}
-              className="w-10 h-10 rounded-full items-center justify-center bg-surface mr-3"
+              className="w-10 h-10 rounded-full items-center justify-center bg-surface dark:bg-surface-muted mr-3"
             >
-              <Ionicons name="arrow-back" size={18} color="#0f172a" />
+              <Ionicons name="arrow-back" size={18} color={isDark? "#fafafa" : "#000"} />
             </Pressable>
             <View className="flex-1">
               <Text className="text-text text-xl">Journey</Text>
               <Text className="text-muted text-xs">
                 Your Hifz & Muraja progress
               </Text>
-              <View className="mt-2">
-                <SyncStatusPill />
-              </View>
+
             </View>
           </View>
 
-          {/* ── Loading ── */}
           {loading ? (
             <View className="py-24 items-center px-4">
               <ActivityIndicator size="large" color="#276359" />
@@ -149,7 +147,6 @@ export default function JourneyScreen() {
                 </View>
               ) : null}
 
-              {/* ── Session log ── */}
               <SectionTitle>Session log</SectionTitle>
               <JourneyTimelineSection
                 sessions={data.sessions}
@@ -158,7 +155,6 @@ export default function JourneyScreen() {
                 onLoadMore={loadMoreSessions}
               />
 
-              {/* ── Real achievements from local DB (same as dashboard) ── */}
               <SectionTitle>Achievements</SectionTitle>
               {badges.length === 0 ? (
                 <View className="rounded-2xl border border-dashed border-border bg-background p-6 mb-4">

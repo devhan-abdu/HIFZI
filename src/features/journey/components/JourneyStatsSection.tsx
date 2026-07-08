@@ -30,7 +30,7 @@ export function JourneyStatsSection({
           value={stats.currentStreak}
           unit="Days"
           icon="flame-outline"
-          type="warning"
+          type="success"
         />
         <StatCard
           title="Best streak"
@@ -66,7 +66,7 @@ export function JourneyStatsSection({
           value={testStats.totalTests}
           unit="Total"
           icon="help-circle-outline"
-          type="info"
+          type="success"
         />
         <StatCard
           title="Average score"

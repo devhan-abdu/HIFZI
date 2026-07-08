@@ -4,6 +4,7 @@ import { hifzLogs, hifzPlans } from "@/src/features/hifz/database/hifzSchema";
 import { dailyMurajaLogs, weeklyMurajaPlans } from "@/src/features/muraja/database/murajaSchema";
 import { testLogs } from "@/src/features/test/database/testSchema";
 import { getSurahByPage, getSurahNameByNumber } from "@/src/features/muraja/utils/quranMapping";
+import { userStats } from "@/src/features/user/database/userSchema";
 import type { ISurah } from "@/src/types";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type {
@@ -178,6 +179,12 @@ export const journeyService = {
       ),
     );
 
+    const userStat = await db.query.userStats.findFirst({
+      where: eq(userStats.userId, userId),
+    });
+    const currentStreak = userStat?.murajaCurrentStreak ?? 0;
+    const bestStreak = userStat?.globalLongestStreak ?? 0;
+
     const completionDates = extractCompletionDates(shared.relevantActivityLogs);
     const sessionLogCount = shared.relevantActivityLogs.filter(isRelevantSessionLog).length;
 
@@ -205,6 +212,8 @@ export const journeyService = {
       surah,
       completionDates,
       planCount: journeyPlans.length,
+      currentStreak,
+      bestStreak,
     });
 
     const stats = computeJourneyStats({
@@ -212,6 +221,8 @@ export const journeyService = {
       murajaPages,
       completionDates,
       totalSessions: sessionLogCount,
+      currentStreak,
+      bestStreak,
     });
 
     const testStats = computeTestStats(shared.allTests);

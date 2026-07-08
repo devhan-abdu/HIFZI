@@ -4,13 +4,11 @@ import { Text } from "@/src/components/common/ui/Text";
 import type { JourneyOverview, JourneyPlanCard } from "../types";
 import { JOURNEY_CONSTANTS } from "../utils/journeyComputations";
 
-// ─── Config ──────────────────────────────────────────────────────────────────
 const TYPE_CONFIG = {
   HIFZ: { label: "Hifz Memorization", icon: "ribbon" as const },
   MURAJA: { label: "Muraja'a Revision", icon: "sync" as const },
 };
 
-// ─── Main export ─────────────────────────────────────────────────────────────
 export function JourneyActivePlanHero({
   activePlan,
   overview,
@@ -24,7 +22,6 @@ export function JourneyActivePlanHero({
   return <ActivePlanHero plan={activePlan} overview={overview} />;
 }
 
-// ─── Active plan variant ──────────────────────────────────────────────────────
 function ActivePlanHero({
   plan,
   overview,
@@ -43,13 +40,10 @@ function ActivePlanHero({
 
   return (
     <View className="bg-primary rounded-[40px] p-7 shadow-2xl shadow-primary/40 overflow-hidden relative border border-white/5">
-      {/* Decorative circles */}
-      <View className="absolute -top-12 -right-12 w-44 h-44 bg-surface/5 rounded-full" />
-      <View className="absolute -bottom-10 -left-10 w-36 h-36 bg-surface/5 rounded-full" />
+      <View className="absolute -top-12 -right-12 w-44 h-44 bg-white/5 rounded-full" />
 
-      {/* Header row */}
       <View className="flex-row items-center justify-between mb-5">
-        <View className="flex-row items-center gap-2 bg-surface/10 px-3 py-1.5 rounded-full border border-white/10">
+        <View className="flex-row items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full border border-white/10">
           <Ionicons name={cfg.icon} size={12} color="rgba(255,255,255,0.8)" />
           <Text className="text-white/80 text-[10px] uppercase tracking-[1.5px]">
             {cfg.label}
@@ -62,7 +56,6 @@ function ActivePlanHero({
         </View>
       </View>
 
-      {/* Plan name */}
       <Text className="text-white text-[22px] tracking-tight leading-tight mb-1">
         {plan.name}
       </Text>
@@ -74,7 +67,6 @@ function ActivePlanHero({
         <View className="mb-5" />
       )}
 
-      {/* Progress bar */}
       <View className="mb-1">
         <View className="flex-row justify-between items-center mb-2">
           <Text className="text-white/50 text-[10px] uppercase tracking-widest">
@@ -82,9 +74,9 @@ function ActivePlanHero({
           </Text>
           <Text className="text-white text-sm">{plan.progressPercent}%</Text>
         </View>
-        <View className="w-full h-2 bg-surface/10 rounded-full overflow-hidden">
+        <View className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
           <View
-            className="h-full bg-surface rounded-full"
+            className="h-full bg-white rounded-full"
             style={{ width: `${Math.max(2, plan.progressPercent)}%` }}
           />
         </View>
@@ -93,10 +85,8 @@ function ActivePlanHero({
         </Text>
       </View>
 
-      {/* Divider */}
-      <View className="w-full h-[1px] bg-surface/10 my-5" />
+      <View className="w-full h-[1px] bg-white/10 my-5" />
 
-      {/* Footer metrics */}
       <View className="flex-row justify-between items-center">
         <HeroMetric
           icon="calendar-outline"
@@ -119,7 +109,6 @@ function ActivePlanHero({
   );
 }
 
-// ─── Fallback: no active plan ────────────────────────────────────────────────
 function OverviewHero({ overview }: { overview: JourneyOverview }) {
   const startLabel = overview.journeyStartDate
     ? new Date(overview.journeyStartDate).toLocaleDateString("en-US", {
@@ -131,14 +120,14 @@ function OverviewHero({ overview }: { overview: JourneyOverview }) {
 
   return (
     <View className="bg-primary rounded-[40px] p-7 shadow-2xl shadow-primary/40 overflow-hidden relative border border-white/5">
-      <View className="absolute -top-10 -right-10 w-40 h-40 bg-surface/5 rounded-full" />
+      <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
 
       <View className="flex-row justify-between items-end mb-6">
         <View className="flex-1">
           <Text className="text-white/50 uppercase tracking-[2px] text-[9px] mb-1.5">
             Hifz memorization
           </Text>
-          <View className="bg-surface/10 px-3 py-1 rounded-full self-start border border-white/10">
+          <View className="bg-white/10 px-3 py-1 rounded-full self-start border border-white/10">
             <Text className="text-white text-[10px] tracking-wider">
               {overview.uniquePagesMemorized} unique pages
             </Text>
@@ -166,9 +155,9 @@ function OverviewHero({ overview }: { overview: JourneyOverview }) {
         </Text>
       </View>
 
-      <View className="w-full h-[2px] bg-surface/10 rounded-full mb-6 overflow-hidden">
+      <View className="w-full h-[2px] bg-white/10 rounded-full mb-6 overflow-hidden">
         <View
-          className="h-full bg-surface rounded-full"
+          className="h-full bg-white rounded-full"
           style={{ width: `${overview.quranPercent}%` }}
         />
       </View>
@@ -195,7 +184,6 @@ function OverviewHero({ overview }: { overview: JourneyOverview }) {
   );
 }
 
-// ─── Shared metric cell ───────────────────────────────────────────────────────
 function HeroMetric({
   icon,
   value,

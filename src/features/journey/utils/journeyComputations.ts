@@ -107,6 +107,8 @@ export function computeOverview(params: {
   surah: ISurah[];
   completionDates: string[];
   planCount: number;
+  currentStreak: number;
+  bestStreak: number;
 }): JourneyOverview {
   const memorizedPages = uniqueMemorizedPagesFromHifz(
     params.hifzLogs,
@@ -127,8 +129,8 @@ export function computeOverview(params: {
     totalDaysActive: new Set(params.completionDates).size,
     totalPlans: params.planCount,
     uniquePagesMemorized: memorizedPages.size,
-    currentStreak: computeCurrentStreak(streakDates),
-    bestStreak: computeLongestStreak(streakDates),
+    currentStreak: params.currentStreak,
+    bestStreak: params.bestStreak,
   };
 }
 
@@ -249,15 +251,16 @@ export function computeJourneyStats(params: {
   murajaPages: number;
   completionDates: string[];
   totalSessions: number;
+  currentStreak: number;
+  bestStreak: number;
 }): JourneyStats {
-  const streakDates = [...params.completionDates].sort();
   return {
     totalSessions: params.totalSessions,
     totalPagesLogged: params.hifzPages + params.murajaPages,
     hifzPages: params.hifzPages,
     murajaPages: params.murajaPages,
-    currentStreak: computeCurrentStreak(streakDates),
-    bestStreak: computeLongestStreak(streakDates),
+    currentStreak: params.currentStreak,
+    bestStreak: params.bestStreak,
   };
 }
 
@@ -321,41 +324,7 @@ function sessionMilestoneDate(sortedDates: string[], target: number): string | n
   return sortedDates[target - 1];
 }
 
-function computeCurrentStreak(sortedDates: string[]): number {
-  if (sortedDates.length === 0) return 0;
-  const set = new Set(sortedDates);
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  let cursorStr = set.has(today) ? today : set.has(yesterday) ? yesterday : null;
-  if (!cursorStr) return 0;
 
-  let streak = 0;
-  const cursor = new Date(cursorStr);
-  while (set.has(cursor.toISOString().slice(0, 10))) {
-    streak++;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-  return streak;
-}
-
-function computeLongestStreak(sortedDates: string[]): number {
-  if (sortedDates.length === 0) return 0;
-  let longest = 0;
-  let current = 0;
-  let prev: Date | null = null;
-  for (const d of sortedDates) {
-    const date = new Date(d);
-    if (!prev) {
-      current = 1;
-    } else {
-      const diff = Math.round((date.getTime() - prev.getTime()) / 86400000);
-      current = diff === 1 ? current + 1 : 1;
-    }
-    longest = Math.max(longest, current);
-    prev = date;
-  }
-  return longest;
-}
 
 export function isRelevantSessionLog(log: RawActivityLog): boolean {
   if (log.activityType !== "HIFZ" && log.activityType !== "MURAJA") return false;
@@ -368,8 +337,8 @@ export function sortSessionLogs(logs: RawActivityLog[]): RawActivityLog[] {
   return [...logs].sort((a, b) => {
     const metaA = parseLogMetadata(a.metadata);
     const metaB = parseLogMetadata(b.metadata);
-    const tsA = metaA.recordedAt ?? a.updatedAt ?? a.date;
-    const tsB = metaB.recordedAt ?? b.updatedAt ?? b.date;
+    const tsA = metaA.recordedAt ?? a.updatedAt ?? a.date ?? '';
+    const tsB = metaB.recordedAt ?? b.updatedAt ?? b.date ?? '';
     return tsB.localeCompare(tsA);
   });
 }
@@ -393,8 +362,8 @@ export function buildSessionTimeline(
 
     sessions.push({
       id: log.id,
-      date,
-      timestamp: meta.recordedAt ?? log.updatedAt ?? log.date,
+      date: date ?? log.date ?? '',
+      timestamp: meta.recordedAt ?? log.updatedAt ?? log.date ?? '',
       activityType: log.activityType as JourneyPlanType,
       planName,
       reference: meta.reference ?? "Session",
