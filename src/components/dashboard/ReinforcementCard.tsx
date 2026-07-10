@@ -60,20 +60,20 @@ export const ReinforcementCard = ({
 
   if (isCompleted) {
     return (
-      <View className="bg-emerald-50 border border-emerald-200 rounded-[24px] p-4">
+      <View className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-[24px] p-4">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center flex-1">
-            <View className="w-8 h-8 rounded-full bg-emerald-100 items-center justify-center mr-3">
-              <Ionicons name="sparkles" size={16} color="#059669" />
+            <View className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 items-center justify-center mr-3">
+              <Ionicons name="sparkles" size={16} color="#87918e" />
             </View>
             <View className="flex-1">
-              <Text className="text-emerald-900 text-sm ">
+              <Text className="text-text text-sm ">
                 Retention Secured
               </Text>
-              <Text className="text-emerald-800 text-sm mt-0.5">
+              <Text className="text-text text-sm mt-0.5">
                 {task.displaySurah || "Quran Review"}
               </Text>
-              <Text className="text-emerald-600/80 text-[10px] uppercase tracking-widest mt-1">
+              <Text className="text-text text-[10px] uppercase tracking-widest mt-1">
                 Pages {task.startPage} – {task.endPage}
               </Text>
             </View>
@@ -84,14 +84,14 @@ export const ReinforcementCard = ({
         <Pressable
           onPress={handleUndo}
           disabled={isLogging}
-          className="mt-3 pt-3 border-t border-emerald-100 flex-row items-center active:opacity-60"
+          className="mt-3 pt-3 border-t border-emerald-100 dark:border-emerald-500/20 flex-row items-center active:opacity-60"
         >
           {isLogging ? (
             <ActivityIndicator size="small" color="#059669" />
           ) : (
             <>
-              <Ionicons name="arrow-undo" size={14} color="#047857" />
-              <Text className="text-emerald-700 text-[10px] uppercase tracking-widest ml-1.5">
+              <Ionicons name="arrow-undo" size={14} color="#74807c" />
+              <Text className="text-text text-[10px] uppercase tracking-widest ml-1.5">
                 Undo
               </Text>
             </>
@@ -102,7 +102,7 @@ export const ReinforcementCard = ({
   }
 
   return (
-    <View className="bg-background border border-border rounded-[28px] p-5">
+    <View className="bg-background dark:bg-surface-muted border border-border dark:border-white/10 rounded-[28px] p-5">
       <View className="flex-row justify-between items-start mb-4">
         <View className="flex-1">
           <View className="flex-row items-center mb-1">
@@ -132,7 +132,7 @@ export const ReinforcementCard = ({
         <Pressable
           onPress={() => setQualityModalVisible(true)}
           disabled={isLogging}
-          className="h-10 w-10 rounded-2xl bg-surface border border-border items-center justify-center active:scale-95 shadow-sm"
+          className="h-10 w-10 rounded-2xl bg-surface dark:bg-surface-muted border border-border dark:border-white/10 items-center justify-center active:scale-95 shadow-sm"
         >
           {isLogging ? (
             <ActivityIndicator size="small" color="#276359" />
@@ -142,13 +142,13 @@ export const ReinforcementCard = ({
         </Pressable>
       </View>
 
-      <View className="flex-row items-center justify-between mt-4 pt-4 border-t border-border">
+      <View className="flex-row items-center justify-between mt-4 pt-4 border-t border-border dark:border-white/10">
         <Pressable
           onPress={onStart}
           disabled={isLogging}
           className="flex-row items-center active:opacity-60"
         >
-          <Text className="text-primary uppercase tracking-widest text-[10px]">
+          <Text className="text-text uppercase tracking-widest text-[10px]">
             Open Mushaf
           </Text>
           <Ionicons

@@ -32,12 +32,24 @@ export function HifzPlanOverviewCard({
   paceDelta,
 }: Props) {
   const pace = getPerformance(paceDelta);
+   const paceLabel =
+     pace.label === "ahead" ? "Ahead"
+     : pace.label === "behind" ? "Behind"
+     : "On Track";
+   const paceIcon =
+     pace.label === "ahead" ? "trending-up"
+     : pace.label === "behind" ? "trending-down"
+     : "remove";
+   const paceBg =
+     pace.label === "ahead" ? "bg-emerald-500/20"
+     : pace.label === "behind" ? "bg-amber-500/20"
+     : "bg-blue-500/20";
+
 
   return (
     <View className="bg-primary rounded-[40px] p-7 shadow-2xl shadow-primary/40 overflow-hidden relative border border-white/5">
-      <View className="absolute -top-10 -right-10 w-40 h-40 bg-surface/5 rounded-full" />
+      <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
 
-      {/* Header row */}
       <View className="flex-row justify-between items-start mb-6">
         <View className="flex-1 pr-3">
           <Text className="text-white/50 uppercase tracking-[2px] text-[9px] mb-1.5">
@@ -50,18 +62,20 @@ export function HifzPlanOverviewCard({
           </View>
         </View>
 
-        {/* Pace badge */}
-        <View className={`flex-row items-center gap-1 px-2.5 py-1.5 rounded-full ${pace.bg} border border-white/10`}>
-          <View className={`w-1.5 h-1.5 rounded-full ${pace.dot}`} />
-          <Text className={`text-[9px] uppercase tracking-wider ${pace.color}`}>
-            {pace.value === 0
-              ? pace.label
-              : `${Math.abs(pace.value)} pg ${pace.label}`}
+        <View
+          className={`flex-row items-center gap-1 px-2.5 py-1.5 rounded-full ${paceBg} border border-white/10`}
+        >
+          <Ionicons
+            name={paceIcon as any}
+            size={11}
+            color="rgba(255,255,255,0.8)"
+          />
+          <Text className="text-white/80 text-[9px] uppercase tracking-wider">
+            {paceLabel}
           </Text>
         </View>
       </View>
 
-      {/* Pages counter */}
       <View className="mb-4">
         <Text className="text-white/40 uppercase tracking-widest text-[9px] mb-1">
           Memorized in this plan
@@ -72,15 +86,18 @@ export function HifzPlanOverviewCard({
         </Text>
       </View>
 
-      {/* Linear progress bar */}
       <View className="mb-6">
         <View className="flex-row justify-between mb-1.5">
-          <Text className="text-white/40 text-[9px] uppercase tracking-widest">Progress</Text>
-          <Text className="text-white/70 text-[9px]">{Math.round(progress)}%</Text>
+          <Text className="text-white/40 text-[9px] uppercase tracking-widest">
+            Progress
+          </Text>
+          <Text className="text-white/70 text-[9px]">
+            {Math.round(progress)}%
+          </Text>
         </View>
-        <View className="w-full h-1.5 bg-surface/15 rounded-full overflow-hidden">
+        <View className="w-full h-1.5 bg-white/15 rounded-full overflow-hidden">
           <View
-            className="h-full bg-surface rounded-full"
+            className="h-full bg-white rounded-full"
             style={{ width: `${Math.min(100, progress)}%` }}
           />
         </View>
@@ -92,7 +109,11 @@ export function HifzPlanOverviewCard({
       <View className="flex-row justify-between items-center">
         <View className="flex-1 items-center border-r border-white/10">
           <View className="flex-row items-center gap-1.5 mb-1">
-            <Ionicons name="calendar-outline" size={12} color="rgba(255,255,255,0.6)" />
+            <Ionicons
+              name="calendar-outline"
+              size={12}
+              color="rgba(255,255,255,0.6)"
+            />
             <Text className="text-white text-sm">{daysPerWeek}</Text>
           </View>
           <Text className="text-white/40 text-[8px] uppercase tracking-[1.5px]">
@@ -102,7 +123,11 @@ export function HifzPlanOverviewCard({
 
         <View className="flex-1 items-center border-r border-white/10">
           <View className="flex-row items-center gap-1.5 mb-1">
-            <Ionicons name="book-outline" size={12} color="rgba(255,255,255,0.6)" />
+            <Ionicons
+              name="book-outline"
+              size={12}
+              color="rgba(255,255,255,0.6)"
+            />
             <Text className="text-white text-sm">{pagesPerDay}</Text>
           </View>
           <Text className="text-white/40 text-[8px] uppercase tracking-[1.5px]">

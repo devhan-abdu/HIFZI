@@ -7,13 +7,12 @@ import { PerformanceService } from "@/src/services/PerformanceService";
 import { GamificationService } from "@/src/services/GamificationService";
 import { PageMasteryService } from "@/src/services/PageMasteryService";
 import { upsertHabitProgressLog, deleteHabitProgressLog, upsertActivityPlan } from "../../habits/services/habitProgressService";
-import { supabase } from "@/src/lib/supabase";
 import { notificationService } from "../../notifications/services/notificationService";
 
 import { userStats } from '../../user/database/userSchema';
 import { habitStackingService } from '../../habits/services/habitStackingService';
 import { getLocalDateString } from '../utils/murajaAnalytics';
-
+import { calculateMurajaFinishedDate } from '../utils/plan-calculations';
 export type LocalMurajaLogWriteResult = {
   localLogId: number | null;
   changed: boolean;
@@ -174,9 +173,32 @@ export const murajaService = {
       )
       });
     
-    const todayDay = (new Date().getDay() + 6) % 7
-    const isEvaluationDay = todayDay === plan.evaluationDay
-    const evaluationDue = isEvaluationDay && activityPlan?.lastEvaluationDate !== todayStr
+    const todayDay = (new Date().getDay() + 6) % 7;
+    const isEvaluationDay = todayDay === plan.evaluationDay;
+    const alreadyEvaluatedThisWeek = activityPlan?.lastEvaluationDate === todayStr;
+
+    let evaluationDue = false;
+    if (isEvaluationDay && !alreadyEvaluatedThisWeek) {
+      const activeDaysArr: number[] = typeof plan.selectedDays === 'string'
+        ? JSON.parse(plan.selectedDays || '[]')
+        : plan.selectedDays ?? [];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const startOfWeek = new Date(today);
+      const todayDayIdx = (today.getDay() + 6) % 7;
+      startOfWeek.setDate(today.getDate() - todayDayIdx);
+      const weekStartStr = startOfWeek.toISOString().slice(0, 10);
+
+      const weekLogs = logs.filter(
+        l => !!l.date && l.date >= weekStartStr && l.date <= todayStr &&
+             (l.status === 'completed' || l.status === 'partial')
+      );
+      const minRequired = Math.max(1, Math.ceil(activeDaysArr.length * 0.25));
+      if (weekLogs.length >= minRequired) {
+        evaluationDue = true;
+      }
+    }
+
 
     const totalCompleted = plan.completedPages ?? 0;
     const totalTarget = (plan.endPage ?? 1) - (plan.startPage ?? 1) + 1;
@@ -297,12 +319,10 @@ export const murajaService = {
       .onConflictDoUpdate({
         target: userStats.userId,
         set: { 
-          murajaLastPage: trueLastPage,
-          updatedAt: sql`CURRENT_TIMESTAMP`
+          murajaLastPage: trueLastPage
         }
       });
 
-    // Dynamic End Date Re-estimation
     if (plan.isActive) {
         const remainingPages = (plan.endPage ?? 0) - trueLastPage;
         if (remainingPages > 0) {
@@ -311,14 +331,7 @@ export const murajaService = {
               : (plan.selectedDays ?? []);
             const weeklyFreq = parsedDays.length || 7;
             const dailyRate = Math.max(1, plan.plannedPagesPerDay);
-            const sessionNeeded = Math.ceil(remainingPages / dailyRate);
-            let daysNeeded = 1;
-            if (sessionNeeded > 1) {
-              daysNeeded = Math.ceil(((sessionNeeded - 1) / weeklyFreq) * 7) + 1;
-            }
-            const newEndDate = new Date();
-            newEndDate.setDate(newEndDate.getDate() + (daysNeeded - 1));
-            const newEndDateStr = newEndDate.toISOString().slice(0, 10);
+            const { finishDate: newEndDateStr } = calculateMurajaFinishedDate(remainingPages, dailyRate, weeklyFreq);
 
             if (newEndDateStr !== plan.weekEndDate) {
                 await tx.update(weeklyMurajaPlans)
@@ -669,15 +682,7 @@ export const murajaService = {
       : (oldPlan.selectedDays ?? []);
     const weeklyFreq = parsedDays.length || 7;
     const dailyRate = oldPlan.plannedPagesPerDay ?? 2;
-    const sessionNeeded = Math.ceil(totalPages / dailyRate);
-    let daysNeeded = 1;
-    if (sessionNeeded > 1) {
-      daysNeeded = Math.ceil(((sessionNeeded - 1) / weeklyFreq) * 7) + 1;
-    }
-    
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() + (daysNeeded - 1));
-    const endDateStr = endDate.toISOString().split('T')[0];
+    const { finishDate: endDateStr } = calculateMurajaFinishedDate(totalPages, dailyRate, weeklyFreq);
 
     return await this.createPlan({
       user_id: userId,

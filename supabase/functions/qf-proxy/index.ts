@@ -23,11 +23,17 @@ serve(async (req) => {
   }
 
   try {
-    const { endpoint: rawEndpoint, method = "GET", body, params } = await req.json();
+    const reqText = await req.text();
+    const { endpoint: rawEndpoint, method = "GET", body, params } = reqText ? JSON.parse(reqText) : {};
+
+    if (!rawEndpoint) {
+      return new Response(JSON.stringify({ error: "MISSING_ENDPOINT" }), { status: 400 });
+    }
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const QF_CLIENT_ID = Deno.env.get("QF_CLIENT_ID")!;
+    const QF_CLIENT_SECRET = Deno.env.get("QF_CLIENT_SECRET")!;
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
     const authHeader = req.headers.get("Authorization");
@@ -43,30 +49,58 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Invalid Token" }), { status: 401 });
     }
 
-    const { data: identities, error: identityError } = await supabase.auth.admin.getUserIdentities(user.id);
-    const qfIdentity = identities?.find(id => id.provider.includes("quran-foundation"));
+    const { data: vault, error: vaultError } = await supabase
+      .from("user_qf_tokens")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
 
-    let accessToken = qfIdentity?.config?.access_token;
-
-    if (!accessToken) {
-      return new Response(
-        JSON.stringify({ error: "NOT_FOUND", details: "No active QF identity token found" }),
-        { status: 404 }
-      );
+    if (vaultError || !vault) {
+      return new Response(JSON.stringify({ error: "QF_TOKENS_NOT_SETUP" }), { status: 404 });
     }
 
-    const BASE_URLS: Record<string, string> = {
-      prelive: "https://apis-prelive.quran.foundation",
-      production: "https://apis.quran.foundation",
-    };
+    let currentAccessToken = vault.access_token;
+    const expiresAt = new Date(vault.expires_at).getTime();
+    const bufferTime = 5 * 60 * 1000; 
 
-    const envMatch = rawEndpoint.match(/^\/(prelive|production)(\/.*)/);
-    if (!envMatch) {
-      return new Response(JSON.stringify({ error: "INVALID_ENDPOINT_PREFIX" }), { status: 400 });
+    if (Date.now() + bufferTime > expiresAt) {
+      const credentials = btoa(`${QF_CLIENT_ID}:${QF_CLIENT_SECRET}`);
+
+      const refreshRes = await fetch("https://apis.quran.foundation/oauth/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Accept": "application/json",
+          "Authorization": `Basic ${credentials}`,
+        },
+        body: new URLSearchParams({
+          grant_type: "refresh_token",
+          refresh_token: vault.refresh_token,
+        }).toString(),
+      });
+
+      if (!refreshRes.ok) {
+        return new Response(JSON.stringify({ error: "PROVIDER_REFRESH_FAILED" }), { status: 401 });
+      }
+
+      const newTokens = await refreshRes.json();
+      currentAccessToken = newTokens.access_token;
+      
+      const newExpiresAt = new Date(Date.now() + (newTokens.expires_in * 1000)).toISOString();
+
+      await supabase
+        .from("user_qf_tokens")
+        .update({
+          access_token: currentAccessToken,
+          refresh_token: newTokens.refresh_token || vault.refresh_token,
+          expires_at: newExpiresAt,
+          updated_at: new Date().toISOString()
+        })
+        .eq("user_id", user.id);
     }
 
-    const [, env, apiPath] = envMatch;
-    const url = new URL(`${BASE_URLS[env]}${apiPath}`);
+    const cleanPath = rawEndpoint.replace(/^\/(prelive|production)/, "");
+    const url = new URL(`https://apis.quran.foundation${cleanPath}`);
 
     if (params) {
       Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, String(v)));
@@ -74,7 +108,7 @@ serve(async (req) => {
 
     let qfRes = await fetch(url.toString(), {
       method,
-      headers: buildQFHeaders(accessToken, QF_CLIENT_ID),
+      headers: buildQFHeaders(currentAccessToken, QF_CLIENT_ID),
       body: method !== "GET" && body ? JSON.stringify(body) : undefined,
     });
 

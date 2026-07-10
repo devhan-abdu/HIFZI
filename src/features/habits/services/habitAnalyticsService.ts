@@ -70,7 +70,14 @@ export const habitAnalyticsService = {
 
     const heatmap = this.calculateHeatmap(rangeEntries);
     const { goalPages, plannedDays } = await this.calculateDailyGoalAndDays(userId);
-    const analytics = this.calculateAnalytics(finalizedList, rangeEntries, userId, plannedDays);
+
+    const userStat = await db.query.userStats.findFirst({
+      where: eq(userStats.userId, userId),
+    });
+    const currentStreak = userStat?.murajaCurrentStreak ?? 0;
+    const longestStreak = userStat?.globalLongestStreak ?? 0;
+
+    const analytics = this.calculateAnalytics(finalizedList, rangeEntries, currentStreak, longestStreak);
 
     return {
       userHistory: this.calculateUserHistory(rangeEntries),
@@ -162,23 +169,13 @@ export const habitAnalyticsService = {
     }
   },
 
-  calculateAnalytics(allEntries: any[], rangeEntries: any[], userId: string, plannedDays: number[] = []) {
+  calculateAnalytics(allEntries: any[], rangeEntries: any[], currentStreak: number, longestStreak: number) {
     const completedRange = rangeEntries.filter(e => e.eventType.includes("_COMPLETED"));
     const missedRange = rangeEntries.filter(e => e.eventType === "TASK_MISSED");
     
     // Global stats derived from ALL historical logs
     const totalMinutes = allEntries.reduce((acc, e) => acc + (e.minutesSpent || 0), 0);
     const totalPages = allEntries.reduce((acc, e) => acc + (e.unitsCompleted || 0), 0);
-
-    // Derive streaks from full history
-    const completionDates = Array.from(new Set(
-      allEntries
-        .filter(e => e.eventType.includes("_COMPLETED") && (e.unitsCompleted || 0) > 0)
-        .map(e => e.sourceDate)
-    )).sort();
-
-    const currentStreak = this.computeCurrentStreak(completionDates, plannedDays);
-    const longestStreak = this.computeLongestStreak(completionDates, plannedDays);
 
     return {
       completionRate: Math.round((completedRange.length / Math.max(1, completedRange.length + missedRange.length)) * 100),
@@ -235,7 +232,8 @@ export const habitAnalyticsService = {
     if (!cursorStr) return 0;
 
     let streak = 0;
-    let cursor = new Date(cursorStr + 'T00:00:00');
+    // Use UTC date to avoid timezone offset shifts when using toISOString
+    let cursor = new Date(`${cursorStr}T00:00:00Z`);
 
     while (true) {
       const dateStr = cursor.toISOString().split('T')[0];
@@ -249,7 +247,7 @@ export const habitAnalyticsService = {
         if (isPlanned) break; // missed a required day — streak over
         // Otherwise it's a rest day — skip and keep counting
       }
-      cursor.setDate(cursor.getDate() - 1);
+      cursor.setUTCDate(cursor.getUTCDate() - 1);
       // Safety: don't walk more than 2 years back
       if (streak > 730) break;
     }
@@ -263,7 +261,8 @@ export const habitAnalyticsService = {
     let prev: Date | null = null;
 
     for (const d of dates) {
-      const date = new Date(d + 'T00:00:00');
+      // Use UTC date to avoid timezone shift
+      const date = new Date(`${d}T00:00:00Z`);
       if (!prev) {
         current = 1;
       } else {

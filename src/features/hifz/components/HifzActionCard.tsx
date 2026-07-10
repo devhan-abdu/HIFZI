@@ -75,7 +75,7 @@ export const HifzActionCard = ({
         actualPagesCompleted: status === "completed" ? (task.target || hifz.pagesPerDay) : 0,
         actualStartPage: task.startPage,
         actualEndPage: task.endPage,
-        status: status === "pending" ? "missed" : status as any, // Hifz logs don't use 'pending'
+        status: status === "pending" ? "missed" : status as any, 
         date: todayStr,
         logDay: logDay,
         qualityScore: quality,

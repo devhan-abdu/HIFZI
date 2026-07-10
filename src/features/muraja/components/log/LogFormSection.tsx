@@ -3,11 +3,10 @@ import { View, Pressable, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/src/components/common/ui/Text";
 import { StatusTab } from "@/src/features/hifz/components/StatusTab";
+import { useColorScheme } from "nativewind";
 import SurahDropdown, {
   SurahPageDropdown,
 } from "@/src/features/muraja/components/SurahDropdown";
-
-type StatusType = "pending" | "completed" | "partial" | "missed";
 
 interface LogFormSectionProps {
   form: any;
@@ -30,6 +29,13 @@ export function LogFormSection({
   isLocked,
   heroPages,
 }: LogFormSectionProps) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const controlIconColor = isDark ? "#ffffff" : "#276359";
+  const secondaryIconColor = isDark ? "#cbd5e1" : "#64748b";
+  const shellClass = "bg-surface dark:bg-surface-muted border border-border dark:border-white/10";
+  const controlShell = "bg-background dark:bg-background/30 border border-border dark:border-white/15";
+
   const {
     showCustomRange,
     startSurah,
@@ -54,12 +60,12 @@ export function LogFormSection({
         {!showCustomRange ?
           <Pressable
             onPress={() => updateForm({ showCustomRange: true })}
-            className="flex-row items-center justify-center gap-2 bg-background border border-border py-4 rounded-2xl active:bg-surface"
+            className={`flex-row items-center justify-center gap-2 py-4 rounded-2xl active:bg-surface dark:active:bg-surface-muted ${controlShell}`}
           >
-            <Ionicons name="options-outline" size={20} color="#64748b" />
+            <Ionicons name="options-outline" size={20} color={secondaryIconColor} />
             <Text className="text-muted">Add Custom Range</Text>
           </Pressable>
-        : <View className="p-5 rounded-3xl border border-border bg-surface shadow-sm gap-y-4">
+        : <View className={`p-5 rounded-3xl shadow-sm gap-y-4 ${shellClass}`}>
             <View className="flex-row justify-between items-center mb-2">
               <Text className="text-text text-base ml-1">Study Range</Text>
               <Pressable
@@ -83,7 +89,7 @@ export function LogFormSection({
                 }}
                 className="p-1"
               >
-                <Ionicons name="close" size={20} color="#64748b" />
+                <Ionicons name="close" size={20} color={secondaryIconColor} />
               </Pressable>
             </View>
             <SurahDropdown
@@ -121,7 +127,7 @@ export function LogFormSection({
                 updateForm(updates);
               }}
             />
-            <View className="h-[1px] bg-surface my-2" />
+            <View className="h-[1px] bg-border dark:bg-white/10 my-2" />
             <SurahDropdown
               label="End Surah"
               surah={endSurah}
@@ -156,7 +162,7 @@ export function LogFormSection({
               }}
             />
             {rangeError ?
-              <View className="flex-row items-center gap-2 bg-red-50 border border-red-100 px-4 py-3 rounded-xl mt-1">
+              <View className="flex-row items-center gap-2 bg-red-50 dark:bg-rose-500/10 border border-red-100 dark:border-rose-500/20 px-4 py-3 rounded-xl mt-1">
                 <Ionicons name="warning-outline" size={16} color="#ef4444" />
                 <Text className="text-red-500 text-xs flex-1">
                   {rangeError}
@@ -210,7 +216,7 @@ export function LogFormSection({
             Reading Quality
           </Text>
           <View className="flex-row gap-4">
-            <View className="flex-1 bg-surface border border-border p-4 rounded-2xl">
+            <View className={`flex-1 p-4 rounded-2xl ${shellClass}`}>
               <View className="flex-row items-center gap-2 mb-3">
                 <Ionicons name="alert-circle-outline" size={16} color="#ef4444" />
                 <Text className="text-muted text-xs">Mistakes</Text>
@@ -218,20 +224,20 @@ export function LogFormSection({
               <View className="flex-row items-center justify-between">
                 <Pressable
                   onPress={() => updateForm({ mistakes: Math.max(0, mistakes - 1) })}
-                  className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
+                  className={`w-8 h-8 items-center justify-center rounded-lg active:bg-surface dark:active:bg-surface-muted ${controlShell}`}
                 >
-                  <Ionicons name="remove" size={16} color="#64748b" />
+                  <Ionicons name="remove" size={16} color={controlIconColor} />
                 </Pressable>
                 <Text className="text-lg text-text">{mistakes}</Text>
                 <Pressable
                   onPress={() => updateForm({ mistakes: mistakes + 1 })}
-                  className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
+                  className={`w-8 h-8 items-center justify-center rounded-lg active:bg-surface dark:active:bg-surface-muted ${controlShell}`}
                 >
                   <Ionicons name="add" size={16} color="#ef4444" />
                 </Pressable>
               </View>
             </View>
-            <View className="flex-1 bg-surface border border-border p-4 rounded-2xl">
+            <View className={`flex-1 p-4 rounded-2xl ${shellClass}`}>
               <View className="flex-row items-center gap-2 mb-3">
                 <Ionicons name="timer-outline" size={16} color="#eab308" />
                 <Text className="text-muted text-xs">Hesitations</Text>
@@ -239,14 +245,14 @@ export function LogFormSection({
               <View className="flex-row items-center justify-between">
                 <Pressable
                   onPress={() => updateForm({ hesitations: Math.max(0, hesitations - 1) })}
-                  className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
+                  className={`w-8 h-8 items-center justify-center rounded-lg active:bg-surface dark:active:bg-surface-muted ${controlShell}`}
                 >
-                  <Ionicons name="remove" size={16} color="#64748b" />
+                  <Ionicons name="remove" size={16} color={controlIconColor} />
                 </Pressable>
                 <Text className="text-lg text-text">{hesitations}</Text>
                 <Pressable
                   onPress={() => updateForm({ hesitations: hesitations + 1 })}
-                  className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
+                  className={`w-8 h-8 items-center justify-center rounded-lg active:bg-surface dark:active:bg-surface-muted ${controlShell}`}
                 >
                   <Ionicons name="add" size={16} color="#eab308" />
                 </Pressable>
@@ -260,7 +266,7 @@ export function LogFormSection({
         <Text className="text-text text-base mb-4 ml-1">
           Actual Progress
         </Text>
-        <View className="bg-surface border border-border p-5 rounded-3xl">
+        <View className={`p-5 rounded-3xl ${shellClass}`}>
           <View className="flex-row items-center justify-between mb-6">
             <View>
               <Text className="text-text">Pages Completed</Text>
@@ -270,7 +276,7 @@ export function LogFormSection({
                 : "Adjust if you did more/less"}
               </Text>
             </View>
-            <View className="flex-row items-center bg-background rounded-xl p-1 border border-border">
+            <View className={`flex-row items-center rounded-xl p-1 ${controlShell}`}>
               <Pressable
                 onPress={() => {
                   const newPages = Math.max(0, pages - 1);
@@ -281,9 +287,9 @@ export function LogFormSection({
                   }
                   updateForm(updates);
                 }}
-                className="w-9 h-9 items-center justify-center active:bg-surface rounded-lg"
+                className={`w-9 h-9 items-center justify-center active:bg-surface dark:active:bg-surface-muted rounded-lg ${controlShell}`}
               >
-                <Ionicons name="remove" size={18} color="#276359" />
+                <Ionicons name="remove" size={18} color={controlIconColor} />
               </Pressable>
               <Text className="text-xl text-text px-4">{heroPages}</Text>
               <Pressable
@@ -293,9 +299,9 @@ export function LogFormSection({
                   if (!showCustomRange && status === "missed") updates.status = "partial";
                   updateForm(updates);
                 }}
-                className="w-9 h-9 items-center justify-center active:bg-surface rounded-lg"
+                className={`w-9 h-9 items-center justify-center active:bg-surface dark:active:bg-surface-muted rounded-lg ${controlShell}`}
               >
-                <Ionicons name="add" size={18} color="#276359" />
+                <Ionicons name="add" size={18} color={controlIconColor} />
               </Pressable>
             </View>
           </View>
@@ -310,7 +316,7 @@ export function LogFormSection({
                 keyboardType="numeric"
                 value={min}
                 onChangeText={(val) => updateForm({ min: val })}
-                className="bg-background/50 px-4 h-12 rounded-xl border border-border text-text text-sm"
+                className="bg-background/50 dark:bg-background/20 px-4 h-12 rounded-xl border border-border dark:border-white/10 text-text text-sm"
               />
             </View>
           )}
@@ -324,7 +330,7 @@ export function LogFormSection({
               placeholderTextColor="#cbd5e1"
               value={note}
               onChangeText={(val) => updateForm({ note: val })}
-              className="bg-background/50 p-4 rounded-2xl border border-border h-24 text-text text-sm"
+              className="bg-background/50 dark:bg-background/20 p-4 rounded-2xl border border-border dark:border-white/10 h-24 text-text text-sm"
               textAlignVertical="top"
             />
           </View>

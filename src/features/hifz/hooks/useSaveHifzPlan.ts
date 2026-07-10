@@ -18,6 +18,8 @@ export function useSaveHifzPlanHifz() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["hifz", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["dashboard", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["activityPlans", user?.id] });
         }
     });
 
@@ -31,6 +33,8 @@ export function useSaveHifzPlanHifz() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["hifz", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["dashboard", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["activityPlans", user?.id] });
         }
     });
 

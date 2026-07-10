@@ -16,12 +16,12 @@ export type MurajaCardState =
   | { type: 'REST_DAY' };
 
 export const useMurajaCardState = (): MurajaCardState => {
-    const { data, isLoading } = useWeeklyMuraja();
-    const { items: surah, loading: surahLoading } = useLoadSurahData();
+  const { data, isLoading } = useWeeklyMuraja();
+  const { items: surah, loading: surahLoading } = useLoadSurahData();
 
   return useMemo(() => {
-    if (isLoading) return { type: 'LOADING' };
-    if (!data)     return { type: 'NO_PLAN' };
+    if (isLoading || surahLoading) return { type: 'LOADING' };
+    if (!data) return { type: 'NO_PLAN' };
 
     if (data.planFinished) return { type: 'PLAN_FINISHED' };
 
@@ -51,14 +51,14 @@ export const useMurajaCardState = (): MurajaCardState => {
       return { type: 'COMPLETED_TODAY', log: todayLog, task: todayTask };
     }
 
-    if (todayTask && !todayTask.isVirtualTask) {
-      return { type: 'PLANNED_DAY', task: todayTask };
-    }
-
     if (todayTask?.isCatchup) {
       return { type: 'CATCHUP_DAY', task: todayTask };
     }
 
+    if (todayTask && !todayTask.isVirtualTask) {
+      return { type: 'PLANNED_DAY', task: todayTask };
+    }
+
     return { type: 'REST_DAY' };
-  }, [data, isLoading]);
+  }, [data, isLoading, surah, surahLoading]);
 };

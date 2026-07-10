@@ -46,7 +46,7 @@ export const ReaderBottomSheet = ({ chapterIds }: ReaderBottomSheetProps) => {
 
   const resolvedChapterId = activeChapterId ?? chapterIds[0] ?? 1;
   const sheetBgColor = colorScheme === "dark" ? "#1a211d" : "#ffffff";
-  const handleColor = colorScheme === "dark" ? "#334155" : "#e2e8f0";
+  const handleColor = colorScheme === "dark" ? "#ffffff" : "#e2e8f0";
 
   const handleExpand = useCallback(() => {
     sheetRef.current?.snapToIndex(1);

@@ -98,7 +98,7 @@ export function TranslationSelectorPanel() {
           transform: [{ translateY: slideAnim }],
         }}
       >
-        <View
+          <View
           style={{
             marginHorizontal: 12,
             borderRadius: 20,
@@ -110,8 +110,8 @@ export function TranslationSelectorPanel() {
             maxHeight: 480,
             overflow: "hidden",
           }}
-          className="bg-background"
-        >
+          className="bg-surface dark:bg-surface-muted"
+          >
           <View className="items-center pt-3 pb-1">
             <View className="w-8 h-1 rounded-full bg-border" />
           </View>
@@ -157,7 +157,7 @@ export function TranslationSelectorPanel() {
                       }
                     }}
                     className={`flex-row items-center px-3 py-3 mb-1 rounded-2xl ${
-                      isSelected ? "bg-primary/10" : "bg-surface"
+                      isSelected ? "bg-primary/10" : "bg-surface dark:bg-surface-muted"
                     }`}
                   >
                     <View className={`w-5 h-5 rounded border mr-3 items-center justify-center ${
@@ -183,7 +183,7 @@ export function TranslationSelectorPanel() {
                       </View>
                       
                       {inProgress && (
-                        <View className="w-full h-1 bg-surface rounded-full mt-2 overflow-hidden">
+                        <View className="w-full h-1 bg-border dark:bg-white/10 rounded-full mt-2 overflow-hidden">
                           <View 
                             style={{ width: `${progress * 100}%` }} 
                             className="h-full bg-primary" 
@@ -200,7 +200,7 @@ export function TranslationSelectorPanel() {
                         <Text className="text-[10px] text-primary ">{Math.round(progress * 100)}%</Text>
                       </View>
                     ) : (
-                      <View className="flex-row items-center bg-surface/80 px-2 py-1 rounded-full space-x-1">
+                      <View className="flex-row items-center bg-background dark:bg-background/30 px-2 py-1 rounded-full space-x-1 border border-border dark:border-white/10">
                         <Ionicons name="cloud-download-outline" size={12} color="#64748b" />
                         <Text className="text-[9px] text-muted ">Tap to use</Text>
                       </View>
@@ -211,7 +211,7 @@ export function TranslationSelectorPanel() {
               ListFooterComponent={
                 <TouchableOpacity 
                   onPress={closeTranslationSelector}
-                  className="mt-2 py-3 items-center border-t border-border"
+                  className="mt-2 py-3 items-center border-t border-border dark:border-white/10"
                 >
                   <Text className="text-primary text-sm">More Translations</Text>
                 </TouchableOpacity>

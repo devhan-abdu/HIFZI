@@ -38,7 +38,7 @@ export function MushafPageSkeleton() {
   return (
     <View className="flex-1 bg-background" style={{ padding: pad }}>
       <View
-        className="flex-1 rounded-lg bg-surface overflow-hidden border border-border"
+        className="flex-1 rounded-lg bg-[#fafafa] dark:bg-surface overflow-hidden border border-border dark:border-white/10"
         style={{ minHeight: innerH }}
       >
         <View className="absolute top-4 left-0 right-0 items-center">
@@ -58,7 +58,7 @@ export function MushafPageSkeleton() {
             <PulseBlock className="h-3 w-full rounded-md bg-border" />
             <PulseBlock className="h-3 w-[80%] rounded-md bg-border self-end" />
           </View>
-          <View style={{ width: 1 }} className="bg-surface" />
+          <View style={{ width: 1 }} className="bg-border dark:bg-white/10" />
           <View className="flex-1 justify-between py-2">
             <PulseBlock className="h-3 w-[90%] rounded-md bg-border self-end" />
             <PulseBlock className="h-3 w-full rounded-md bg-border" />
@@ -87,7 +87,7 @@ function VerseBlockSkeleton() {
         paddingBottom: 28,
         borderBottomWidth: 1,
         borderBottomColor: "#f1f5f9",
-        backgroundColor: "#ffffff",
+        backgroundColor: "#fafafa",
       }}
     >
       <View style={{ marginBottom: 18 }}>
@@ -110,7 +110,7 @@ function VerseBlockSkeleton() {
 /** Mimics translation mode: verse badge + RTL Arabic block + translation lines */
 export function TranslationPageSkeleton() {
   return (
-    <View className="flex-1 justify-center items-center bg-surface">
+    <View className="flex-1 justify-center items-center bg-[#fafafa] dark:bg-surface">
       <ActivityIndicator size="large" color="#0d9488" />
     </View>
   );

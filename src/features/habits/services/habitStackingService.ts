@@ -303,7 +303,6 @@ export const habitStackingService = {
       }
     }
 
-    console.log(`Successfully scheduled consolidated dynamic reminders`);
   },
 
   async scheduleReminders(plan: { 
@@ -313,8 +312,7 @@ export const habitStackingService = {
     isCustomTime: boolean;
     selectedDays: number[];
   }) {
-    // Legacy support: delegate to scheduleUnifiedReminders
-    // Fetch user id from db based on plan ID
+    
     try {
       let userId = "";
       if (plan.type === 'muraja') {

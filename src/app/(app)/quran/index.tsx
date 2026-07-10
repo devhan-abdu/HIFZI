@@ -80,7 +80,7 @@ export default function SurahIndex() {
           {resumePage != null && (
             <Pressable
               onPress={() => push(`/quran/reader?page=${resumePage}`)}
-              className="flex-1 flex-row items-center justify-center rounded-2xl bg-background border border-border py-3 px-3"
+              className="flex-1 flex-row items-center justify-center rounded-2xl bg-surface dark:bg-surface-muted border border-border dark:border-white/10 py-3 px-3"
             >
               <Ionicons
                 name="book-outline"
@@ -94,7 +94,7 @@ export default function SurahIndex() {
           )}
           <Pressable
             onPress={() => push("/(app)/quran/offline")}
-            className="flex-1 flex-row items-center justify-center rounded-2xl bg-background border border-border py-3 px-3"
+            className="flex-1 flex-row items-center justify-center rounded-2xl bg-surface dark:bg-surface-muted border border-border dark:border-white/10 py-3 px-3"
           >
             <Ionicons
               name="cloud-download-outline"
@@ -117,11 +117,11 @@ export default function SurahIndex() {
                 key={tab.key}
                 onPress={() => setActiveTab(tab.key)}
                 className={`flex-1 rounded-2xl px-4 py-3 ${
-                  isActive ? "bg-primary/10" : "bg-transparent"
+                  isActive ? "text-primary dark:text-primary" : "bg-transparent"
                 }`}
               >
                 <Text
-                  className={`text-center text-sm  ${
+                  className={`text-center text-lg ${
                     isActive ? "text-text" : "text-muted"
                   }`}
                 >
@@ -191,7 +191,7 @@ export default function SurahIndex() {
                   <Ionicons
                     name="arrow-forward"
                     size={18}
-                    color={isDark ? "#4ade80" : "#276359"}
+                    color={isDark ? "#276359" : "#276359"}
                   />
                 </View>
               </View>

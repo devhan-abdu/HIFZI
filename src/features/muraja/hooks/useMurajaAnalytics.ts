@@ -14,6 +14,32 @@ import {
   getLocalDateString,
 } from "../utils/murajaAnalytics";
 
+function computeMissedDays(
+  planStartDateStr: string,
+  activeDays: number[],
+  dailyLogs: any[],
+): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = getLocalDateString(today);
+  const planStart = new Date(planStartDateStr);
+  planStart.setHours(0, 0, 0, 0);
+
+  let missed = 0;
+  const cursor = new Date(planStart);
+  while (cursor < today) {
+    const dateStr = getLocalDateString(cursor);
+    const isScheduled = activeDays.includes((cursor.getDay() + 6) % 7);
+    if (isScheduled) {
+      const log = dailyLogs.find((l: any) => l.date === dateStr);
+      const wasSuccess = log && (log.status === 'completed' || log.status === 'partial');
+      if (!wasSuccess) missed++;
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return missed;
+}
+
 export const useMurajaAnalytics = () => {
   const { data, isLoading } = useWeeklyMuraja();
   const { items: surah, loading: surahLoading } = useLoadSurahData();
@@ -24,7 +50,7 @@ export const useMurajaAnalytics = () => {
     const todayStr = getLocalDateString(new Date());
     const today = new Date();
 
-    const activeDays = data.activeDays
+    const activeDays = data.activeDays;
 
     const start_page = data.startPage ?? 1;
     const end_page   = data.endPage ?? 604;
@@ -40,9 +66,11 @@ export const useMurajaAnalytics = () => {
       (acc, l) => acc + (l.completed_pages ?? 0), 0
     );
 
-    const missedDaysCount = data.daily_logs.filter(
-      (l) => l.status === 'missed' || (l.status === 'pending' && l.date < todayStr)
-    ).length;
+    const missedDaysCount = computeMissedDays(
+      data.weekStartDate ?? todayStr,
+      activeDays,
+      data.daily_logs,
+    );
 
     const totalMissedPages = missedDaysCount * planned_pages_per_day;
     const accuracy =

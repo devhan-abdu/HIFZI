@@ -1,28 +1,75 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
+import { useColorScheme } from "nativewind";
 
-type StatusTabType = {
+type StatusVariant = "completed" | "partial" | "missed";
+
+type StatusTabProps = {
   label: string;
   icon: string;
   active: boolean;
+  variant: StatusVariant;
   onPress: () => void;
 };
 
-export function StatusTab({ label, icon, active, onPress }: StatusTabType) {
+const statusStyles = {
+  completed: {
+    active: "border-primary",
+    inactive: "border-primary/25",
+    icon: "#276359",
+
+  },
+  partial: {
+    active: "border-amber-500",
+    inactive: "border-amber-500/25",
+    icon: "#f59e0b",
+  },
+  missed: {
+    active: "border-red-500",
+    inactive: "border-red-500/25",
+    icon: "#ef4444",
+  },
+} as const;
+
+export function StatusTab({
+  label,
+  icon,
+  active,
+  variant,
+  onPress,
+}: StatusTabProps) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
+
+  const styles = statusStyles[variant];
+
   return (
     <Pressable
       onPress={onPress}
-      className={`items-center justify-center p-2 rounded-2xl w-[31%] border-2 ${
-        active ? "bg-surface border-[#2D6A4F]" : "bg-surface border-transparent"
-      }`}
+      className={`
+        w-[31%]
+        items-center
+        justify-center
+        rounded-2xl
+        border-2
+        px-3
+        py-4
+        transition-all
+        ${
+          active ?
+            styles.active
+          : `bg-surface dark:bg-surface-muted ${styles.inactive}`
+        }
+      `}
     >
-      <Ionicons
-        name={icon as any}
-        size={24}
-        color={active ? "#2D6A4F" : "#9CA3AF"}
-      />
-      <Text className={`  mt-2 ${active ? "text-[#2D6A4F]" : "text-muted"}`}>
+      <Ionicons name={icon as any} size={24} color={styles.icon} />
+
+      <Text
+        className={`mt-2 font-semibold  text-text
+          
+    `}
+      >
         {label}
       </Text>
     </Pressable>

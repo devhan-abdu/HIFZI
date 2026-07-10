@@ -95,7 +95,7 @@ export const Alert = ({
       >
         <Animated.View
           style={animatedStyle}
-          className="w-full bg-surface rounded-2xl p-8 items-center shadow-2xl"
+          className="w-full bg-surface rounded-2xl p-8 items-center shadow-2xl border border-border dark:border-white/10"
         >
           <View className={`${theme.bg} p-3 rounded-full mb-6`}>
             <Ionicons
@@ -116,7 +116,7 @@ export const Alert = ({
           <View className="flex-row w-full gap-3">
             <Button
               onPress={onCancel}
-              className="flex-1 h-12 bg-surface rounded-xl justify-center items-center active:bg-surface"
+              className="flex-1 h-12 bg-surface dark:bg-surface-muted rounded-xl justify-center items-center active:bg-surface dark:active:bg-surface-muted"
             >
               <Text className="text-muted   text-lg">{cancelText}</Text>
             </Button>

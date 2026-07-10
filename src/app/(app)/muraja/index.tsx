@@ -106,15 +106,14 @@ export default function MurajaIndex() {
               <Button
                 variant="outline"
                 onPress={handleTakeTest}
-                className="border-primary/20 mt-3"
+                className="border-border  bg-surface mt-6 mr-auto"
               >
                 <Ionicons name="school-outline" size={17} color="#276359" />
-                <Text className="text-primary">Take Today's Test</Text>
+                <Text className="text-text">Take Today's Test</Text>
               </Button>
             )}
           </View>
 
-          {/* Extra Sessions */}
           {(today_extra_sessions?.length ?? 0) > 0 && (
             <View className="mt-6 mb-4">
               <SectionHeader title="Extra Sessions" />
@@ -150,7 +149,6 @@ export default function MurajaIndex() {
             </View>
           )}
 
-          {/* Weekly Consistency */}
           <View className="mt-10 mb-2 px-1">
             <Text className="text-muted uppercase tracking-[2px] text-[10px] mb-2">
               Activity
@@ -161,7 +159,6 @@ export default function MurajaIndex() {
             <DayByDay progress={dayProgress ?? null} />
           </View>
 
-          {/* Stats */}
           <View className="mt-10">
             <Text className="text-muted uppercase tracking-[2px] text-[10px] mb-2 px-1">
               Insights
@@ -222,11 +219,11 @@ export default function MurajaIndex() {
 
           <Button
             variant="outline"
-            className="flex-1"
+            className="flex-1 bg-surface border-border"
             onPress={() => push("/(app)/muraja/create-muraja-plan")}
           >
-            <Ionicons name="pencil-outline" size={18} color="#276359" />
-            <Text className="text-primary">Edit Plan</Text>
+            <Ionicons name="brush-outline" size={18} color="#276359" />
+            <Text className="text-text">Edit Plan</Text>
           </Button>
         </View>
       </ScreenFooter>

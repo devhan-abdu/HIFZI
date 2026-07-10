@@ -6,10 +6,10 @@
   "build": {
     "base": {
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://aaqcrqbnxarnkmcvsbyn.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhcWNycWJueGFybmttY3ZzYnluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMTYyNzEsImV4cCI6MjA5NjU5MjI3MX0.qRDupwX_wRjF84zFe7lHrtjgwdm7cZHIIySTYStl6o0",
-        "EXPO_PUBLIC_QF_CLIENT_ID": "52b3e206-f02e-460c-a5d3-b82ff40c32c4",
-        "EXPO_PUBLIC_BACKEND_URL": "https://aaqcrqbnxarnkmcvsbyn.supabase.co/functions/v1",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://khoylcovqwrrvuiruxbh.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtob3lsY292cXdycnZ1aXJ1eGJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4NjEwMjUsImV4cCI6MjA5ODQzNzAyNX0.pMX2tK4pe-o7QXAHjdVrsSO7VWq0KdvWSGfP4CyfGgs",
+        "EXPO_PUBLIC_QF_CLIENT_ID": "5bcbbebb-f797-4725-9a63-28183abb5703",
+        "EXPO_PUBLIC_BACKEND_URL": "https://khoylcovqwrrvuiruxbh.supabase.co/functions/v1",
         "EXPO_PUBLIC_QF_ENV": "production",
         "EXPO_PUBLIC_QF_URL": "https://oauth2.quran.foundation"
       }

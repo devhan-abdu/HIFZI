@@ -27,9 +27,8 @@ export const WeeklyOverviewCard = ({
 
   return (
     <View className="bg-primary rounded-[40px] p-7 mb-8 shadow-2xl shadow-primary/40 overflow-hidden relative border border-white/5">
-      <View className="absolute -top-10 -right-10 w-40 h-40 bg-surface/5 rounded-full" />
+      <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full" />
 
-      {/* Header row */}
       <View className="flex-row justify-between items-start mb-6">
         <View className="flex-1 pr-3">
           <Text className="text-white/50 uppercase tracking-[2px] text-[9px] mb-1.5">
@@ -42,14 +41,12 @@ export const WeeklyOverviewCard = ({
           </View>
         </View>
 
-        {/* Pace badge */}
         <View className={`flex-row items-center gap-1 px-2.5 py-1.5 rounded-full ${paceBg} border border-white/10`}>
           <Ionicons name={paceIcon as any} size={11} color="rgba(255,255,255,0.8)" />
           <Text className="text-white/80 text-[9px] uppercase tracking-wider">{paceLabel}</Text>
         </View>
       </View>
 
-      {/* Pages counter */}
       <View className="mb-4">
         <Text className="text-white/40 uppercase tracking-widest text-[9px] mb-1">
           Reviewed in this cycle
@@ -60,15 +57,14 @@ export const WeeklyOverviewCard = ({
         </Text>
       </View>
 
-      {/* Linear progress bar */}
       <View className="mb-6">
         <View className="flex-row justify-between mb-1.5">
           <Text className="text-white/40 text-[9px] uppercase tracking-widest">Progress</Text>
           <Text className="text-white/70 text-[9px]">{progressPct.toFixed(0)}%</Text>
         </View>
-        <View className="w-full h-1.5 bg-surface/15 rounded-full overflow-hidden">
+        <View className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
           <View
-            className="h-full bg-surface rounded-full"
+            className="h-full bg-white rounded-full"
             style={{ width: `${Math.min(100, progressPct)}%` }}
           />
         </View>
@@ -76,7 +72,6 @@ export const WeeklyOverviewCard = ({
 
       <View className="w-full h-[1px] bg-surface/10 rounded-full mb-6" />
 
-      {/* Stats row */}
       <View className="flex-row justify-between items-center">
         <View className="flex-1 items-center border-r border-white/10">
           <View className="flex-row items-center gap-1.5 mb-1">

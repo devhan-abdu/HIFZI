@@ -4,8 +4,7 @@ import {
   Dimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
-  StatusBar,
-} from "react-native";
+  } from "react-native";
 import { useSession } from "@/src/hooks/useSession";
 import { router } from "expo-router";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -84,7 +83,7 @@ export default function IntroScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#276359" }}>
-      <StatusBar barStyle="light-content" backgroundColor="#276359" />
+      
 
       <FlatList
         ref={flatListRef}

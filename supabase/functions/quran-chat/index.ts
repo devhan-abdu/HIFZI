@@ -121,7 +121,6 @@ Deno.serve(async (req) => {
       await mcpClient.connect(transport);
       const toolsRes = await mcpClient.listTools();
       mcpTools = toolsRes.tools ?? [];
-      console.log("MCP tools loaded:", mcpTools.length);
     } catch (err) {
       console.error("MCP connection failed (non-fatal):", err);
     }
@@ -148,7 +147,6 @@ Deno.serve(async (req) => {
 
     if (functionCall && mcpClient) {
       try {
-        console.log("Tool called:", functionCall.name);
         const toolResult = await mcpClient.callTool({
           name: functionCall.name,
           arguments: functionCall.args,

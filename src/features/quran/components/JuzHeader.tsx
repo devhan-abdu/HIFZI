@@ -9,7 +9,7 @@ export function JuzHeader({
   juzStartingPage: number;
 }) {
   return (
-    <View className="bg-border border-border  p-4 flex-row items-center justify-between px-4">
+    <View className="bg-border p-4 flex-row items-center justify-between px-4">
       <Text className="text-lg">Juz' {juzNumber}</Text>
       <Text className="text-lg">{juzStartingPage}</Text>
     </View>

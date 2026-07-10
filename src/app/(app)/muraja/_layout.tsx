@@ -4,7 +4,7 @@ import { View } from "react-native";
 
 export default function MurajaLayout() {
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1 ">
         <Header title="Muraja" />
 
       <Stack

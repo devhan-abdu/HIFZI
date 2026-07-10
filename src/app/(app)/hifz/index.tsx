@@ -67,7 +67,6 @@ export default function Hifz() {
   return (
     <Screen>
       <ScreenContent>
-        {/* Plan Overview */}
         {analytics && pace && (
           <HifzPlanOverviewCard
             startSurah={analytics.startSurah?.replace(/^Surah\s+/i, "") ?? ""}
@@ -223,7 +222,7 @@ export default function Hifz() {
 
           <Button
             variant="outline"
-            className="flex-1"
+            className="flex-1 border-border text-text bg-surface"
             onPress={() => push("/(app)/hifz/create-hifz-plan")}
           >
             <Ionicons name="create-outline" size={18} color="#276359" />

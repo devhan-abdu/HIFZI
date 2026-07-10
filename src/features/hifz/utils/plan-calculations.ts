@@ -2,7 +2,6 @@ import { ISurah } from "@/src/types";
 import { HifzPlanSchemaFormType, IHifzLog, IHifzPlan } from "../types";
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
-//this one is used to get finshed date but  ut i need  the status calulation not from start but last logged page
 export const calculatePlanStats = (data: HifzPlanSchemaFormType, surahData?: ISurah[]) => {
   
   const totalQuranPages = 604;

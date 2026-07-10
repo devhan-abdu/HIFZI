@@ -17,7 +17,7 @@ interface ReaderHeaderProps {
 }
 
 export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
-  const { push, back } = useNavigate();
+  const { push } = useNavigate();
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
   const iconColor = colorScheme === "dark" ? "#e2e8f0" : "#334155";
@@ -97,14 +97,11 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
     total: bulk.total,
   };
 
-  const mushafFullyCached =
-    (diskPages !== null && diskPages >= 604) || bulk.status === "completed";
-
   return (
     <>
       <View
         style={{ paddingTop: insets.top + 8, zIndex: 100, position: "absolute" }}
-        className="top-0 left-0 right-0 bg-surface shadow-sm border-b border-border"
+        className="top-0 left-0 right-0 bg-surface shadow-sm border-b border-border dark:border-white/10"
       >
         <View className="flex-row items-center justify-between px-4 py-3">
           <TouchableOpacity onPress={handleBack} className="p-2 mr-2">
@@ -129,7 +126,7 @@ export default function ReaderHeader({ pageData }: ReaderHeaderProps) {
                 </Text>
               </View>
             ) : (
-              <Text className="text-xs text-muted mt-0.5">{pageLabel} • Juz' {pageData?.juz}</Text>
+              <Text className="text-xs text-muted mt-0.5">{pageLabel} • Juz&apos; {pageData?.juz}</Text>
             )}
           </TouchableOpacity>
 

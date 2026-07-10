@@ -208,17 +208,34 @@ export const PageMasteryService = {
 
     const heatmap: Record<number, IPageMasteryInfo> = {};
 
+    const now = new Date();
     for (const p of performances) {
       let status: PageStatus = 'not_started';
       
-      if (p.stability < 2) {
+      let daysSinceReview = 0;
+      if (p.lastReviewedAt) {
+        const lastDate = new Date(p.lastReviewedAt);
+        daysSinceReview = Math.max(0, (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+      }
+      
+      const stability = p.stability || 1;
+      const decayRatio = daysSinceReview / Math.max(1, stability);
+      
+      let effectiveStability = stability;
+      // Start decaying effective stability if days elapsed exceeds the stability window
+      if (decayRatio > 1) {
+        effectiveStability = stability * Math.exp(-(decayRatio - 1) * 0.5); 
+      }
+
+      if (effectiveStability < 2) {
         status = 'weak';
-      } else if (p.stability < 7) {
+      } else if (effectiveStability < 7) {
         status = 'partial';
-      } else if (p.stability < 30) {
+      } else if (effectiveStability < 30) {
         status = 'strong';
       } else {
-        status = (p.consecutivePerfects || 0) >= 3 ? 'mastered' : 'strong';
+        // Must maintain perfects and not be overdue by more than 20% to keep 'mastered'
+        status = (p.consecutivePerfects || 0) >= 3 && decayRatio <= 1.2 ? 'mastered' : 'strong';
       }
 
       heatmap[p.pageNumber] = {

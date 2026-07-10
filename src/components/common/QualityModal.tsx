@@ -17,7 +17,7 @@ interface QualityModalProps {
 export const QualityModal = ({ visible, onSelect, onClose, title = "Session Quality" }: QualityModalProps) => {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const primaryColor = isDark ? "#4ade80" : "#276359";
+  const primaryColor = isDark ? "#276359" : "#276359";
   const chevronColor = isDark ? "#94a3b8" : "#94a3b8";
 
   const options = [
@@ -56,7 +56,7 @@ export const QualityModal = ({ visible, onSelect, onClose, title = "Session Qual
         
         <View 
           style={styles.modalContainer}
-          className="bg-surface rounded-[40px] p-8 shadow-2xl border border-border"
+          className="bg-surface rounded-[40px] p-8 shadow-2xl border border-border dark:border-white/10"
         >
           <View className="items-center mb-8">
             <View className="w-16 h-1.5 bg-border rounded-full mb-6" />
@@ -71,10 +71,10 @@ export const QualityModal = ({ visible, onSelect, onClose, title = "Session Qual
               <Pressable
                 key={opt.score}
                 onPress={() => onSelect(opt.score)}
-                className="flex-row items-center p-4 rounded-2xl active:scale-[0.98] transition-all bg-background border border-border active:bg-primary"
+                className="flex-row items-center p-4 rounded-2xl active:scale-[0.98] transition-all bg-surface-muted dark:bg-background/30 border border-border dark:border-white/5 active:bg-primary"
               >
                 <View 
-                  className="w-12 h-12 rounded-full items-center justify-center mr-4 bg-surface border border-border shadow-sm"
+                  className="w-12 h-12 rounded-full items-center justify-center mr-4 bg-surface dark:bg-surface-muted border border-border dark:border-white/10 shadow-sm"
                 >
                   <Ionicons name={opt.icon as any} size={22} color={primaryColor} />
                 </View>
@@ -88,7 +88,7 @@ export const QualityModal = ({ visible, onSelect, onClose, title = "Session Qual
                   </Text>
                 </View>
 
-                <View className="w-8 h-8 rounded-full bg-surface items-center justify-center border border-border">
+                <View className="w-8 h-8 rounded-full bg-surface dark:bg-surface-muted items-center justify-center border border-border dark:border-white/10">
                   <Ionicons name="chevron-forward" size={14} color={chevronColor} />
                 </View>
               </Pressable>

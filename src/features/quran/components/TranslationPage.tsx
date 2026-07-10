@@ -28,9 +28,9 @@ const VerseRow = React.memo(function VerseRow({
   translationNames: Map<number, string>;
 }) {
   return (
-    <View className="px-5 pt-5 pb-7 border-b border-border bg-background">
+    <View className="px-5 pt-5 pb-7 border-b border-border dark:border-white/10 bg-background">
       <View className="flex-row justify-start mb-4">
-        <View className="px-3 py-1.5 rounded-xl bg-background/80 dark:bg-background/90">
+        <View className="px-3 py-1.5 rounded-xl bg-[#fafafa] dark:bg-background/90 border border-border dark:border-white/10">
           <Text className="text-[12px] font-semibold text-muted tracking-[0.5px]">
             {item.verseKey}
           </Text>
@@ -70,11 +70,11 @@ const VerseRow = React.memo(function VerseRow({
 
 function SurahDivider({ name }: { name: string }) {
   return (
-    <View className="bg-background border-y border-border py-4 px-5 items-center">
+    <View className="bg-background border-y border-border dark:border-white/10 py-4 px-5 items-center">
       <View className="flex-row items-center mb-2 w-full">
-        <View className="flex-1 h-px bg-border" />
-        <View className="w-1.5 h-1.5 rounded-full bg-border mx-2" />
-        <View className="flex-1 h-px bg-border" />
+        <View className="flex-1 h-px bg-border dark:bg-white/10" />
+        <View className="w-1.5 h-1.5 rounded-full bg-border dark:bg-white/10 mx-2" />
+        <View className="flex-1 h-px bg-border dark:bg-white/10" />
       </View>
 
       <Text
@@ -85,9 +85,9 @@ function SurahDivider({ name }: { name: string }) {
       </Text>
 
       <View className="flex-row items-center mt-2 w-full">
-        <View className="flex-1 h-px bg-border" />
-        <View className="w-1.5 h-1.5 rounded-full bg-border mx-2" />
-        <View className="flex-1 h-px bg-border" />
+        <View className="flex-1 h-px bg-border dark:bg-white/10" />
+        <View className="w-1.5 h-1.5 rounded-full bg-border dark:bg-white/10 mx-2" />
+        <View className="flex-1 h-px bg-border dark:bg-white/10" />
       </View>
     </View>
   );

@@ -151,12 +151,7 @@ export function getHifzPaceDelta(plan: IHifzPlan, surah: ISurah[]) {
     ) * plan.pagesPerDay;
 
   const todayLog = (plan.hifzDailyLogs ?? []).find((l) => l.date === todayKey);
-  const loggedToday =
-    todayLog?.status === "completed" || todayLog?.status === "partial";
 
-  if (plan.selectedDays.includes(todayIndex) && !loggedToday) {
-    expectedPages = Math.max(0, expectedPages - plan.pagesPerDay);
-  }
 
   return {
     delta: expectedPages - status.completedPages,

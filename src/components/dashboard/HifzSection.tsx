@@ -27,7 +27,7 @@ export function HifzSection({ surahData }: { surahData: ISurah[] }) {
   return (
     <>
       <SectionHeader title="Hifz Progress" />
-      <View className="bg-surface rounded-[32px] p-6 shadow-md shadow-slate-200 border border-border">
+      <View className="bg-surface dark:bg-surface-muted rounded-[32px] p-6 shadow-md shadow-slate-200 border border-border dark:border-white/10">
         <View className="flex-row items-center justify-between mb-6">
           <View className="flex-1">
             <Text className="text-muted  uppercase tracking-[2px] text-[9px] mb-1.5">
@@ -60,8 +60,8 @@ export function HifzSection({ surahData }: { surahData: ISurah[] }) {
           />
         </View>
 
-        <View className="flex-row items-center border-t border-border pt-5">
-          <View className="pr-6 mr-6 border-r border-border">
+        <View className="flex-row items-center border-t border-border dark:border-white/10 pt-5">
+          <View className="pr-6 mr-6 border-r border-border dark:border-white/10">
             <Text className="text-text text-3xl  tracking-tighter">
               {hifzAnalytics.todayTarget}
             </Text>

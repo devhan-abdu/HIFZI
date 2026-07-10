@@ -37,6 +37,7 @@ import { useAlert } from "@/src/hooks/useAlert";
 import { Alert } from "@/src/components/common/Alert";
 import { useNotificationPermissions } from "@/src/hooks/useNotificationPermissions";
 import { NotificationPermissionModal } from "@/src/components/common/NotificationPermissionModal";
+import { calculateMurajaPlanStats } from "@/src/features/muraja/utils/plan-calculations";
 
 export default function CreateWeeklyPlan() {
   const { colorScheme } = useColorScheme();
@@ -175,24 +176,13 @@ export default function CreateWeeklyPlan() {
     if (!user?.id) return;
 
     try {
-      const totalPages = data.end_page - data.start_page + 1;
-      const dailyRate = data.planned_pages_per_day;
-      const weeklyFreq = data.selectedDays?.length || 1;
-      const sessionNeeded = Math.ceil(totalPages / dailyRate);
-      let daysNeeded = 1;
-      if (sessionNeeded > 1) {
-        daysNeeded = Math.ceil(((sessionNeeded - 1) / weeklyFreq) * 7) + 1;
-      }
-
-      const startDate = new Date(data.week_start_date);
-      const endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + (daysNeeded - 1));
+      const { finishDate } = calculateMurajaPlanStats(data);
 
       const planPayload: Omit<IWeeklyMurajaPLan, "id"> = {
         user_id: user.id,
         remote_id: null,
         week_start_date: data.week_start_date,
-        week_end_date: endDate.toISOString().slice(0, 10),
+        week_end_date: finishDate.toISOString().slice(0, 10),
         planned_pages_per_day: data.planned_pages_per_day,
         start_page: data.start_page,
         end_page: data.end_page,
@@ -270,7 +260,11 @@ export default function CreateWeeklyPlan() {
           onPress={() => router.back()}
           className="w-10 h-10 items-center justify-center rounded-full active:bg-surface"
         >
-          <Ionicons name="arrow-back" size={24} color={isDark ? "#ecedee" : "#11181c"} />
+          <Ionicons
+            name="arrow-back"
+            size={24}
+            color={isDark ? "#ecedee" : "#11181c"}
+          />
         </Pressable>
 
         <View className="flex-1 ml-2">
@@ -305,9 +299,7 @@ export default function CreateWeeklyPlan() {
                       <View>
                         <Text
                           className={`text-base  ${
-                            formattedWeekStart ? "text-text" : (
-                              "text-muted"
-                            )
+                            formattedWeekStart ? "text-text" : "text-muted"
                           }`}
                         >
                           {formattedWeekStart || "Select Start Date"}
@@ -565,7 +557,7 @@ export default function CreateWeeklyPlan() {
           </View>
 
           <SectionHeader title="Plan Summary" />
-          <View className="p-5 mb-10 rounded-[32px] border border-border bg-surface">
+          <View className="p-5 mb-10 rounded-[32px] border border-border bg-surface-muted">
             <MurajaStatsSummary control={control} />
           </View>
         </ScreenContent>
@@ -574,10 +566,10 @@ export default function CreateWeeklyPlan() {
           <View className="flex-row gap-3 ">
             <Button
               variant="outline"
-              className="flex-1 h-14 border-border"
+              className="flex-1 h-14 bg-surface border-border"
               onPress={() => router.back()}
             >
-              <Text className="text-muted  uppercase text-[11px] tracking-widest">
+              <Text className="text-text  uppercase text-[11px] tracking-widest">
                 Cancel
               </Text>
             </Button>

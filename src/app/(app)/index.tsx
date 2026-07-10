@@ -40,7 +40,6 @@ export default function Dashboard() {
   const { data: userStats } = useUserStats();
   const hasSyncedOnce = useSyncStore((s) => s.hasSyncedOnce);
 
-  // New architecture — card states
   const hifzCardState = useHifzCardState();
   const murajaCardState = useMurajaCardState();
 
@@ -182,7 +181,7 @@ export default function Dashboard() {
             <View className="flex-row justify-between items-end mb-4 px-1">
               <Text className="text-text  text-xl mb-2 px-1">Consistency</Text>
             </View>
-            <View className="bg-surface border border-border rounded-3xl p-5 mb-4 items-center">
+            <View className="bg-surface-muted border border-border rounded-3xl p-5 mb-4 items-center">
               <HabitProgressRing
                 completedPages={habitProgress.todayStats.completedPages}
                 goalPages={dynamicGoalPages}

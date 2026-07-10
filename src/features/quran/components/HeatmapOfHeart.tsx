@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, memo } from "react";
-import { View, Pressable, Dimensions } from "react-native";
+import { View, Pressable } from "react-native";
 import { Text } from "@/src/components/common/ui/Text";
 import { useNavigate } from "@/src/hooks/useNavigate";
 import { Ionicons } from "@expo/vector-icons";
@@ -157,7 +157,7 @@ export const HeatmapOfHeart = () => {
     : null;
 
   return (
-    <View className="bg-surface rounded-[32px] p-6 border border-border shadow-sm">
+    <View className="bg-surface dark:bg-surface-muted rounded-[32px] p-6 border border-border dark:border-white/10 shadow-sm">
       <View className="flex-row justify-between items-center mb-5 px-1">
         <View>
           <Text className="text-muted uppercase tracking-[2px] text-[10px]">
@@ -197,7 +197,7 @@ export const HeatmapOfHeart = () => {
 
       <View className="mt-8 pt-6 border-t border-border">
         {selectedPage ? (
-          <View className="flex-row items-center justify-between bg-primary/5 p-4 rounded-[24px] border border-border">
+          <View className="flex-row items-center justify-between bg-primary/5 dark:bg-background/30 p-4 rounded-[24px] border border-border dark:border-white/10">
             <View className="flex-1 mr-4">
               <View className="flex-row items-center gap-2 mb-1">
                 <Text className="text-lg text-text leading-tight">
@@ -209,7 +209,7 @@ export const HeatmapOfHeart = () => {
                       ? `${strengthInfo.color}15`
                       : "transparent",
                   }}
-                  className="px-2 py-0.5 rounded-full border border-border"
+                  className="px-2 py-0.5 rounded-full border border-border dark:border-white/10"
                 >
                   <Text
                     style={{ color: strengthInfo?.color }}

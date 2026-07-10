@@ -162,11 +162,11 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
                     className={`mb-2 flex-row items-center rounded-2xl p-4 ${
                       isSelected ?
                         "bg-primary/10 border border-primary/20"
-                      : "bg-background"
+                      : "bg-background dark:bg-background/30"
                     }`}
                   >
                     <View
-                      className={`h-8 w-8 items-center justify-center rounded-full ${isSelected ? "bg-primary" : "bg-surface"}`}
+                      className={`h-8 w-8 items-center justify-center rounded-full ${isSelected ? "bg-primary" : "bg-surface dark:bg-surface-muted"}`}
                     >
                       <Text
                         className={`text-xs ${isSelected ? "text-primary-foreground" : "text-muted"}`}
@@ -207,7 +207,7 @@ export const QariList = ({ chapterId, expanded }: QariListProps) => {
 
       {!expanded && (
         <View className="mt-4 items-center">
-          <View className="h-1 w-8 rounded-full bg-surface" />
+          <View className="h-1 w-8 rounded-full bg-surface dark:bg-surface-muted" />
           <Text className="mt-2 text-[10px]  text-muted uppercase tracking-widest">
             Swipe up to change Qari
           </Text>

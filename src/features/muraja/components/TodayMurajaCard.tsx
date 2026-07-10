@@ -1,4 +1,3 @@
-import { Button } from "@/src/components/ui/Button";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigate } from "@/src/hooks/useNavigate";
 import { View, Pressable, ActivityIndicator } from "react-native";
@@ -20,7 +19,7 @@ export const TodayMurajaCard = ({
   const isDisabled = isUpdating || todayPlan.status !== "pending";
 
   return (
-    <View className="bg-surface rounded-xl  border border-border shadow-sm">
+    <View className="bg-surface dark:bg-surface-muted rounded-xl border border-border dark:border-white/10 shadow-sm">
       <View className="p-6">
         <View className="flex-row justify-between items-center mb-6 ">
           <View>
@@ -43,7 +42,7 @@ export const TodayMurajaCard = ({
             </Text>
             <Pressable
               onPress={() => push(`/(app)/muraja/log`)}
-              className="flex-row items-center bg-primary/20 px-3 py-1.5 rounded-full active:bg-surface"
+              className="flex-row items-center bg-background dark:bg-background/30 px-3 py-1.5 rounded-full border border-border dark:border-white/10 active:bg-surface dark:active:bg-surface-muted"
             >
               <Text className="text-primary   text-[11px] mr-1.5">Add Log</Text>
               <Ionicons name="chevron-forward" size={12} color="#276359" />
@@ -54,7 +53,7 @@ export const TodayMurajaCard = ({
             <ActionButton
               label="Done"
               icon="checkmark-circle"
-              colorClass="bg-primary border-emerald-600"
+              colorClass="bg-primary border-primary"
               onPress={() => onStatusUpdate("completed")}
               isActive={todayPlan.status === "completed"}
               loading={isUpdating}
@@ -77,11 +76,11 @@ const ActionButton = ({
   isActive,
 }: any) => {
   return (
-    <Pressable
+      <Pressable
       onPress={onPress}
       disabled={disabled}
       className={`flex-1 flex-row items-center justify-center gap-2 px-3 py-3 rounded-2xl border 
-        ${isActive ? colorClass : "bg-surface border-border"} 
+        ${isActive ? colorClass : "bg-surface dark:bg-surface-muted border-border dark:border-white/10"} 
         ${disabled ? "opacity-40" : "active:scale-[0.96] shadow-sm"}`}
     >
       {loading ?
@@ -90,11 +89,11 @@ const ActionButton = ({
           <Ionicons
             name={icon}
             size={16}
-            color={isActive ? "white" : "#64748b"}
+            color={isActive ? "white" : "#276359"}
           />
           <Text
             className={`text-[11px]  uppercase tracking-wider 
-            ${isActive ? "text-white" : "text-muted"}`}
+            ${isActive ? "text-white" : "text-primary"}`}
           >
             {label}
           </Text>

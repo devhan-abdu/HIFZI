@@ -4,7 +4,7 @@ import { View } from "react-native";
 
 export const SectionSkeleton = () => {
   return (
-    <View className="bg-surface rounded-2xl p-6 mb-6 shadow-xl border border-border  animat-pulse">
+    <View className="bg-surface dark:bg-surface-muted rounded-2xl p-6 mb-6 shadow-xl border border-border dark:border-white/10 animat-pulse">
       <View className="w-24 h-4 bg-border rounded-md mb-3" />
       <View className="w-32 h-8 bg-border rounded-lg mb-5" />
 
@@ -29,7 +29,7 @@ const SkeletonItem = ({ className }: { className?: string }) => (
 
 export const DashboardSkeleton = () => {
   return (
-    <View className="flex-1 bg-surface p-4 mt-24">
+    <View className="flex-1 bg-background p-4 mt-24">
     <CardSkeleton/>
 
       <View className="mt-10 px-1">
@@ -79,7 +79,7 @@ const SkeletonPulse = ({ className }: { className?: string }) => (
 
 export const CardSkeleton = () => {
   return (
-    <View className="bg-surface rounded-[40px] p-7 overflow-hidden relative border border-border">
+    <View className="bg-surface dark:bg-surface-muted rounded-[40px] p-7 overflow-hidden relative border border-border dark:border-white/10">
       <View className="flex-row justify-between items-end mb-6">
         <View>
           <SkeletonPulse className="w-24 h-2 mb-2" />

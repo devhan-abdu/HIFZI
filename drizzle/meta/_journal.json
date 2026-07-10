@@ -15,6 +15,13 @@
       "when": 1781525527538,
       "tag": "0001_glossy_inertia",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1783157060837,
+      "tag": "0002_bitter_drax",
+      "breakpoints": true
     }
   ]
 }

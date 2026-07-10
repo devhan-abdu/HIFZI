@@ -42,11 +42,11 @@ export default function WeeklyPlanCard({
   const containerStyle =
     isHero ?
       "bg-primary rounded-[32px] p-6 shadow-xl shadow-primary/30 border border-white/10 mb-6"
-    : "bg-surface rounded-[24px] p-5 border border-border mb-4 shadow-xs ";
+    : "bg-surface dark:bg-surface-muted rounded-[24px] p-5 border border-border dark:border-white/10 mb-4 shadow-xs ";
 
   const textPrimary = isHero ? "text-white" : "text-text";
   const textSecondary = isHero ? "text-white/60" : "text-muted";
-  const dividerColor = isHero ? "bg-surface/10" : "bg-surface";
+  const dividerColor = isHero ? "bg-surface/10" : "bg-border dark:bg-white/10";
   const iconColor = isHero ? "#ffffff" : "#4b5563";
 
   return (

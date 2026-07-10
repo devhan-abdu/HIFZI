@@ -23,9 +23,11 @@ export const Header = ({
   const { unreadCount } = useNotifications();
   const { isFullyEnabled, togglePreference } = useNotificationPermissions();
   const { push } = useNavigate();
-  const { colorScheme } = useColorScheme();
+  const { colorScheme, setColorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
   const iconColor = isDark ? "#ecedee" : "#11181c";
+
+  const toggleTheme = () => setColorScheme(isDark ? "light" : "dark");
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [signOut, setSignOut] = useState(false);
@@ -52,7 +54,7 @@ export const Header = ({
       <View className="flex-row justify-between items-center">
         <View className="flex-1">
           <View className="flex-row items-center gap-x-3">
-            <Text className="text-[#276359] text-[18px] uppercase tracking-[3px]">
+            <Text className={`${isDark ? "text-white" : "text-primary" } text-[18px]  uppercase tracking-[3px]`}>
               HIFZI
             </Text>
           </View>
@@ -122,6 +124,29 @@ export const Header = ({
               >
                 <View
                   className={`w-4 h-4 rounded-full bg-surface shadow-sm transition-all ${isFullyEnabled ? "ml-auto" : ""}`}
+                />
+              </View>
+            </Pressable>
+
+            <Pressable
+              onPress={toggleTheme}
+              className="flex-row items-center justify-between px-4 py-3.5 border-b border-border active:bg-primary/5"
+            >
+              <View className="flex-row items-center">
+                <Ionicons
+                  name={isDark ? "moon" : "sunny-outline"}
+                  size={18}
+                  color={isDark ? "#276359" : "#b45309"}
+                />
+                <Text className="text-text text-sm ml-3">
+                  {isDark ? "Dark mode" : "Light mode"}
+                </Text>
+              </View>
+              <View
+                className={`w-10 h-6 rounded-full p-1 justify-center ${isDark ? "bg-primary" : "bg-border"}`}
+              >
+                <View
+                  className={`w-4 h-4 rounded-full bg-surface shadow-sm ${isDark ? "ml-auto" : ""}`}
                 />
               </View>
             </Pressable>

@@ -34,7 +34,7 @@ export const useHifzCardState = (): HifzCardState => {
     if (!analytics || hifz.pagesPerDay <= 0) return { type: 'REST_DAY' };
 
     const dayNumber = (new Date().getDay() + 6) % 7;
-    let targetInfo = getTargetPage(
+    const targetInfo = getTargetPage(
       hifz.selectedDays,
       analytics.plannedPages,
       analytics.completedPages,
@@ -42,52 +42,42 @@ export const useHifzCardState = (): HifzCardState => {
       dayNumber,
     );
 
-    let isPlannedDay = hifz.selectedDays.includes(dayNumber);
+    if (loggedToday && todayLog) {
+      const sSurah = surah.find((s) => todayLog.actualStartPage >= s.startingPage && todayLog.actualStartPage <= s.endingPage);
+      const eSurah = surah.find((s) => todayLog.actualEndPage >= s.startingPage && todayLog.actualEndPage <= s.endingPage);
+      const displaySurah = sSurah?.number === eSurah?.number
+        ? sSurah?.englishName
+        : `${sSurah?.englishName} & ${eSurah?.englishName}`;
 
-    if (!isPlannedDay && targetInfo.catchUpAmount === 0 && hifz.selectedDays.length > 0) {
-      let nextDay = (dayNumber + 1) % 7;
-      let daysToAdd = 1;
-      while (!hifz.selectedDays.includes(nextDay) && daysToAdd < 7) {
-        nextDay = (nextDay + 1) % 7;
-        daysToAdd++;
-      }
-      if (hifz.selectedDays.includes(nextDay)) {
-        targetInfo = getTargetPage(
-          hifz.selectedDays,
-          analytics.plannedPages,
-          analytics.completedPages,
-          hifz.pagesPerDay,
-          nextDay,
-        );
-        isPlannedDay = true;
-      }
+      return {
+        type: 'COMPLETED_TODAY',
+        log: todayLog,
+        task: {
+          startPage: todayLog.actualStartPage,
+          endPage: todayLog.actualEndPage,
+          totalTarget: todayLog.actualPagesCompleted,
+          displaySurah: displaySurah || '',
+          isCatchup: false,
+          isPlannedDay: true,
+        },
+      };
     }
 
-    const effectiveTarget = targetInfo?.totalTarget > 0
-      ? targetInfo.totalTarget
-      : Math.max(0, Math.round(hifz.pagesPerDay));
+    if (targetInfo.totalTarget <= 0) return { type: 'REST_DAY' };
 
-    if (effectiveTarget <= 0) return { type: 'REST_DAY' };
-
-    const rawTask = getTodayTask(hifz, surah, effectiveTarget);
+    const rawTask = getTodayTask(hifz, surah, targetInfo.totalTarget);
     if (!rawTask) return { type: 'REST_DAY' };
 
     const todayTask = {
       ...rawTask,
       ...targetInfo,
-      isCatchup: (targetInfo?.catchUpAmount ?? 0) > 0,
-      isVirtualTask: !isPlannedDay,
     };
-
-    if (loggedToday && todayLog) {
-      return { type: 'COMPLETED_TODAY', log: todayLog, task: todayTask };
-    }
 
     if (todayTask.isCatchup) {
       return { type: 'CATCHUP_DAY', task: todayTask };
     }
 
-    if (!todayTask.isVirtualTask) {
+    if (todayTask.isPlannedDay) {
       return { type: 'PLANNED_DAY', task: todayTask };
     }
 

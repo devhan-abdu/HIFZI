@@ -1,5 +1,4 @@
 import { cn } from "@/src/lib/utils";
-import { useState } from "react";
 import { Pressable, PressableProps, View, ActivityIndicator } from "react-native";
 import { Text } from "../common/ui/Text";
 
@@ -29,7 +28,7 @@ export function Button({
 
   const variants: Record<ButtonVariant, string> = {
     primary: "bg-primary",
-    outline: "border border-primary bg-transparent",
+    outline: "border border-border bg-transparent dark:border-white/15",
     ghost: "bg-transparent",
     none: "",
   };

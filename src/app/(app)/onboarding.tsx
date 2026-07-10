@@ -20,13 +20,13 @@ import Animated, {
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useColorScheme } from "nativewind";
 
-const { height, width } = Dimensions.get("window");
+const { height } = Dimensions.get("window");
 
 const PRIMARY = "#1e5a54";
-const PRIMARY_LIGHT = "#2a7f77";
+const PRIMARY_LIGHT = "#2d8a7a";
 const BG_DARK = "#333535";
-const CARD_BG = "#F8FAFC"; // Light background for contrast
 const BORDER_COLOR = "#E2E8F0";
 
 type JourneyOption = "hifz" | "muraja";
@@ -68,6 +68,8 @@ function OptionCard({
   selected: boolean;
   onPress: () => void;
 }) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const scale = useSharedValue(1);
   const selectionProgress = useSharedValue(selected ? 1 : 0);
 
@@ -92,7 +94,7 @@ function OptionCard({
     backgroundColor: interpolateColor(
       selectionProgress.value,
       [0, 1],
-      ["#FFFFFF", "#F0Fdfa"] // white to light teal
+      [isDark ? "#1a211d" : "#FFFFFF", isDark ? "#1a211d" : "#FFFFFF"]
     ),
   }));
 
@@ -115,7 +117,7 @@ function OptionCard({
     backgroundColor: interpolateColor(
       selectionProgress.value,
       [0, 1],
-      ["#F1F5F9", "rgba(30,90,84,0.1)"]
+      [isDark ? "#1a211d" : "#FFFFFF", isDark ? "#1a211d" : "#FFFFFF"]
     ),
   }));
 
@@ -132,24 +134,23 @@ function OptionCard({
     <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut}>
       <Animated.View
         style={[animatedStyle]}
-        className="w-full rounded-xl border p-5" // Fully rounded for the option card itself
+        className="w-full rounded-xl border p-5" 
       >
         <View className="flex-row items-center">
           {/* Icon */}
           <Animated.View
             style={[badgeStyle]}
-            className="mr-4 h-14 w-14 items-center justify-center rounded-full border" // Fully rounded icon container
+            className="mr-4 h-14 w-14 items-center justify-center rounded-full border" 
           >
-            <Ionicons
+          <Ionicons
               name={option.iconName}
               size={26}
               color={selected ? PRIMARY : "#64748b"}
             />
           </Animated.View>
 
-          {/* Text */}
           <View className="flex-1 justify-center">
-            <Text className={`text-base mb-1 ${selected ? "text-primary" : "text-text"}`}>
+            <Text className="text-base mb-1 text-text">
               {option.title}
             </Text>
             <Text className="text-xs text-muted">
@@ -157,7 +158,6 @@ function OptionCard({
             </Text>
           </View>
 
-          {/* Icons container */}
           <View className="w-7 h-7 items-center justify-center ml-2">
             <Animated.View style={[chevronStyle]} className="absolute">
               <Ionicons
@@ -187,8 +187,7 @@ function OptionCard({
         {selected && (
           <Animated.View
             entering={FadeIn.duration(300)}
-            className="mt-4 border-t pt-4"
-            style={{ borderTopColor: "rgba(30,90,84,0.1)" }}
+            className="mt-4 border-t pt-4 border-border dark:border-white/10"
           >
             <Text className="text-[13px] leading-5 text-muted">
               {option.description}
@@ -203,6 +202,8 @@ function OptionCard({
 export default function OnboardingBridge() {
   const [selected, setSelected] = useState<JourneyOption | null>(null);
   const insets = useSafeAreaInsets();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
 
   const buttonProgress = useSharedValue(0);
   buttonProgress.value = withTiming(selected ? 1 : 0, { duration: 300 });
@@ -248,14 +249,14 @@ export default function OnboardingBridge() {
             Choose Your{"\n"}Path
           </Text>
           <Text className="text-white opacity-80 text-sm leading-6 mt-2 max-w-xs">
-            Select what you'd like to focus on in your Quran journey
+            Select what you&apos;d like to focus on in your Quran journey
           </Text>
         </Animated.View>
       </View>
 
       <View
         className="flex-1 rounded-t-3xl overflow-hidden"
-        style={{ backgroundColor: CARD_BG, marginTop: 8 }}
+        style={{ backgroundColor: isDark ? "#1a211d" : "#ffffff", marginTop: 8 }}
       >
         <ScrollView
           contentContainerStyle={{
@@ -297,18 +298,15 @@ export default function OnboardingBridge() {
               className="active:opacity-75"
             >
               <Animated.View style={[buttonStyle]}>
-                <LinearGradient
-                  colors={
-                    selected
-                      ? [PRIMARY_LIGHT, PRIMARY]
-                      : ["#E2E8F0", "#E2E8F0"]
-                  }
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  className="w-full h-14 rounded-[60px] items-center justify-center flex-row"
+                <View
+                  className={`w-full h-14 rounded-[60px] items-center justify-center flex-row border ${
+                    isDark
+                      ? "bg-black border-white/10"
+                      : "bg-white border-border"
+                  }`}
                 >
                   <Animated.Text
-                    style={{ color: selected ? "#FFFFFF" : "#94A3B8" }}
+                    style={{ color: "#276359" }}
                     className="text-base font-semibold "
                   >
                     Continue
@@ -318,10 +316,10 @@ export default function OnboardingBridge() {
                     <Ionicons
                       name="arrow-forward"
                       size={18}
-                      color={selected ? "#FFFFFF" : "#94A3B8"}
+                      color="#276359"
                     />
                   </Animated.View>
-                </LinearGradient>
+                </View>
               </Animated.View>
             </Pressable>
           </View>

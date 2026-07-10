@@ -30,7 +30,6 @@ export default ({ config }) => {
 
   const active = profiles[profile] || profiles.development;
 
-  console.log("Active profile:", profile, "→", active.appName);
 
   return {
     ...config,

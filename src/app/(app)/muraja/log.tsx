@@ -329,12 +329,16 @@ export default function LogPage() {
   return (
     <>
       <Screen>
-        <View className="bg-surface px-4 pt-4 pb-4 flex-row items-center border-b border-border">
+        <View className="px-4 pt-4 pb-4 flex-row items-center">
           <Pressable
             onPress={() => router.back()}
-            className="w-10 h-10 items-center justify-center rounded-full active:bg-surface"
+            className="w-10 h-10 items-center justify-center rounded-full active:bg-surface-muted"
           >
-            <Ionicons name="arrow-back" size={22} color={isDark ? "#ecedee" : "#11181c"} />
+            <Ionicons
+              name="arrow-back"
+              size={22}
+              color={isDark ? "#ecedee" : "#11181c"}
+            />
           </Pressable>
           <Text className="text-lg text-text ml-2">{formattedDate}</Text>
         </View>
@@ -405,30 +409,44 @@ export default function LogPage() {
                 {!showCustomRange ?
                   <Pressable
                     onPress={() => updateForm({ showCustomRange: true })}
-                    className="flex-row items-center justify-center gap-2 bg-background border border-border py-4 rounded-2xl active:bg-surface"
+                    className="flex-row items-center justify-center gap-2 bg-surface border border-border py-4 rounded-2xl active:bg-surface"
                   >
-                    <Ionicons name="options-outline" size={20} color="#64748b" />
+                    <Ionicons
+                      name="options-outline"
+                      size={20}
+                      color="#64748b"
+                    />
                     <Text className="text-muted">Add Custom Range</Text>
                   </Pressable>
-                : <View className="p-5 rounded-3xl border border-border bg-surface shadow-sm gap-y-4">
-                    <View className="flex-row justify-between items-center mb-2">
-                      <Text className="text-text text-base ml-1">Study Range</Text>
+                : <View className="p-5 rounded-3x border border-border shadow-sm gap-y-4">
+                    <View className="flex-row justify-between items-center mb-2  bg-surface-muted">
+                      <Text className="text-text text-base ml-1">
+                        Study Range
+                      </Text>
                       <Pressable
                         onPress={() => {
-                          updateForm({ showCustomRange: false, rangeError: "" });
+                          updateForm({
+                            showCustomRange: false,
+                            rangeError: "",
+                          });
                           if (todayTask) {
                             const sn =
-                              items.find((s) => s.englishName === todayTask.startSurah)
-                                ?.number || 1;
+                              items.find(
+                                (s) => s.englishName === todayTask.startSurah,
+                              )?.number || 1;
                             const en =
-                              items.find((s) => s.englishName === todayTask.endSurah)
-                                ?.number || 1;
+                              items.find(
+                                (s) => s.englishName === todayTask.endSurah,
+                              )?.number || 1;
                             updateForm({
                               startSurah: sn,
                               startPage: todayTask.startPage || 1,
                               endSurah: en,
                               endPage: todayTask.endPage || 1,
-                              pages: recalcPages(todayTask.startPage, todayTask.endPage)
+                              pages: recalcPages(
+                                todayTask.startPage,
+                                todayTask.endPage,
+                              ),
                             });
                           }
                         }}
@@ -443,7 +461,10 @@ export default function LogPage() {
                       setSurah={(newSurah) => {
                         const found = items.find((s) => s.number === newSurah);
                         const newStartPage = found?.startingPage ?? startPage;
-                        const updates: any = { startSurah: newSurah, startPage: newStartPage };
+                        const updates: any = {
+                          startSurah: newSurah,
+                          startPage: newStartPage,
+                        };
                         if (newSurah > endSurah) {
                           updates.endSurah = newSurah;
                           updates.endPage = newStartPage;
@@ -451,7 +472,10 @@ export default function LogPage() {
                           updates.rangeError = "";
                         } else {
                           updates.pages = recalcPages(newStartPage, endPage);
-                          updates.rangeError = newStartPage > endPage ? "End page must be ≥ start page." : "";
+                          updates.rangeError =
+                            newStartPage > endPage ?
+                              "End page must be ≥ start page."
+                            : "";
                         }
                         updateForm(updates);
                       }}
@@ -479,7 +503,10 @@ export default function LogPage() {
                       setSurah={(newSurah) => {
                         const found = items.find((s) => s.number === newSurah);
                         const newEndPage = found?.startingPage ?? endPage;
-                        const updates: any = { endSurah: newSurah, endPage: newEndPage };
+                        const updates: any = {
+                          endSurah: newSurah,
+                          endPage: newEndPage,
+                        };
                         if (newEndPage < startPage) {
                           updates.rangeError = "End page must be ≥ start page.";
                           updates.pages = 0;
@@ -508,7 +535,11 @@ export default function LogPage() {
                     />
                     {rangeError ?
                       <View className="flex-row items-center gap-2 bg-red-500/10 border border-red-500/20 px-4 py-3 rounded-xl mt-1">
-                        <Ionicons name="warning-outline" size={16} color="#ef4444" />
+                        <Ionicons
+                          name="warning-outline"
+                          size={16}
+                          color="#ef4444"
+                        />
                         <Text className="text-red-500 text-xs flex-1">
                           {rangeError}
                         </Text>
@@ -527,28 +558,42 @@ export default function LogPage() {
                     <StatusTab
                       label="Completed"
                       icon="checkmark-circle"
+                      variant="completed"
                       active={status === "completed"}
                       onPress={() => {
-                        updateForm({ status: "completed", pages: recalcPages(startPage, endPage) });
+                        updateForm({
+                          status: "completed",
+                          pages: recalcPages(startPage, endPage),
+                        });
                       }}
                     />
+
                     <StatusTab
                       label="Partial"
                       icon="contrast"
+                      variant="partial"
                       active={status === "partial"}
                       onPress={() => {
                         updateForm({
                           status: "partial",
-                          pages: Math.max(1, Math.floor(recalcPages(startPage, endPage) / 2))
+                          pages: Math.max(
+                            1,
+                            Math.floor(recalcPages(startPage, endPage) / 2),
+                          ),
                         });
                       }}
                     />
+
                     <StatusTab
                       label="Missed"
                       icon="close-circle"
+                      variant="missed"
                       active={status === "missed"}
                       onPress={() => {
-                        updateForm({ status: "missed", pages: 0 });
+                        updateForm({
+                          status: "missed",
+                          pages: 0,
+                        });
                       }}
                     />
                   </View>
@@ -561,43 +606,59 @@ export default function LogPage() {
                     Reading Quality
                   </Text>
                   <View className="flex-row gap-4">
-                    <View className="flex-1 bg-surface border border-border p-4 rounded-2xl">
+                    <View className="flex-1 bg-surface-muted border border-border p-4 rounded-2xl">
                       <View className="flex-row items-center gap-2 mb-3">
-                        <Ionicons name="alert-circle-outline" size={16} color="#ef4444" />
+                        <Ionicons
+                          name="alert-circle-outline"
+                          size={16}
+                          color="#ef4444"
+                        />
                         <Text className="text-muted text-xs">Mistakes</Text>
                       </View>
                       <View className="flex-row items-center justify-between">
                         <Pressable
-                          onPress={() => updateForm({ mistakes: Math.max(0, mistakes - 1) })}
-                          className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
+                          onPress={() =>
+                            updateForm({ mistakes: Math.max(0, mistakes - 1) })
+                          }
+                          className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface-muted"
                         >
                           <Ionicons name="remove" size={16} color="#64748b" />
                         </Pressable>
                         <Text className="text-lg text-text">{mistakes}</Text>
                         <Pressable
                           onPress={() => updateForm({ mistakes: mistakes + 1 })}
-                          className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
+                          className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface-muted"
                         >
                           <Ionicons name="add" size={16} color="#ef4444" />
                         </Pressable>
                       </View>
                     </View>
-                    <View className="flex-1 bg-surface border border-border p-4 rounded-2xl">
+                    <View className="flex-1 bg-surface-muted border border-border p-4 rounded-2xl">
                       <View className="flex-row items-center gap-2 mb-3">
-                        <Ionicons name="timer-outline" size={16} color="#eab308" />
+                        <Ionicons
+                          name="timer-outline"
+                          size={16}
+                          color="#eab308"
+                        />
                         <Text className="text-muted text-xs">Hesitations</Text>
                       </View>
                       <View className="flex-row items-center justify-between">
                         <Pressable
-                          onPress={() => updateForm({ hesitations: Math.max(0, hesitations - 1) })}
-                          className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
+                          onPress={() =>
+                            updateForm({
+                              hesitations: Math.max(0, hesitations - 1),
+                            })
+                          }
+                          className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface-muted"
                         >
                           <Ionicons name="remove" size={16} color="#64748b" />
                         </Pressable>
                         <Text className="text-lg text-text">{hesitations}</Text>
                         <Pressable
-                          onPress={() => updateForm({ hesitations: hesitations + 1 })}
-                          className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
+                          onPress={() =>
+                            updateForm({ hesitations: hesitations + 1 })
+                          }
+                          className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface-muted"
                         >
                           <Ionicons name="add" size={16} color="#eab308" />
                         </Pressable>
@@ -611,7 +672,7 @@ export default function LogPage() {
                 <Text className="text-text text-base mb-4 ml-1">
                   Actual Progress
                 </Text>
-                <View className="bg-surface border border-border p-5 rounded-3xl">
+                <View className="bg-surface-muted border border-border p-5 rounded-3xl">
                   <View className="flex-row items-center justify-between mb-6">
                     <View>
                       <Text className="text-text">Pages Completed</Text>
@@ -628,23 +689,27 @@ export default function LogPage() {
                           const updates: any = { pages: newPages };
                           if (!showCustomRange) {
                             if (newPages === 0) updates.status = "missed";
-                            else if (status === "completed") updates.status = "partial";
+                            else if (status === "completed")
+                              updates.status = "partial";
                           }
                           updateForm(updates);
                         }}
-                        className="w-9 h-9 items-center justify-center active:bg-surface rounded-lg"
+                        className="w-9 h-9 items-center justify-center active:bg-surface-muted rounded-lg"
                       >
                         <Ionicons name="remove" size={18} color="#276359" />
                       </Pressable>
-                      <Text className="text-xl text-text px-4">{heroPages}</Text>
+                      <Text className="text-xl text-text px-4">
+                        {heroPages}
+                      </Text>
                       <Pressable
                         onPress={() => {
                           const newPages = pages + 1;
                           const updates: any = { pages: newPages };
-                          if (!showCustomRange && status === "missed") updates.status = "partial";
+                          if (!showCustomRange && status === "missed")
+                            updates.status = "partial";
                           updateForm(updates);
                         }}
-                        className="w-9 h-9 items-center justify-center active:bg-surface rounded-lg"
+                        className="w-9 h-9 items-center justify-center active:bg-surface-muted rounded-lg"
                       >
                         <Ionicons name="add" size={18} color="#276359" />
                       </Pressable>
@@ -671,17 +736,19 @@ export default function LogPage() {
                     </Text>
                     <TextInput
                       multiline
-                      placeholder="Any specific difficulties?"
-                      placeholderTextColor="#cbd5e1"
+                      placeholder="any specific difficulties?"
+                      placeholderTextColor="#5d6063"
                       value={note}
                       onChangeText={(val) => updateForm({ note: val })}
-                      className="bg-background/50 p-4 rounded-2xl border border-border h-24 text-text text-sm"
+                      className="bg-background p-4 rounded-2xl border border-border h-24 text-text text-sm placholder:text-xs"
                       textAlignVertical="top"
                     />
                   </View>
                 </View>
                 {error ?
-                  <Text className="text-red-500 mt-4 text-center text-xs">{error}</Text>
+                  <Text className="text-red-500 mt-4 text-center text-xs">
+                    {error}
+                  </Text>
                 : null}
               </View>
             </>
@@ -692,7 +759,7 @@ export default function LogPage() {
           <Button
             onPress={handleSave}
             disabled={isUpdating || isLocked || !!rangeError}
-            className={`h-14 rounded-2xl shadow-sm ${rangeError ? "bg-surface" : "bg-primary"}`}
+            className={`h-14 rounded-2xl shadow-sm ${rangeError ? "bg-surface-muted" : "bg-primary"}`}
           >
             <View className="flex-row items-center justify-center">
               <Text className="text-white text-base mr-2">

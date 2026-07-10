@@ -25,3 +25,25 @@ export const calculateMurajaPlanStats = (data: Partial<WeeklyMurajaFormType>, su
     daysNeeded,
   };
 };
+
+export const calculateMurajaFinishedDate = (
+    remainingPages: number, 
+    pagesPerDay: number, 
+    weeklyFreq: number,
+) => {
+  const sessionNeeded = Math.ceil(remainingPages / Math.max(1, pagesPerDay));
+  let daysNeeded = 1;
+  if (sessionNeeded > 1) {
+    daysNeeded = Math.ceil(((sessionNeeded - 1) / weeklyFreq) * 7) + 1;
+  }
+
+  const finishDate = new Date();
+  if (!isNaN(daysNeeded) && isFinite(daysNeeded)) {
+    finishDate.setDate(finishDate.getDate() + (daysNeeded - 1));
+  }
+
+  return {
+    finishDate: finishDate.toISOString().slice(0, 10),
+    daysNeeded
+  }
+}

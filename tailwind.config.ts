@@ -5,15 +5,17 @@ const config: Config = {
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
-      colors: {
-        primary: "#276359",
+       colors: {
+        background: "var(--background)",
+        surface: "var(--surface)",
+        "surface-muted": "var(--surface-muted)",
+        border: "var(--border)",
+        text: "var(--text)",
+        muted: "var(--muted)",
+        primary: "var(--primary)",
+        "primary-foreground": "var(--primary-foreground)",
       },
-      fontFamily: {
-        sans: ["Rosemary"], 
-        rosemary: ["Rosemary"],
-      },
-    }
-    ,
+    },
   },
   plugins: [],
 };

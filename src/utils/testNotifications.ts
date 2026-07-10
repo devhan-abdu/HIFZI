@@ -26,5 +26,4 @@ export async function sendTestNotification(
     message: entry.message,
     eventKey: `test:${type}:${Date.now()}`,
   });
-  console.log("[TEST NOTIFICATION SENT]", type);
 }

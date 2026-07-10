@@ -291,10 +291,8 @@ export async function downloadTranslation(
   if (activeDownloads.has(id)) return;
   activeDownloads.add(id);
 
-  console.log(`[TranslationService] Starting download for ${name} (${id})...`);
 
   try {
-    // 1. Count how many pages are already downloaded
     let completedCount = 0;
     for (let p = 1; p <= 604; p++) {
       if (getTranslationFile(id, p).exists) {
@@ -331,7 +329,6 @@ export async function downloadTranslation(
       }
 
       if (pagesToDownload.length > 0) {
-        // Fetch pages in parallel within the chunk
         await Promise.all(pagesToDownload.map((p) => fetchTranslationPage(id, p)));
         completedCount += pagesToDownload.length;
       }
@@ -343,7 +340,6 @@ export async function downloadTranslation(
       
       onProgress(progress);
     }
-    console.log(`[TranslationService] Download complete for ${name} (${id})`);
   } catch (error) {
     console.error(`[TranslationService] Failed to download ${name} (${id}):`, error);
     throw error;

@@ -10,6 +10,7 @@ export const getTargetPage = (
       totalTarget: 0,
       baseTarget: 0,
       catchUpAmount: 0,
+      isCatchup: false,
       isPlannedDay: false,
       hasBacklog: false
     };
@@ -19,32 +20,34 @@ export const getTargetPage = (
   const backlog = Math.max(0, plannedTotal - completedTotal);
   const hasBacklog = backlog > 0;
 
-  if (dailyRate <= 0 || (!isPlannedDay && !hasBacklog)) {
+  if (!isPlannedDay && !hasBacklog) {
     return {
       totalTarget: 0,
       baseTarget: 0,
       catchUpAmount: 0,
-      isPlannedDay,
+      isCatchup: false,
+      isPlannedDay: false,
       hasBacklog: false
     };
   }
 
-  let baseTarget = isPlannedDay ? dailyRate : 0;
-  let catchUpAmount = 0;
-
-  if (hasBacklog) {
-    catchUpAmount = Math.min(Math.floor(dailyRate / 2), backlog);
-    
-    if (!isPlannedDay && catchUpAmount === 0 && backlog > 0) {
-      catchUpAmount = 1;
-    }
+  if (!isPlannedDay && hasBacklog) {
+    return {
+      totalTarget: dailyRate,
+      baseTarget: dailyRate,
+      catchUpAmount: dailyRate,
+      isCatchup: true,
+      isPlannedDay: false,
+      hasBacklog: true
+    };
   }
 
   return {
-    totalTarget: baseTarget + catchUpAmount,
-    baseTarget,
-    catchUpAmount,
-    isPlannedDay,
+    totalTarget: dailyRate,
+    baseTarget: dailyRate,
+    catchUpAmount: 0,
+    isCatchup: hasBacklog,
+    isPlannedDay: true,
     hasBacklog
   };
 };

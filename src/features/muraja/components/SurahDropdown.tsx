@@ -34,11 +34,11 @@ const useDropdownTheme = () => {
   const isDark = colorScheme === "dark";
   return {
     isDark,
-    bgColor: isDark ? "#1a211d" : "#ffffff", 
-    borderColor: isDark ? "#334155" : "#e2e8f0", 
-    textColor: isDark ? "#f8fafc" : "#111827", 
+    bgColor: isDark ? "rgba(26, 33, 29)" : "#ffffff",
+    borderColor: isDark ? "#334155" : "#e2e8f0",
+    textColor: isDark ? "#f8fafc" : "#111827",
     placeholderColor: isDark ? "#64748b" : "#9ca3af",
-    iconColor: isDark ? "#1d3f39" : "#276359", 
+    iconColor: isDark ? "#1d3f39" : "#276359",
     activeBg: isDark ? "#0f1512" : "#f8fafc",
   };
 };

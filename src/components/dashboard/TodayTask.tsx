@@ -27,11 +27,11 @@ export const EvaluationRequiredCard = ({ type,planId }: { type: 'hifz' | 'muraja
       onPress={() =>
         push(`/evaluation?type=${type.toUpperCase()}&planId=${planId}`)
       }
-      className="bg-surface border border-border rounded-2xl p-6 shadow-sm overflow-hidden"
+      className="bg-surface dark:bg-surface-muted border border-border dark:border-white/10 rounded-2xl p-6 shadow-sm overflow-hidden"
     >
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-4">
-          <View className="w-12 h-12 bg-primary/10 rounded-full items-center justify-center">
+          <View className="w-12 h-12 bg-primary/10 rounded-full items-center justify-center border border-primary/10 dark:border-white/10">
             <Ionicons name="lock-closed-outline" size={24} color="#276359" />
           </View>
           <View>
@@ -57,11 +57,11 @@ export const EvaluationRequiredCard = ({ type,planId }: { type: 'hifz' | 'muraja
 export const RestDayCardSingle = ({ type, onLog }: { type: 'hifz' | 'muraja', onLog: () => void }) => (
     <Pressable 
         onPress={onLog}
-        className="bg-surface border border-border shadow-sm rounded-2xl p-6 flex-row items-center justify-between"
+        className="bg-surface dark:bg-surface-muted border border-border dark:border-white/10 shadow-sm rounded-2xl p-6 flex-row items-center justify-between"
     >
         <View className="flex-row items-center gap-4">
             <View className={`w-12 h-12 rounded-full items-center justify-center bg-primary/10`}>
-                <Ionicons name="cafe-outline" size={24} color={type === 'hifz' ? '#276359' : '#0891b2'} />
+                <Ionicons name="cafe-outline" size={24} color="#276359" />
             </View>
             <View>
                 <Text className="text-text">{type === 'hifz' ? 'Hifz Rest Day' : 'Muraja Rest Day'}</Text>
@@ -71,7 +71,6 @@ export const RestDayCardSingle = ({ type, onLog }: { type: 'hifz' | 'muraja', on
         <Ionicons name="add-circle" size={24} color="#CBD5E1" />
     </Pressable>
 )
-
 
 
 

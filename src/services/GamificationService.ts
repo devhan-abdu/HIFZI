@@ -219,7 +219,6 @@ export const GamificationService = {
         }
       }
 
-      console.log(`Checking plan progress badges for ${planType} plan ${planId}: percentage = ${percentage * 100}%`);
 
       const awarded: any[] = [];
 

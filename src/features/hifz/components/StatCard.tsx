@@ -20,19 +20,26 @@ export default function StatCard({
   icon,
   category,
 }: StatCardProps) {
+  const { colorScheme } = require("react-native").useColorScheme();
+  const isDark = colorScheme === "dark";
+
+  const primaryIcon = isDark ? "#4ade80" : "#276359";
+  const primaryText = isDark ? "text-emerald-400" : "text-primary";
+  const primaryBg = isDark ? "bg-emerald-900/20" : "bg-primary/10";
+
   const themes: any = {
-    success: { bg: "bg-primary/10", icon: "#276359", text: "text-primary" },
-    danger: { bg: "bg-rose-500/10", icon: "#e11d48", text: "text-rose-500" },
-    info: { bg: "bg-blue-500/10", icon: "#2563eb", text: "text-blue-500" },
-    warning: { bg: "bg-amber-500/10", icon: "#d97706", text: "text-amber-500" },
-    hifz: { bg: "bg-primary/10", icon: "#276359", text: "text-primary" },
-    muraja: { bg: "bg-primary/10", icon: "#276359", text: "text-primary" },
+    success: { bg: primaryBg, icon: primaryIcon, text: primaryText },
+    danger: { bg: isDark ? "bg-rose-900/30" : "bg-rose-500/10", icon: isDark ? "#fb7185" : "#e11d48", text: isDark ? "text-rose-400" : "text-rose-500" },
+    info: { bg: isDark ? "bg-blue-900/30" : "bg-blue-500/10", icon: isDark ? "#60a5fa" : "#2563eb", text: isDark ? "text-blue-400" : "text-blue-500" },
+    warning: { bg: isDark ? "bg-amber-900/30" : "bg-amber-500/10", icon: isDark ? "#fbbf24" : "#d97706", text: isDark ? "text-amber-400" : "text-amber-500" },
+    hifz: { bg: primaryBg, icon: primaryIcon, text: primaryText },
+    muraja: { bg: primaryBg, icon: primaryIcon, text: primaryText },
   };
 
   const theme = themes[type] || themes.success;
 
   return (
-    <View className="w-[48%] bg-surface rounded-xl px-4 py-5 mb-4 border border-border shadow-sm relative">
+    <View className="w-[48%] bg-surface dark:bg-surface-muted rounded-xl px-4 py-5 mb-4 border border-border shadow-sm relative">
       {category && (
         <Text
           className={`absolute top-3 right-3 text-[7px]  uppercase tracking-[1px] ${theme.text}`}

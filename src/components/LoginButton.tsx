@@ -1,15 +1,18 @@
 import * as React from "react";
-import { View, ActivityIndicator, Platform } from "react-native";
+import { View, ActivityIndicator } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import { makeRedirectUri } from "expo-auth-session";
 import { Text, Button } from "./common/ui/Text";
 import { supabase } from "../lib/supabase";
 import { authService } from "../features/user/services/authService";
+import { useColorScheme } from "nativewind";
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginButton() {
   const [isLoading, setIsLoading] = React.useState(false);
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
 
   const handleLogin = async () => {
     setIsLoading(true);
@@ -64,7 +67,7 @@ export default function LoginButton() {
           }
         }
       }
-    } catch (e) {
+    } catch {
     } finally {
       setIsLoading(false);
     }
@@ -75,19 +78,19 @@ export default function LoginButton() {
       <Button
         disabled={isLoading}
         onPress={handleLogin}
-        className="bg-primary p-5 rounded-2xl my-8 flex-row items-center justify-center shadow-lg active:opacity-90"
+        className={`p-4 rounded-2xl my-8 flex-row items-center justify-center shadow-lg active:opacity-90 border  bg-surface border-border `}
       >
         {isLoading ? (
-          <ActivityIndicator color="#ffffff" />
+          <ActivityIndicator color="#276359" />
         ) : (
           <View className="flex-row items-center justify-center w-full">
-            <Text className="text-white text-center text-lg uppercase tracking-widest ">
+            <Text className={`text-text text-center text-lg ${isDark ? 'text-text' : 'text-primary'} `}>
               Continue with Quran.com
             </Text>
           </View>
         )}
       </Button>
-      <Text className="text-white/40 text-center text-xs -mt-4">
+      <Text className="text-white text-center text-xs -mt-4">
         Secure authentication via Quran Foundation
       </Text>
     </View>

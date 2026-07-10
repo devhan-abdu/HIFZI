@@ -1,10 +1,3 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-
-@layer base {
-  text {
-    font-family: Rosemary;
-  }
-}

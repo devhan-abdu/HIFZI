@@ -22,6 +22,8 @@ export function useMurajaOperation() {
             queryClient.invalidateQueries({ queryKey: ["page-performance-all"] });
             queryClient.invalidateQueries({ queryKey: ["user-stats", user?.id] });
             queryClient.invalidateQueries({ queryKey: ["user-badges", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["journey-overview", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["journey-sessions", user?.id] });
             
             if (result.changed) {
                 queryClient.invalidateQueries({ queryKey: ["adaptive-guidance", user?.id] });

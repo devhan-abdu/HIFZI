@@ -26,3 +26,5 @@ export const SurahRow = memo(({ surah, onPress }: SurahRowProps) => {
     </Pressable>
   );
 });
+
+SurahRow.displayName = "SurahRow";

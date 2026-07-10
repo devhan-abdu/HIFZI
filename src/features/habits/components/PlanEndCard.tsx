@@ -19,7 +19,7 @@ export const PlanEndCard: React.FC<PlanEndCardProps> = ({ activityType, localRef
     return (
         <Pressable 
             onPress={() => push(`/(app)/plan-completion?type=${activityType}&id=${localRefId}`)}
-            className="mb-6 overflow-hidden"
+            className="mb-6 overflow-hidden bg-surface rounded-[40px]  border border-border"
         >
             <View className="p-7 rounded-[40px] bg-surface relative shadow-2xl shadow-slate-200 border border-border overflow-hidden">
                 <View className="absolute -right-6 -bottom-6 w-32 h-32 bg-amber-400/20 border border-amber-300 rounded-full" />

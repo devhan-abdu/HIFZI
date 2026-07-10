@@ -293,7 +293,6 @@ export function calculateTodayTask(params: {
     dailyLogs: any[];
     surahs: any[];
     getSurahByPage: (page: number, surahs: any[]) => string | undefined;
-    // Legacy compat
     weekStartDate?: string;
     weekEndDate?: string;
 }) {
@@ -304,8 +303,6 @@ export function calculateTodayTask(params: {
     } = params;
 
     const todayStr = getLocalDateString(today);
-    const isPlanActive = today >= new Date(planStartDate);
-    if (!isPlanActive) return null;
 
     const isPlanEnded = today > new Date(planEndDate);
     if (isPlanEnded) return null;
@@ -313,30 +310,22 @@ export function calculateTodayTask(params: {
     const todayLog = dailyLogs.find((log: any) => log.date === todayStr);
     const isScheduledToday = activeDays.includes((today.getDay() + 6) % 7);
 
-    // Count missed scheduled days (past, in-plan, no completed log)
     const missedPages = _countMissedPages(planStartDate, todayStr, activeDays, dailyLogs, plannedPagesPerDay);
 
-    // If today's log already exists in the database, return it immediately
     if (todayLog) {
         const completed = todayLog.completedPages ?? todayLog.completed_pages ?? 0;
         const rawStatus = todayLog.status as 'pending' | 'completed' | 'partial' | 'missed';
         const loggedStartPage = todayLog.startPage ?? todayLog.start_page ?? startPage;
-        // The actual number of pages the plan required today
         const derivedLoggedEndPage = Math.min(loggedStartPage + plannedPagesPerDay - 1, endPage);
         const loggedEndPage = todayLog.endPage ?? todayLog.end_page ?? derivedLoggedEndPage;
 
         const planTargetStart = Math.min(loggedStartPage, loggedEndPage);
         const planTargetEnd = Math.max(loggedStartPage, loggedEndPage);
-        // The actual number of pages the plan required today
         const plannedCount = planTargetEnd - planTargetStart + 1;
 
-        // ── Actual logged range ───────────────────────────────────────────────
-        // "completed" pages is what was stored; derive the actual end from it.
         const actualEnd = completed > 0 ? (loggedStartPage + completed - 1) : planTargetEnd;
         const displayEnd = Math.max(planTargetEnd, actualEnd);
 
-        // ── Auto-derive status from page coverage when status is ambiguous ────
-        // Guard against stale "pending" status that never got updated
         let derivedStatus = rawStatus;
         if (rawStatus === 'pending' || !rawStatus) {
             if (completed === 0) derivedStatus = 'missed';
@@ -359,13 +348,11 @@ export function calculateTodayTask(params: {
         };
     }
 
-    // ── Determine next start page for a pending task ──────────────────────────
     const fallbackStart = Math.max(startPage, (murajaLastPage ?? startPage - 1) + 1);
     let finalStart = fallbackStart > endPage ? startPage : fallbackStart;
 
     const displayStart = finalStart;
 
-    // ── Catch-up: not scheduled but missed pages exist ───────────────────────────
     if (!isScheduledToday) {
         if (missedPages > 0) {
             const catchupPages = Math.min(missedPages, plannedPagesPerDay);
@@ -385,7 +372,6 @@ export function calculateTodayTask(params: {
                 missedPages,
             };
         }
-        // True rest day - return the next logical task so users can log extra sessions
         const quotaEnd = Math.min(displayStart + plannedPagesPerDay - 1, endPage);
         return {
             isCompleted: false,
@@ -403,7 +389,6 @@ export function calculateTodayTask(params: {
         };
     }
 
-    // ── Scheduled day ─────────────────────────────────────────────────────
     const quotaEnd = Math.min(displayStart + plannedPagesPerDay - 1, endPage);
     
     return {

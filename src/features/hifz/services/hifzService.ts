@@ -2,6 +2,7 @@ import { eq, and, desc, sql } from 'drizzle-orm';
 import { db } from '@/src/lib/db/local-client';
 import { hifzPlans, hifzLogs } from '../database/hifzSchema';
 import { activityPlans } from '../../habits/database/habitSchema';
+import { userStats } from '../../user/database/userSchema';
 import { supabase } from "@/src/lib/supabase";
 import { IHifzLog, IHifzPlan } from "../types";
 import {
@@ -132,19 +133,12 @@ export const hifzService = {
   async getPlan(userId: string, planId?: number): Promise<IHifzPlan | null> {
     if (!userId) return null;
 
-    let localPlan = await db.query.hifzPlans.findFirst({
-      where: planId 
+    const localPlan = await db.query.hifzPlans.findFirst({
+      where: planId
         ? eq(hifzPlans.id, planId)
         : and(eq(hifzPlans.userId, userId), eq(hifzPlans.status, 'active')),
       orderBy: [desc(hifzPlans.id)],
     });
-
-    if (!localPlan && !planId) {
-      localPlan = await db.query.hifzPlans.findFirst({
-        where: eq(hifzPlans.userId, userId),
-        orderBy: [desc(hifzPlans.id)],
-      });
-    }
 
     if (!localPlan) return null;
 
@@ -168,7 +162,28 @@ export const hifzService = {
 
   const todayDay = (new Date().getDay() + 6) % 7;
   const isEvaluationDay = todayDay === (localPlan.evaluationDay ?? 5);
-  const evaluationDue = isEvaluationDay && activityPlan?.lastEvaluationDate !== todayStr;
+  const alreadyEvaluatedThisWeek = activityPlan?.lastEvaluationDate === todayStr;
+
+  let evaluationDue = false;
+  if (isEvaluationDay && !alreadyEvaluatedThisWeek) {
+    const selectedDays: number[] = JSON.parse(localPlan.selectedDays ?? '[]');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startOfWeek = new Date(today);
+    const todayDayIdx = (today.getDay() + 6) % 7;
+    startOfWeek.setDate(today.getDate() - todayDayIdx);
+    const weekStartStr = startOfWeek.toISOString().slice(0, 10);
+
+    const weekLogs = logs.filter(
+      l => l.date >= weekStartStr && l.date <= todayStr &&
+           (l.status === 'completed' || l.status === 'partial')
+    );
+    const minRequired = Math.max(1, Math.ceil(selectedDays.length * 0.25));
+    if (weekLogs.length >= minRequired) {
+      evaluationDue = true;
+    }
+  }
+
 
     const totalCompleted = localPlan.completedPages ?? 0;
     const planFinished = totalCompleted >= localPlan.totalPages;
@@ -356,6 +371,15 @@ export const hifzService = {
         })
         .where(eq(hifzPlans.id, todayLog.hifzPlanId));
 
+      if (todayLog.status === "completed" || todayLog.status === "partial") {
+        await tx.insert(userStats)
+          .values({ userId, hifzLastPage: todayLog.actualEndPage ?? 0 })
+          .onConflictDoUpdate({
+            target: userStats.userId,
+            set: { hifzLastPage: todayLog.actualEndPage ?? 0 }
+          });
+      }
+
       const normalizedUnits = Math.max(0, Math.round(todayLog.actualPagesCompleted ?? 0));
       const isMissed = todayLog.status === "missed" || normalizedUnits === 0;
 
@@ -452,18 +476,18 @@ export const hifzService = {
   async completePlan(userId: string, planId: number) {
     await db.transaction(async (tx) => {
       await tx.update(hifzPlans)
-        .set({ status: 'completed', syncStatus: 0, updatedAt: sql`CURRENT_TIMESTAMP` })
+        .set({ status: 'paused', syncStatus: 0, updatedAt: sql`CURRENT_TIMESTAMP` })
         .where(and(eq(hifzPlans.userId, userId), eq(hifzPlans.id, planId)));
-      
+
       await tx.update(activityPlans)
-        .set({ status: 'completed', updatedAt: sql`CURRENT_TIMESTAMP` })
+        .set({ status: 'paused', updatedAt: sql`CURRENT_TIMESTAMP` })
         .where(and(
           eq(activityPlans.userId, userId),
           eq(activityPlans.activityType, 'HIFZ'),
           eq(activityPlans.localRefId, planId)
         ));
     });
-    
+
     void this.syncPending(userId);
   }
 };

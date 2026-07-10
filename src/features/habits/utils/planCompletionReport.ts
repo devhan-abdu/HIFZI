@@ -41,6 +41,7 @@ export type PlanCompletionReport = {
   pagesRangeStr: string;
   planStartDate: string;
   planEndDate: string;
+  highestStreak: number;
 };
 
 type PageInsight = {
@@ -282,6 +283,22 @@ export async function buildHifzCompletionReport(
       ? plan.startPage + plan.totalPages - 1
       : plan.startPage - plan.totalPages + 1;
 
+  let currentStreak = 0;
+  let highestStreak = 0;
+  
+  const sortedLogs = [...(plan.hifzDailyLogs || [])]
+    .filter(l => l.date && (l.status === 'completed' || l.status === 'partial' || l.status === 'missed'))
+    .sort((a, b) => a.date!.localeCompare(b.date!));
+    
+  for (const log of sortedLogs) {
+    if (log.status === 'completed' || log.status === 'partial') {
+      currentStreak++;
+      if (currentStreak > highestStreak) highestStreak = currentStreak;
+    } else {
+      currentStreak = 0;
+    }
+  }
+
   return {
     avgRate: status.progress,
     consistencyRate: status.accuracy,
@@ -296,6 +313,7 @@ export async function buildHifzCompletionReport(
     pagesRangeStr: `Pages ${plan.startPage} – ${endPage}`,
     planStartDate: plan.startDate,
     planEndDate,
+    highestStreak,
     achievedBadges,
     ...breakdown,
   };
@@ -403,6 +421,22 @@ export async function buildMurajaCompletionReport(
     planEndDate,
   );
 
+  let currentStreak = 0;
+  let highestStreak = 0;
+  
+  const sortedLogs = [...logs]
+    .filter(l => l.date && (l.status === 'completed' || l.status === 'partial' || l.status === 'missed'))
+    .sort((a, b) => a.date!.localeCompare(b.date!));
+    
+  for (const log of sortedLogs) {
+    if (log.status === 'completed' || log.status === 'partial') {
+      currentStreak++;
+      if (currentStreak > highestStreak) highestStreak = currentStreak;
+    } else {
+      currentStreak = 0;
+    }
+  }
+
   return {
     avgRate,
     consistencyRate,
@@ -420,6 +454,7 @@ export async function buildMurajaCompletionReport(
     pagesRangeStr: `Pages ${startPage} – ${endPage}`,
     planStartDate,
     planEndDate,
+    highestStreak,
     achievedBadges,
     ...breakdown,
   };
