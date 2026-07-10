@@ -78,7 +78,7 @@ export const computeWeeklyReview = (plan: any) => {
     avgQuality: summary.qualityCount ? parseFloat((summary.totalQuality / summary.qualityCount).toFixed(1)) : 0,
     completedDays: summary.completed,
     partialDays: summary.partial,
-    startDate: plan.weekStartDate || plan.week_start_date,
+    startDate: plan.startDate || plan.start_date || plan.weekStartDate || plan.week_start_date,
   };
 };
 

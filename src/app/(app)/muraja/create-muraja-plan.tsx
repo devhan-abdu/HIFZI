@@ -72,7 +72,7 @@ export default function CreateWeeklyPlan() {
   } = useForm<WeeklyMurajaFormType>({
     resolver: yupResolver(WeeklyMurajaSchema) as Resolver<WeeklyMurajaFormType>,
     defaultValues: {
-      week_start_date: new Date().toISOString().slice(0, 10),
+      start_date: new Date().toISOString().slice(0, 10),
       planned_pages_per_day: 20,
       start_surah: 1,
       start_page: 1,
@@ -93,7 +93,7 @@ export default function CreateWeeklyPlan() {
   const selectedStartPage = useWatch({ control, name: "start_page" });
   const selectedEndPage = useWatch({ control, name: "end_page" });
   const selectedEvalDay = useWatch({ control, name: "evaluation_day" });
-  const weekStart = useWatch({ control, name: "week_start_date" });
+  const startDate = useWatch({ control, name: "start_date" });
 
   React.useEffect(() => {
     if (selectedSurah && items.length > 0) {
@@ -144,8 +144,8 @@ export default function CreateWeeklyPlan() {
         : (existingPlan.selectedDays ?? []);
 
       reset({
-        week_start_date:
-          existingPlan.weekStartDate ?? new Date().toISOString().slice(0, 10),
+        start_date:
+          existingPlan.startDate ?? new Date().toISOString().slice(0, 10),
         planned_pages_per_day: existingPlan.plannedPagesPerDay ?? 20,
         start_page: existingPlan.startPage ?? 1,
         end_page: existingPlan.endPage ?? 604,
@@ -181,7 +181,9 @@ export default function CreateWeeklyPlan() {
       const planPayload: Omit<IWeeklyMurajaPLan, "id"> = {
         user_id: user.id,
         remote_id: null,
-        week_start_date: data.week_start_date,
+        start_date: data.start_date,
+        end_date: finishDate.toISOString().slice(0, 10),
+        week_start_date: data.start_date,
         week_end_date: finishDate.toISOString().slice(0, 10),
         planned_pages_per_day: data.planned_pages_per_day,
         start_page: data.start_page,
@@ -199,7 +201,8 @@ export default function CreateWeeklyPlan() {
 
       const isFundamentalChange =
         !existingPlan ||
-        existingPlan.weekStartDate !== data.week_start_date ||
+        (existingPlan.startDate ) !== data.start_date ||
+        (existingPlan.endDate ) !== finishDate.toISOString().slice(0, 10) ||
         existingPlan.startPage !== data.start_page ||
         existingPlan.endPage !== data.end_page;
 
@@ -225,6 +228,8 @@ export default function CreateWeeklyPlan() {
         },
       );
     } catch (error: any) {
+        console.log(error, "what error from create ");
+
       showError(
         "Oops!",
         "We couldn't process your request right now. Please try again.",
@@ -232,9 +237,9 @@ export default function CreateWeeklyPlan() {
     }
   };
 
-  const formattedWeekStart =
-    weekStart ?
-      new Date(weekStart).toLocaleDateString("en-US", {
+  const formattedStartDate =
+    startDate ?
+      new Date(startDate).toLocaleDateString("en-US", {
         weekday: "short",
         month: "short",
         day: "numeric",
@@ -257,7 +262,7 @@ export default function CreateWeeklyPlan() {
     <>
       <View className="h-16 px-4 flex-row items-center">
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => router.replace("/(app)/muraja")}
           className="w-10 h-10 items-center justify-center rounded-full active:bg-surface"
         >
           <Ionicons
@@ -281,13 +286,13 @@ export default function CreateWeeklyPlan() {
             </Text>
             <Controller
               control={control}
-              name="week_start_date"
+              name="start_date"
               render={({ field: { value, onChange } }) => (
                 <View>
                   <Pressable
                     onPress={() => setShowDatePicker(true)}
                     className={`flex-row items-center justify-between active:opacity-60 ${
-                      errors.week_start_date ?
+                      errors.start_date ?
                         "border border-red-100 p-2 rounded-xl"
                       : ""
                     }`}
@@ -299,10 +304,10 @@ export default function CreateWeeklyPlan() {
                       <View>
                         <Text
                           className={`text-base  ${
-                            formattedWeekStart ? "text-text" : "text-muted"
+                            formattedStartDate ? "text-text" : "text-muted"
                           }`}
                         >
-                          {formattedWeekStart || "Select Start Date"}
+                          {formattedStartDate || "Select Start Date"}
                         </Text>
                       </View>
                     </View>
@@ -312,7 +317,7 @@ export default function CreateWeeklyPlan() {
                       color={isDark ? "#ecedee" : "#11181c"}
                     />
                   </Pressable>
-                  <ErrorMessage error={errors.week_start_date} />
+                  <ErrorMessage error={errors.start_date} />
                   {showDatePicker && (
                     <DateTimePicker
                       value={value ? new Date(value) : new Date()}

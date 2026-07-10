@@ -43,8 +43,8 @@ export async function pullMurajaPlans(
 
     const values = {
       userId,
-      weekStartDate: (row.week_start_date as string | null) ?? null,
-      weekEndDate: (row.week_end_date as string | null) ?? null,
+      startDate: (row.week_start_date as string | null) ?? null,
+      endDate: (row.week_end_date as string | null) ?? null,
       plannedPagesPerDay: (row.planned_pages_per_day as number | null) ?? null,
       startPage: (row.start_page as number | null) ?? null,
       endPage: (row.end_page as number | null) ?? null,

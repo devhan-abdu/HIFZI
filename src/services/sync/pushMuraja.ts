@@ -28,8 +28,8 @@ export async function pushMurajaPlans(userId: string): Promise<void> {
         .upsert(
           {
             user_id: plan.userId,
-            week_start_date: plan.weekStartDate,
-            week_end_date: plan.weekEndDate,
+            week_start_date: plan.startDate,
+            week_end_date: plan.endDate,
             planned_pages_per_day: plan.plannedPagesPerDay,
             planned_pages: plan.plannedPagesPerDay,
             start_page: plan.startPage,

@@ -35,8 +35,8 @@ export const useMurajaCardState = (): MurajaCardState => {
 
     const todayTask = calculateTodayTask({
       today: new Date(),
-      planStartDate: data.weekStartDate ?? '',
-      planEndDate: data.weekEndDate ?? '',
+      planStartDate: data.startDate ?? '',
+      planEndDate: data.endDate ?? '',
       activeDays,
       plannedPagesPerDay: data.plannedPagesPerDay ?? 1,
       startPage: data.startPage ?? 1,

@@ -5,8 +5,14 @@ export interface IWeeklyMurajaPLan {
     id: number;
     remote_id: string | null;
     user_id: string;
-    week_start_date: string | null;
-    week_end_date: string | null;
+    start_date?: string | null;
+    end_date?: string | null;
+    startDate?: string | null;
+    endDate?: string | null;
+    week_start_date?: string | null;
+    week_end_date?: string | null;
+    weekStartDate?: string | null;
+    weekEndDate?: string | null;
     planned_pages_per_day: number;
     start_page: number;
     end_page: number;
@@ -61,7 +67,6 @@ export type IMurajaDashboardData = IWeeklyMurajaPLan & {
     daily_logs: IDailyMurajaLog[];
 };
 
-// ─── Range-Based Plan Overview (replaces IWeeklyPlanDashboardData) ───────────
 export interface IPlanOverviewData {
     id: number;
     totalRangePages: number;
@@ -78,7 +83,6 @@ export interface IPlanOverviewData {
     endPage: number | null;
 }
 
-// Backward compat alias for components still using IWeeklyPlanDashboardData
 export type IWeeklyPlanDashboardData = IPlanOverviewData & {
     /** @deprecated use totalRangePages */ weeklyTargetPages?: number;
     /** @deprecated use plannedDays */ totalDays?: number;
@@ -86,21 +90,19 @@ export type IWeeklyPlanDashboardData = IPlanOverviewData & {
     /** @deprecated use endDate */ week_end_date?: string | null;
 };
 
-// ─── Range-Aware Day Status (replaces IWeeklyMUrajaStatus) ────────────────────
 export interface IMurajaDayStatus {
-    date: string;        // ISO YYYY-MM-DD
-    dayName: string;     // e.g. "Mon"
+    date: string;        
+    dayName: string;   
     status: "completed" | "missed" | "rest" | "pending" | "future";
     isToday: boolean;
-    isSelected: boolean; // whether it's a scheduled (non-rest) day
-    completed: number;   // completed_pages from log (0 if no log)
+    isSelected: boolean; 
+    completed: number;   
 }
 
-// Backward compat alias
 export type IWeeklyMUrajaStatus = IMurajaDayStatus;
 
 export const WeeklyMurajaSchema = Yup.object({
- week_start_date: Yup.string()
+ start_date: Yup.string()
     .required("Start date is required")
     .test(
       "not-in-past",
@@ -112,6 +114,17 @@ export const WeeklyMurajaSchema = Yup.object({
         const selected = new Date(value);
         selected.setHours(0, 0, 0, 0);
         return selected >= today;
+      }
+    ),
+ end_date: Yup.string()
+    .nullable()
+    .test(
+      "end-after-start",
+      "End date must be on or after the start date",
+      function (value) {
+        const { start_date } = this.parent;
+        if (!value || !start_date) return true;
+        return new Date(value) >= new Date(start_date);
       }
     ),
  planned_pages_per_day: Yup.number()

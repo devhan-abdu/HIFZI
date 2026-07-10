@@ -181,6 +181,7 @@ export function LogFormSection({
           <View className="flex-row justify-between">
             <StatusTab
               label="Completed"
+              variant="completed"
               icon="checkmark-circle"
               active={status === "completed"}
               onPress={() => {
@@ -190,6 +191,7 @@ export function LogFormSection({
             <StatusTab
               label="Partial"
               icon="contrast"
+              variant="partial"
               active={status === "partial"}
               onPress={() => {
                 updateForm({
@@ -200,6 +202,7 @@ export function LogFormSection({
             />
             <StatusTab
               label="Missed"
+              variant="missed"
               icon="close-circle"
               active={status === "missed"}
               onPress={() => {

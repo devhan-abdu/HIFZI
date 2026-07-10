@@ -25,6 +25,12 @@ export type LocalMurajaLogWriteResult = {
 export const murajaService = {
   async createPlan(planData: Omit<IWeeklyMurajaPLan, "id">) {
     let lastId = 0;
+    const startDateValue = planData.start_date ?? planData.week_start_date ?? null;
+    const endDateValue = planData.end_date ?? planData.week_end_date ?? null;
+
+    if (startDateValue && endDateValue && new Date(endDateValue) < new Date(startDateValue)) {
+      throw new Error("End date must be on or after the start date.");
+    }
     
     await db.transaction(async (tx) => {
       await tx.update(weeklyMurajaPlans)
@@ -33,8 +39,8 @@ export const murajaService = {
 
       const [newPlan] = await tx.insert(weeklyMurajaPlans).values({
         userId: planData.user_id,
-        weekStartDate: planData.week_start_date,
-        weekEndDate: planData.week_end_date,
+        startDate: planData.start_date ?? planData.week_start_date ?? null,
+        endDate: planData.end_date ?? planData.week_end_date ?? null,
         plannedPagesPerDay: planData.planned_pages_per_day,
         startPage: planData.start_page,
         endPage: planData.end_page,
@@ -56,8 +62,8 @@ export const murajaService = {
         activityType: "MURAJA",
         status: "active",
         title: "Muraja Plan",
-        startDate: planData.week_start_date,
-        endDate: planData.week_end_date,
+        startDate: planData.start_date ?? planData.week_start_date,
+        endDate: planData.end_date ?? planData.week_end_date,
         evaluationDay: planData.evaluationDay ?? 5,
         localRefId: lastId,
         metadata: JSON.stringify({
@@ -90,12 +96,20 @@ export const murajaService = {
   },
 
   async updatePlan(planId: number, planData: Partial<IWeeklyMurajaPLan>) {
+    const startDateValue = planData.start_date ?? planData.week_start_date ?? null;
+    const endDateValue = planData.end_date ?? planData.week_end_date ?? null;
+
+    if (startDateValue && endDateValue && new Date(endDateValue) < new Date(startDateValue)) {
+      throw new Error("End date must be on or after the start date.");
+    }
+
     await db.transaction(async (tx) => {
       await tx.update(weeklyMurajaPlans)
         .set({
           plannedPagesPerDay: planData.planned_pages_per_day,
           selectedDays: planData.selected_days,
-          weekEndDate: planData.week_end_date,
+          startDate: planData.start_date ?? planData.week_start_date ?? null,
+          endDate: planData.end_date ?? planData.week_end_date ?? null,
           estimatedTimeMin: planData.estimated_time_min,
           place: planData.place ?? null,
           note: planData.note ?? null,
@@ -109,7 +123,8 @@ export const murajaService = {
         userId: planData.user_id as string,
         activityType: "MURAJA",
         localRefId: planId,
-        endDate: planData.week_end_date,
+        startDate: planData.start_date ?? planData.week_start_date,
+        endDate: planData.end_date ?? planData.week_end_date,
         evaluationDay: planData.evaluationDay ?? 5,
         metadata: JSON.stringify({
           planned_pages_per_day: planData.planned_pages_per_day,
@@ -155,8 +170,9 @@ export const murajaService = {
       where: eq(userStats.userId, userId),
     });
 
-      const todayStr = getLocalDateString(new Date());
-
+    const todayStr = getLocalDateString(new Date());
+    const planStartDate = plan.startDate ?? null;
+    const planEndDate = plan.endDate ?? null;
 
     const logs = await db.query.dailyMurajaLogs.findMany({
       where: eq(dailyMurajaLogs.planId, plan.id),
@@ -202,7 +218,9 @@ export const murajaService = {
 
     const totalCompleted = plan.completedPages ?? 0;
     const totalTarget = (plan.endPage ?? 1) - (plan.startPage ?? 1) + 1;
-    const planFinished = totalCompleted >= totalTarget;
+    const planFinished = planEndDate
+      ? new Date(todayStr) > new Date(planEndDate)
+      : totalCompleted >= totalTarget;
     const mapLog = (l: any):IDailyMurajaLog=> ({
       id: l.id,
       remote_id: l.remoteId,
@@ -242,8 +260,7 @@ export const murajaService = {
       evaluationDue,     
       planFinished,
       activeDays,
-      preferred_time: plan.preferredTime ?? undefined,
-      is_custom_time: plan.isCustomTime ?? undefined,
+
     };
   },
 
@@ -333,9 +350,13 @@ export const murajaService = {
             const dailyRate = Math.max(1, plan.plannedPagesPerDay);
             const { finishDate: newEndDateStr } = calculateMurajaFinishedDate(remainingPages, dailyRate, weeklyFreq);
 
-            if (newEndDateStr !== plan.weekEndDate) {
+            if (newEndDateStr !== (plan.endDate ?? plan.end_date ?? plan.weekEndDate)) {
                 await tx.update(weeklyMurajaPlans)
-                    .set({ weekEndDate: newEndDateStr, syncStatus: 0 })
+                    .set({
+                      startDate: plan.startDate ?? plan.start_date ?? plan.weekStartDate ?? null,
+                      endDate: newEndDateStr,
+                      syncStatus: 0,
+                    })
                     .where(eq(weeklyMurajaPlans.id, planId));
             }
         }
@@ -623,7 +644,7 @@ export const murajaService = {
 
     const plan = await db.query.weeklyMurajaPlans.findFirst({
       where: and(...conditions),
-      orderBy: [desc(weeklyMurajaPlans.weekEndDate)],
+      orderBy: [desc(weeklyMurajaPlans.endDate)],
     });
 
     if (!plan) return null;
@@ -686,8 +707,8 @@ export const murajaService = {
 
     return await this.createPlan({
       user_id: userId,
-      week_start_date: today,
-      week_end_date: endDateStr,
+      start_date: today,
+      end_date: endDateStr,
       planned_pages_per_day: oldPlan.plannedPagesPerDay ?? 2,
       start_page: oldPlan.startPage ?? 1,
       end_page: oldPlan.endPage ?? 10,

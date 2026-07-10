@@ -67,7 +67,7 @@ export const useMurajaAnalytics = () => {
     );
 
     const missedDaysCount = computeMissedDays(
-      data.weekStartDate ?? todayStr,
+      data.startDate  ?? todayStr,
       activeDays,
       data.daily_logs,
     );
@@ -88,7 +88,7 @@ export const useMurajaAnalytics = () => {
         : '0.0';
 
     const expectedPages = calculateExpectedPages(
-      data.weekStartDate ?? '',
+      data.startDate ?? '',
       activeDays,
       planned_pages_per_day,
       today
@@ -100,8 +100,8 @@ export const useMurajaAnalytics = () => {
     const juzRangeLabel = formatJuzRange(start_juz, end_juz);
 
     const dayProgress = generateRolling7DayWindow(
-      data.weekStartDate ?? '',
-      data.weekEndDate ?? '',
+      data.startDate ?? '',
+      data.endDate ?? '',
       activeDays,
       data.daily_logs,
       today
@@ -111,8 +111,8 @@ export const useMurajaAnalytics = () => {
       id: data.id,
       totalRangePages,
       plannedDays: activeDays.length,
-      startDate: data.weekStartDate,
-      endDate: data.weekEndDate,
+      startDate: data.startDate ,
+      endDate: data.endDate,
       estimated_time_min: data.estimatedTimeMin,
       planned_pages_per_day,
       start_juz,
@@ -123,8 +123,8 @@ export const useMurajaAnalytics = () => {
       endPage: end_page,
       weeklyTargetPages: totalRangePages,
       totalDays: activeDays.length,
-      week_start_date: data.weekStartDate,
-      week_end_date: data.weekEndDate,
+      week_start_date: data.startDate,
+      week_end_date: data.endDate ,
     };
 
     return {

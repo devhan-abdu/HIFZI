@@ -17,7 +17,7 @@ const MurajaStatsSummary = ({
   const surah = useLoadSurahData();
   const formData = useWatch<WeeklyMurajaFormType>({ control });
   const safeFormData = {
-    week_start_date: formData.week_start_date ?? new Date().toISOString().slice(0, 10),
+    start_date: formData.start_date ?? new Date().toISOString().slice(0, 10),
     start_surah: formData.start_surah ?? 1,
     start_page: formData.start_page ?? 1,
     end_surah: formData.end_surah ?? 114,
@@ -36,7 +36,7 @@ const MurajaStatsSummary = ({
       formData.end_page,
       formData.planned_pages_per_day,
       formData.selectedDays,
-      formData.week_start_date,
+      formData.start_date,
       surah.items,
     ],
   );
