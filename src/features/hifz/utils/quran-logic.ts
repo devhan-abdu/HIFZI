@@ -1,6 +1,7 @@
 import { ISurah } from "@/src/types";
-import { getJuzByPage, getSurah } from "../../muraja/utils/quranMapping";
+import { getJuzByPage ,getSurahForTraversal} from "../../muraja/utils/quranMapping";
 import { IHifzLog, IHifzPlan } from "../types";
+
 
 export const getNextTask = (
   direction: "backward" | "forward",
@@ -10,44 +11,66 @@ export const getNextTask = (
   isNewPlan: boolean
 ) => {
   if (dailyRate <= 0) return null;
-
   const isForward = direction === 'forward';
+
   let pageAllocated = 0;
   let startPage: number | null = null;
   let endPage: number | null = null;
-
+  let startSurahNumber: number | null = null;
+  let endSurahNumber: number | null = null;
   let currentPage = isNewPlan ? lastLoggedPage : 0;
+  let currentSurahNumber: number | null = null;
 
   if (!isNewPlan) {
-    const currentSurah = getSurah(lastLoggedPage, surahData);
+    const currentSurah = getSurahForTraversal(lastLoggedPage, surahData);
     if (!currentSurah) return null;
 
     if (isForward) {
       currentPage = lastLoggedPage + 1;
     } else {
-      currentPage = (lastLoggedPage >= currentSurah.endingPage)
-        ? (surahData.find(s => s.number === currentSurah.number - 1)?.startingPage || 1)
-        : lastLoggedPage + 1;
+      if (lastLoggedPage >= currentSurah.endingPage) {
+        const prevSurah = surahData.find(s => s.number === currentSurah.number - 1);
+        if (!prevSurah) return null;
+        currentPage = prevSurah.startingPage;
+        currentSurahNumber = prevSurah.number;
+      } else {
+        currentPage = lastLoggedPage + 1;
+        currentSurahNumber = currentSurah.number;
+      }
     }
   }
 
   while (pageAllocated < dailyRate) {
     if (currentPage > 604 || currentPage < 1) break;
 
-    if (startPage === null) startPage = currentPage;
-    endPage = currentPage;
-    pageAllocated++;
+    if (currentSurahNumber === null) {
+      const s = getSurahForTraversal(currentPage, surahData);
+      if (!s) break;
+      currentSurahNumber = s.number;
+    }
 
-    const currentSurah = getSurah(currentPage, surahData);
+    const currentSurah = surahData.find(s => s.number === currentSurahNumber);
     if (!currentSurah) break;
+
+    if (startPage === null) {
+      startPage = currentPage;
+      startSurahNumber = currentSurah.number;
+    }
+    endPage = currentPage;
+    endSurahNumber = currentSurah.number;
+    pageAllocated++;
 
     if (isForward) {
       currentPage++;
+      if (currentPage > currentSurah.endingPage) {
+        currentSurahNumber = currentSurah.number + 1; // deterministic, no re-lookup
+      }
     } else {
       if (currentPage >= currentSurah.endingPage) {
         const prevSurah = surahData.find(s => s.number === currentSurah.number - 1);
         if (!prevSurah) break;
         currentPage = prevSurah.startingPage;
+        currentSurahNumber = prevSurah.number; // explicit, no re-lookup
       } else {
         currentPage++;
       }
@@ -56,8 +79,8 @@ export const getNextTask = (
 
   if (startPage === null || endPage === null) return null;
 
-  const sSurah = getSurah(startPage, surahData);
-  const eSurah = getSurah(endPage, surahData);
+  const sSurah = surahData.find(s => s.number === startSurahNumber);
+  const eSurah = surahData.find(s => s.number === endSurahNumber);
 
   return {
     startPage,
@@ -72,7 +95,6 @@ export const getNextTask = (
     status: "pending",
   };
 };
-
 export const getTodayTask = (
   hifzPlan: IHifzPlan,
   surahData: ISurah[],
@@ -89,7 +111,6 @@ export const getTodayTask = (
   const lastLog = [...historicalLogs].reverse().find(log => log.status === "completed" || log.status === "partial")
 
   const reaferencePage = lastLog ? lastLog.actualEndPage : hifzPlan.startPage;
-
   return getNextTask(
     hifzPlan.direction as "forward" | "backward",
     reaferencePage,
@@ -115,7 +136,7 @@ export const getPagesFromLog = (log: IHifzLog, direction: 'forward' | 'backward'
 
     if (pages.length >= targetCount) break;
 
-    const currentSurah = getSurah(currentPage, surahData);
+    const currentSurah = getSurahForTraversal(currentPage, surahData);
     if (!currentSurah) break;
 
     if (direction === 'forward') {
@@ -165,8 +186,8 @@ export const getReinforcementRange = (
   const startPage = actualPages[0];
   const endPage = actualPages[actualPages.length - 1];
   
-  const sSurah = getSurah(startPage, surahData);
-  const eSurah = getSurah(endPage, surahData);
+  const sSurah = getSurahForTraversal(startPage, surahData);
+  const eSurah = getSurahForTraversal(endPage, surahData);
 
   return {
     startPage,

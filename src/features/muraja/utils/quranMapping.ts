@@ -62,6 +62,16 @@ export function getSurah(page: number, surah: ISurah[]) {
         return surah.find(s => page >=s.startingPage && page <= s.endingPage)
 }
 
+
+export function getSurahForTraversal(
+  page: number,
+  surah: ISurah[]
+): ISurah | undefined {
+  const matches = surah.filter(s => page >= s.startingPage && page <= s.endingPage);
+  if (!matches.length) return undefined;
+  return matches[0];
+}
+
 export function getWeeklyPlanData(startPage: number , plannedPages: number, selectedDaysLength: number, surah: ISurah[]) {
   const endPage = startPage + plannedPages * selectedDaysLength - 1
   const startSurah = getSurahByPage(startPage, surah)

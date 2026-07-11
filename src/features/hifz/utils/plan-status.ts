@@ -226,8 +226,6 @@ function calculateMissedDays(
 
   return Math.max(0, effectivePlannedDays - successDays);
 }
-
-/** Last calendar day with a successful log, or plan start if none. */
 export function getHifzPlanEndDate(plan: IHifzPlan): string {
   const successLogs = (plan.hifzDailyLogs ?? []).filter(
     (log) => log.status === "completed" || log.status === "partial",
@@ -240,24 +238,27 @@ export function getHifzPlanEndDate(plan: IHifzPlan): string {
 }
 
 export const getWeeklyStatus = (plan: IHifzPlan | null, surahData?: ISurah[]) => {
-  if(!plan) return
+  if (!plan) return;
   const logs = plan.hifzDailyLogs || [];
 
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0); // Clear time first!
 
   const startDate = new Date(plan.startDate);
   startDate.setHours(0, 0, 0, 0);
 
-  const todayNumber = today.getDay();
-  const todayIndex = (todayNumber + 6) % 7
+  // Monday = 0, Tuesday = 1, ..., Saturday = 5, Sunday = 6
+  const todayNumber = today.getDay(); 
+  const todayIndex = (todayNumber + 6) % 7; 
 
-  let pageCompleted = [] as number[]
+  let pageCompleted = [] as number[];
 
   const week = dayNames.map((name, index) => {
-    const dayDate = new Date(today);
+    const dayDate = new Date(today.getTime()); 
+    
     dayDate.setDate(today.getDate() - todayIndex + index);
-    dayDate.setHours(0, 0, 0, 0);
+    
+    dayDate.setHours(0, 0, 0, 0); 
 
     const isPlanned = plan.selectedDays.includes(index);
 
@@ -274,14 +275,20 @@ export const getWeeklyStatus = (plan: IHifzPlan | null, surahData?: ISurah[]) =>
     const logDate = new Date(log.date);
 
     if (isWithinCurrentWeek(logDate)) {
-      const logDayIndex = (logDate.getDay() + 6 ) % 7;
-      week[logDayIndex].log = log;
-      if (surahData) {
-           const pagesFromLog = getPagesFromLog(log, plan.direction, surahData);
-         pageCompleted.push(...pagesFromLog);      }
+      const logDayIndex = (logDate.getDay() + 6) % 7;
+      
+      if (week[logDayIndex]) {
+        week[logDayIndex].log = log;
+
+        if (surahData) {
+          const pagesFromLog = getPagesFromLog(log, plan.direction, surahData);
+          pageCompleted.push(...pagesFromLog);
+        }
+      }
     }
   });
 
   pageCompleted = Array.from(new Set(pageCompleted));
-  return { week , pageCompleted};
+  return { week, pageCompleted };
 };
+
