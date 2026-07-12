@@ -35,8 +35,8 @@ export default function ExamIndex() {
           </Text>
         </View>
 
-        <View className="bg-surface-muted border border-border rounded-[32px] shadow-sm">
-          <View className="p-8">
+        <View className="bg-surface-muted border border-border rounded-[32px]">
+          <View className="p-8 bg-surface-muted">
 
           <View className="flex-row items-center justify-between mb-8 ">
             <View className="bg-primary p-2 rounded-full">
