@@ -7,9 +7,7 @@ import { MushafPage } from "@/src/features/mushaf/components/MushafPage";
 import { TranslationPage } from "@/src/features/quran/components/TranslationPage";
 import { ReaderBottomSheet } from "@/src/features/quran/components/ReaderBottomSheet";
 import ReaderHeader from "@/src/features/quran/components/ReaderHeader";
-import {
-  TranslationPageSkeleton,
-} from "@/src/features/quran/components/QuranPageSkeletons";
+import { TranslationPageSkeleton } from "@/src/features/quran/components/QuranPageSkeletons";
 import { useReaderStore } from "@/src/features/quran/hooks/useReaderStore";
 import { useFullscreenSystemUI } from "@/src/hooks/useFullscreenSystemUI";
 
@@ -82,8 +80,6 @@ export default function QuranReaderScreen() {
     selectedTranslations,
   } = useReaderStore();
 
-  const [, setTallyCounts] = useState({ mistakes: 0, hesitations: 0 });
-
   useFullscreenSystemUI(!uiVisible);
 
   useEffect(() => {
@@ -129,8 +125,7 @@ export default function QuranReaderScreen() {
           index: currentPage - 1,
           animated: false,
         });
-      } catch {
-      }
+      } catch {}
     });
     return () => cancelAnimationFrame(id);
   }, [bootstrapDone, currentPage]);
@@ -283,7 +278,11 @@ export default function QuranReaderScreen() {
       }
       return (
         <View style={{ width, height }}>
-          <MushafPage pageNumber={item} isActive={item === currentPage} pageData={pageMeta[item]} />
+          <MushafPage
+            pageNumber={item}
+            isActive={item === currentPage}
+            pageData={pageMeta[item]}
+          />
         </View>
       );
     },
@@ -306,7 +305,11 @@ export default function QuranReaderScreen() {
 
   return (
     <GestureHandlerRootView className="flex-1 bg-background">
-      <ReaderHeader pageData={pageMeta[currentPage]} />
+      <View
+        style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 50 }}
+      >
+        <ReaderHeader pageData={pageMeta[currentPage]} />
+      </View>
 
       <FlatList
         ref={listRef}

@@ -23,12 +23,17 @@ interface TranslationPageProps {
 const VerseRow = React.memo(function VerseRow({
   item,
   translationNames,
+  onPress,
 }: {
   item: VerseTranslationEntry;
   translationNames: Map<number, string>;
+  onPress: () => void;
 }) {
   return (
-    <View className="px-5 pt-5 pb-7 border-b border-border dark:border-white/10 bg-background">
+    <Pressable
+      onPress={onPress}
+      className="px-5 pt-5 pb-7 border-b border-border dark:border-white/10 bg-background"
+    >
       <View className="flex-row justify-start mb-4">
         <View className="px-3 py-1.5 rounded-xl bg-[#fafafa] dark:bg-background/90 border border-border dark:border-white/10">
           <Text className="text-[12px] font-semibold text-muted tracking-[0.5px]">
@@ -64,7 +69,7 @@ const VerseRow = React.memo(function VerseRow({
           </View>
         );
       })}
-    </View>
+    </Pressable>
   );
 });
 
@@ -93,6 +98,10 @@ function SurahDivider({ name }: { name: string }) {
   );
 }
 
+function TranslationPageHeaderSpacer() {
+  return <View className="h-[64px] w-full bg-background" />;
+}
+
 export const TranslationPage = React.memo(function TranslationPage({
   pageNumber,
   chapterIds,
@@ -112,9 +121,10 @@ export const TranslationPage = React.memo(function TranslationPage({
     return map;
   }, [surahs]);
 
-  const [availableTranslations, setAvailableTranslations] = React.useState<
-    Map<number, string>
-  >(new Map());
+  type TranslationNameMap = Map<number, string>;
+
+  const [availableTranslations, setAvailableTranslations] =
+    React.useState<TranslationNameMap>(new Map());
   React.useEffect(() => {
     getTranslationsCached().then((list) => {
       setAvailableTranslations(new Map(list.map((t) => [t.id, t.name])));
@@ -144,13 +154,21 @@ export const TranslationPage = React.memo(function TranslationPage({
     ({ item }: { item: ListItem }) => {
       if (item.type === "divider") {
         const name = surahNameMap.get(item.surahId) ?? `Surah ${item.surahId}`;
-        return <SurahDivider name={name} />;
+        return (
+          <Pressable onPress={toggleUI}>
+            <SurahDivider name={name} />
+          </Pressable>
+        );
       }
       return (
-        <VerseRow item={item.entry} translationNames={availableTranslations} />
+        <VerseRow
+          item={item.entry}
+          translationNames={availableTranslations}
+          onPress={toggleUI}
+        />
       );
     },
-    [surahNameMap, availableTranslations],
+    [surahNameMap, availableTranslations, toggleUI],
   );
 
   const keyExtractor = useCallback((item: ListItem) => item.key, []);
@@ -163,7 +181,10 @@ export const TranslationPage = React.memo(function TranslationPage({
 
   if (error) {
     return (
-      <Pressable onPress={toggleUI} className="flex-1 bg-background justify-center items-center p-8">
+      <Pressable
+        onPress={toggleUI}
+        className="flex-1 bg-background justify-center items-center p-8"
+      >
         <Ionicons
           name="cloud-offline-outline"
           size={40}
@@ -197,6 +218,7 @@ export const TranslationPage = React.memo(function TranslationPage({
         data={listData}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
+        ListHeaderComponent={TranslationPageHeaderSpacer}
         contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
         removeClippedSubviews

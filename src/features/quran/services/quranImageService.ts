@@ -79,13 +79,10 @@ let activePrefetchPage = 0;
 export async function prefetchPages(currentPage: number): Promise<void> {
   activePrefetchPage = currentPage;
 
-  // 1. Download current page first and await it
   await getPageImage(currentPage);
 
-  // If the user already scrolled to a different page, cancel the rest of the prefetch
   if (activePrefetchPage !== currentPage) return;
 
-  // 2. Define optimized neighbors list (prioritizing closest forward pages first)
   const pages: number[] = [];
   const FORWARD_LIMIT = 8;
   const BACKWARD_LIMIT = 3;
