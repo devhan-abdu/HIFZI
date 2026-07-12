@@ -2,6 +2,7 @@ import * as React from "react";
 import { View, ActivityIndicator } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import { makeRedirectUri } from "expo-auth-session";
+import * as Linking from "expo-linking";
 import { Text, Button } from "./common/ui/Text";
 import { supabase } from "../lib/supabase";
 import { authService } from "../features/user/services/authService";
@@ -17,15 +18,13 @@ export default function LoginButton() {
   const handleLogin = async () => {
     setIsLoading(true);
 
-    const redirectTo = makeRedirectUri({
-      scheme: "hifzi-dev",
-      path: "login",
-    });
+    const redirectTo = Linking.createURL("login");
 
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "custom:quran-foundation",
         options: {
+          scopes: "openid offline_access user bookmark collection content",
           redirectTo,
           skipBrowserRedirect: true,
         },
@@ -38,7 +37,10 @@ export default function LoginButton() {
         return;
       }
 
-      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      const result = await WebBrowser.openAuthSessionAsync(
+        data.url,
+        redirectTo,
+      );
 
       if (result.type === "success" && result.url) {
         const parsedUrl = new URL(result.url.replace("#", "?"));
@@ -80,15 +82,16 @@ export default function LoginButton() {
         onPress={handleLogin}
         className={`p-4 rounded-2xl my-8 flex-row items-center justify-center shadow-lg active:opacity-90 border  bg-surface border-border `}
       >
-        {isLoading ? (
+        {isLoading ?
           <ActivityIndicator color="#276359" />
-        ) : (
-          <View className="flex-row items-center justify-center w-full">
-            <Text className={`text-text text-center text-lg ${isDark ? 'text-text' : 'text-primary'} `}>
+        : <View className="flex-row items-center justify-center w-full">
+            <Text
+              className={`text-text text-center text-lg ${isDark ? "text-text" : "text-primary"} `}
+            >
               Continue with Quran.com
             </Text>
           </View>
-        )}
+        }
       </Button>
       <Text className="text-white text-center text-xs -mt-4">
         Secure authentication via Quran Foundation

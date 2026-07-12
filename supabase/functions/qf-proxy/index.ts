@@ -61,12 +61,13 @@ serve(async (req) => {
 
     let currentAccessToken = vault.access_token;
     const expiresAt = new Date(vault.expires_at).getTime();
-    const bufferTime = 5 * 60 * 1000; 
+    const bufferTime = 5 * 60 * 1000;
 
     if (Date.now() + bufferTime > expiresAt) {
+      console.log(`Refreshing QF token for user ${user.id}...`);
       const credentials = btoa(`${QF_CLIENT_ID}:${QF_CLIENT_SECRET}`);
 
-      const refreshRes = await fetch("https://apis.quran.foundation/oauth/token", {
+      const refreshRes = await fetch("https://oauth2.quran.foundation/oauth2/token", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -80,15 +81,17 @@ serve(async (req) => {
       });
 
       if (!refreshRes.ok) {
-        return new Response(JSON.stringify({ error: "PROVIDER_REFRESH_FAILED" }), { status: 401 });
+        const errorDetails = await refreshRes.text();
+        console.error("QF Refresh failed raw error payload:", errorDetails);
+        return new Response(JSON.stringify({ error: "PROVIDER_REFRESH_FAILED", details: errorDetails }), { status: 401 });
       }
 
       const newTokens = await refreshRes.json();
+
       currentAccessToken = newTokens.access_token;
-      
       const newExpiresAt = new Date(Date.now() + (newTokens.expires_in * 1000)).toISOString();
 
-      await supabase
+      const dbUpdate = await supabase
         .from("user_qf_tokens")
         .update({
           access_token: currentAccessToken,
@@ -97,6 +100,10 @@ serve(async (req) => {
           updated_at: new Date().toISOString()
         })
         .eq("user_id", user.id);
+
+      if (dbUpdate.error) {
+        console.error("Supabase token database update failed:", dbUpdate.error);
+      }
     }
 
     const cleanPath = rawEndpoint.replace(/^\/(prelive|production)/, "");
@@ -119,6 +126,7 @@ serve(async (req) => {
     });
 
   } catch (err: any) {
+    console.error("Caught critical exception inside function:", err.message);
     return new Response(JSON.stringify({ error: "INTERNAL_ERROR", msg: err.message }), { status: 500 });
   }
 });
