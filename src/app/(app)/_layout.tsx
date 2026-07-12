@@ -14,10 +14,11 @@ import {
 import { useAIButtonGestures } from "../../hooks/useAIButtonGestures";
 import { TabBarGradient } from "../../components/navigation/TabBarGradient";
 import { AIButton } from "../../components/AIButton";
+import { getTabsScreenOptions } from "../../components/navigation/TabConfiguration";
 import {
-  getTabsScreenOptions,
-} from "../../components/navigation/TabConfiguration";
-import { TAB_BAR_HEIGHT, TAB_ICON_SIZE } from "../../components/navigation/constants";
+  TAB_BAR_HEIGHT,
+  TAB_ICON_SIZE,
+} from "../../components/navigation/constants";
 import { Ionicons } from "@expo/vector-icons";
 import { CommonActions } from "@react-navigation/native";
 
@@ -49,6 +50,7 @@ export default function AppLayout() {
     pathname.includes("/quran/reader") ||
     pathname.includes("/evaluation") ||
     pathname.includes("/plan-completion") ||
+    pathname.includes("/onboarding") ||
     pathname.includes("/journey");
   const hideAiButton = pathname.includes("/ai-chat") || hideTabs;
 
@@ -91,7 +93,7 @@ export default function AppLayout() {
           c.tabBg,
           c.shadow,
           insets.bottom,
-          TAB_BAR_HEIGHT
+          TAB_BAR_HEIGHT,
         )}
       >
         <Tabs.Screen
@@ -99,7 +101,11 @@ export default function AppLayout() {
           options={{
             title: "Home",
             tabBarIcon: ({ focused, color }) => (
-              <Ionicons name={focused ? "grid" : "grid-outline"} size={TAB_ICON_SIZE} color={color} />
+              <Ionicons
+                name={focused ? "grid" : "grid-outline"}
+                size={TAB_ICON_SIZE}
+                color={color}
+              />
             ),
           }}
         />
@@ -109,7 +115,11 @@ export default function AppLayout() {
           options={{
             title: "Muraja",
             tabBarIcon: ({ focused, color }) => (
-              <Ionicons name={focused ? "sync" : "sync-outline"} size={TAB_ICON_SIZE} color={color} />
+              <Ionicons
+                name={focused ? "sync" : "sync-outline"}
+                size={TAB_ICON_SIZE}
+                color={color}
+              />
             ),
           }}
         />
@@ -119,7 +129,11 @@ export default function AppLayout() {
           options={{
             title: "Hifz",
             tabBarIcon: ({ focused, color }) => (
-              <Ionicons name={focused ? "ribbon" : "ribbon-outline"} size={TAB_ICON_SIZE} color={color} />
+              <Ionicons
+                name={focused ? "ribbon" : "ribbon-outline"}
+                size={TAB_ICON_SIZE}
+                color={color}
+              />
             ),
           }}
         />
@@ -128,25 +142,51 @@ export default function AppLayout() {
           options={{
             title: "Exam",
             tabBarIcon: ({ focused, color }) => (
-              <Ionicons name={focused ? "help-circle" : "help-circle-outline"} size={TAB_ICON_SIZE} color={color} />
+              <Ionicons
+                name={focused ? "help-circle" : "help-circle-outline"}
+                size={TAB_ICON_SIZE}
+                color={color}
+              />
             ),
           }}
         />
-        <Tabs.Screen name="onboarding" options={{ href: null, headerShown: false }} />
-        <Tabs.Screen name="evaluation" options={{ href: null, headerShown: false }} />
-        <Tabs.Screen name="plan-completion" options={{ href: null, headerShown: false }} />
+        <Tabs.Screen
+          name="onboarding"
+          options={{ href: null, headerShown: false }}
+        />
+        <Tabs.Screen
+          name="evaluation"
+          options={{ href: null, headerShown: false }}
+        />
+        <Tabs.Screen
+          name="plan-completion"
+          options={{ href: null, headerShown: false }}
+        />
         <Tabs.Screen
           name="quran"
           options={{
             title: "Quran",
             tabBarIcon: ({ focused, color }) => (
-              <Ionicons name={focused ? "book" : "book-outline"} size={TAB_ICON_SIZE} color={color} />
+              <Ionicons
+                name={focused ? "book" : "book-outline"}
+                size={TAB_ICON_SIZE}
+                color={color}
+              />
             ),
           }}
         />
-        <Tabs.Screen name="ai-chat" options={{ href: null, headerShown: false }} />
-        <Tabs.Screen name="notifications" options={{ href: null, headerShown: false }} />
-        <Tabs.Screen name="journey" options={{ href: null, headerShown: false }} />
+        <Tabs.Screen
+          name="ai-chat"
+          options={{ href: null, headerShown: false }}
+        />
+        <Tabs.Screen
+          name="notifications"
+          options={{ href: null, headerShown: false }}
+        />
+        <Tabs.Screen
+          name="journey"
+          options={{ href: null, headerShown: false }}
+        />
       </Tabs>
 
       <AIButton
