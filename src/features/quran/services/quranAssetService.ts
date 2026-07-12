@@ -87,10 +87,7 @@ export async function getPageData(page: number, db:SQLiteDatabase): Promise<Page
   }
 }
 
-/**
- * Returns all distinct surah (chapter) numbers that appear on a given page,
- * ordered ascending. Used to detect multi-chapter pages for the audio modal.
- */
+
 export async function getChaptersForPage(page: number, db: SQLiteDatabase): Promise<number[]> {
   const assetDb = getAssetDb(db);
   try {

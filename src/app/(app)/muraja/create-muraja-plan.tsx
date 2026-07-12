@@ -228,8 +228,6 @@ export default function CreateWeeklyPlan() {
         },
       );
     } catch (error: any) {
-        console.log(error, "what error from create ");
-
       showError(
         "Oops!",
         "We couldn't process your request right now. Please try again.",

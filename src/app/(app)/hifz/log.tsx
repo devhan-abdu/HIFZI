@@ -21,7 +21,6 @@ import {
 } from "@/src/components/screen/ScreenContent";
 import { Alert } from "@/src/components/common/Alert";
 import { LogProgressSkeleton } from "@/src/features/hifz/components/skeleton";
-import { Switch } from "@/src/features/hifz/components/Switch";
 import { getTodayTask } from "@/src/features/hifz/utils/quran-logic";
 import { useReaderSessionStore } from "@/src/features/quran/store/readerSessionStore";
 import { ExistingProgressCard } from "@/src/features/hifz/components/hifz-log/ExistingProgressCard";
@@ -59,24 +58,6 @@ export default function LogProgress() {
       cardState.task
     : null;
 
-  const [pages, setPages] = useState(1);
-  const [status, setStatus] = useState<"completed" | "partial" | "missed">(
-    "completed",
-  );
-  const [notes, setNotes] = useState("");
-  const [mistakes, setMistakes] = useState(0);
-  const [hesitations, setHesitations] = useState(0);
-  const [errorVisible, setErrorVisible] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [reviewed, setReviewed] = useState(false);
-  const [sessionMode, setSessionMode] = useState<"append" | "overwrite">(
-    "append",
-  );
-  const [startSurah, setStartSurah] = useState(1);
-  const [startPage, setStartPage] = useState(1);
-  const [endSurah, setEndSurah] = useState(1);
-  const [endPage, setEndPage] = useState(1);
-
   const reviewStartPage = Number(params.reviewStartPage ?? 0);
   const reviewEndPage = Number(params.reviewEndPage ?? 0);
   const hasReviewPrefill =
@@ -86,8 +67,30 @@ export default function LogProgress() {
   const todayLog = plan?.hifzDailyLogs?.find((l) => l.date === todayStr);
   const completedPages = todayLog ? (todayLog.actualPagesCompleted ?? 0) : 0;
   const hasExistingProgress = completedPages > 0;
-  const isRestDay =
-    !hasReviewPrefill && (!logContext || logContext.isVirtualTask);
+
+  const [pages, setPages] = useState(1);
+  const [status, setStatus] = useState<"completed" | "partial" | "missed">(
+    "completed",
+  );
+  const [notes, setNotes] = useState("");
+  const [mistakes, setMistakes] = useState(0);
+  const [hesitations, setHesitations] = useState(0);
+  const [errorVisible, setErrorVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [sessionMode, setSessionMode] = useState<"append" | "overwrite">(
+    "append",
+  );
+  const [startSurah, setStartSurah] = useState(1);
+  const [startPage, setStartPage] = useState(1);
+  const [endSurah, setEndSurah] = useState(1);
+  const [endPage, setEndPage] = useState(1);
+
+  const isRestDay = !hasReviewPrefill && cardState.type === "REST_DAY";
+
+  const activeTask = React.useMemo(() => {
+    if (!plan || !surahData.length) return logContext;
+    return getTodayTask(plan, surahData, pages);
+  }, [plan, surahData, pages, logContext]);
 
   const sessionMistakes = useReaderSessionStore((s) => s.mistakes);
   const sessionHesitations = useReaderSessionStore((s) => s.hesitations);
@@ -98,11 +101,6 @@ export default function LogProgress() {
     day: "numeric",
     month: "long",
   }).format(new Date());
-
-  const getSurahNameByNumber = (num: number) => {
-    const found = surahData.find((s) => s.number === num);
-    return found ? found.englishName.replace(/^Surat\s+/i, "").trim() : "Surah";
-  };
 
   useEffect(() => {
     if (sessionMistakes > 0) setMistakes(sessionMistakes);
@@ -115,6 +113,10 @@ export default function LogProgress() {
       setPages(Math.max(1, reviewEndPage - reviewStartPage + 1));
       return;
     }
+    if (isRestDay) {
+      if (plan) setPages(plan.pagesPerDay);
+      return;
+    }
     if (!logContext) return;
     if (hasExistingProgress) {
       setStatus("completed");
@@ -122,7 +124,7 @@ export default function LogProgress() {
     } else {
       setPages(logContext.totalTarget);
     }
-  }, [hasReviewPrefill, logContext, reviewEndPage, reviewStartPage]);
+  }, [hasReviewPrefill, logContext, reviewEndPage, reviewStartPage, isRestDay]);
 
   useEffect(() => {
     if (isRestDay && surahData.length > 0) {
@@ -203,8 +205,8 @@ export default function LogProgress() {
       const actualStartPage =
         hasReviewPrefill ? reviewStartPage
         : hasExistingProgress && sessionMode === "append" ?
-          (todayLog?.actualStartPage ?? plan.startPage)
-        : (logContext?.startPage ?? plan.startPage);
+          (todayLog?.actualStartPage ?? activeTask?.startPage ?? plan.startPage)
+        : (activeTask?.startPage ?? plan.startPage);
 
       const actualEndPage =
         hasReviewPrefill ?
@@ -249,22 +251,26 @@ export default function LogProgress() {
   };
 
   const heroSurahLabel =
-    hasReviewPrefill ? "Targeted Review" : (logContext?.displaySurah ?? "—");
+    hasReviewPrefill ? "Targeted Review" : (activeTask?.displaySurah ?? "—");
   const heroRangeLabel =
     hasReviewPrefill ?
       `${reviewStartPage}—${reviewEndPage}`
-    : `${logContext?.startPage ?? 0}—${logContext?.endPage ?? 0}`;
+    : `${activeTask?.startPage ?? 0}—${activeTask?.endPage ?? 0}`;
   const heroPageCount =
     hasReviewPrefill ? Math.max(1, reviewEndPage - reviewStartPage + 1) : pages;
 
   return (
     <>
-      <View className="bg-surface px-4 pt-4 pb-4 flex-row items-center border-b border-border">
+      <View className="bg-surface-muted px-4 pt-4 pb-4 flex-row items-center ">
         <Pressable
           onPress={() => router.back()}
-          className="w-10 h-10 items-center justify-center rounded-full active:bg-surface"
+          className="w-10 h-10 items-center justify-center rounded-full active:bg-surface-muted"
         >
-          <Ionicons name="arrow-back" size={22} color={isDark ? "#ecedee" : "#11181c"} />
+          <Ionicons
+            name="arrow-back"
+            size={22}
+            color={isDark ? "#ecedee" : "#11181c"}
+          />
         </Pressable>
         <Text className="text-lg text-text ml-2">{formattedDate}</Text>
       </View>
@@ -305,30 +311,7 @@ export default function LogProgress() {
             heroPageCount={heroPageCount}
           />
 
-          {!isRestDay && !hasReviewPrefill && (
-            <View className="bg-background/50 border border-border p-4 rounded-2xl mb-8 flex-row items-center justify-between">
-              <View className="flex-row items-center gap-3">
-                <View
-                  className={`w-8 h-8 rounded-full items-center justify-center ${reviewed ? "bg-primary/10" : "bg-surface"}`}
-                >
-                  <Ionicons
-                    name="refresh"
-                    size={16}
-                    color={reviewed ? "#276359" : "#94a3b8"}
-                  />
-                </View>
-                <View>
-                  <Text className="text-text">Revision Done</Text>
-                  <Text className="text-muted text-[10px]">
-                    Verified previous 5 pages
-                  </Text>
-                </View>
-              </View>
-              <Switch value={reviewed} onValueChange={setReviewed} />
-            </View>
-          )}
-
-          {!isLocked && !isRestDay && (
+          {!isLocked && (
             <View className="mb-8">
               <Text className="text-text text-base mb-4 ml-1">
                 How did it go?
@@ -336,6 +319,7 @@ export default function LogProgress() {
               <View className="flex-row justify-between">
                 <StatusTab
                   label="Completed"
+                  variant="completed"
                   icon="checkmark-circle"
                   active={status === "completed"}
                   onPress={() => handleStatusSelection("completed")}
@@ -343,11 +327,13 @@ export default function LogProgress() {
                 <StatusTab
                   label="Partial"
                   icon="contrast"
+                  variant="partial"
                   active={status === "partial"}
                   onPress={() => handleStatusSelection("partial")}
                 />
                 <StatusTab
                   label="Missed"
+                  variant="missed"
                   icon="close-circle"
                   active={status === "missed"}
                   onPress={() => handleStatusSelection("missed")}
@@ -362,7 +348,7 @@ export default function LogProgress() {
                 Reading Quality
               </Text>
               <View className="flex-row gap-4">
-                <View className="flex-1 bg-surface border border-border p-4 rounded-2xl">
+                <View className="flex-1 bg-surface-muted border border-border p-4 rounded-2xl">
                   <View className="flex-row items-center gap-2 mb-3">
                     <Ionicons
                       name="alert-circle-outline"
@@ -374,20 +360,20 @@ export default function LogProgress() {
                   <View className="flex-row items-center justify-between">
                     <Pressable
                       onPress={() => setMistakes(Math.max(0, mistakes - 1))}
-                      className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
+                      className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface-muted"
                     >
                       <Ionicons name="remove" size={16} color="#64748b" />
                     </Pressable>
                     <Text className="text-lg text-text">{mistakes}</Text>
                     <Pressable
                       onPress={() => setMistakes(mistakes + 1)}
-                      className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
+                      className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface-muted"
                     >
                       <Ionicons name="add" size={16} color="#ef4444" />
                     </Pressable>
                   </View>
                 </View>
-                <View className="flex-1 bg-surface border border-border p-4 rounded-2xl">
+                <View className="flex-1 bg-surface-muted border border-border p-4 rounded-2xl">
                   <View className="flex-row items-center gap-2 mb-3">
                     <Ionicons name="timer-outline" size={16} color="#eab308" />
                     <Text className="text-muted text-xs">Hesitations</Text>
@@ -397,16 +383,14 @@ export default function LogProgress() {
                       onPress={() =>
                         setHesitations(Math.max(0, hesitations - 1))
                       }
-                      className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
+                      className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface-muted"
                     >
                       <Ionicons name="remove" size={16} color="#64748b" />
                     </Pressable>
-                    <Text className="text-lg text-text">
-                      {hesitations}
-                    </Text>
+                    <Text className="text-lg text-text">{hesitations}</Text>
                     <Pressable
                       onPress={() => setHesitations(hesitations + 1)}
-                      className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface"
+                      className="w-8 h-8 items-center justify-center bg-background rounded-lg active:bg-surface-muted"
                     >
                       <Ionicons name="add" size={16} color="#eab308" />
                     </Pressable>
@@ -421,7 +405,7 @@ export default function LogProgress() {
               <Text className="text-text text-base mb-4 ml-1">
                 Actual Progress
               </Text>
-              <View className="bg-surface border border-border p-5 rounded-3xl">
+              <View className="bg-surface-muted border border-border p-5 rounded-3xl">
                 <View className="flex-row items-center justify-between mb-6">
                   <View>
                     <Text className="text-text">Pages Completed</Text>
@@ -436,7 +420,7 @@ export default function LogProgress() {
                         setPages(newPages);
                         if (newPages === 0) setStatus("missed");
                       }}
-                      className="w-9 h-9 items-center justify-center active:bg-surface rounded-lg"
+                      className="w-9 h-9 items-center justify-center active:bg-surface-muted rounded-lg"
                     >
                       <Ionicons name="remove" size={18} color="#276359" />
                     </Pressable>
@@ -447,7 +431,7 @@ export default function LogProgress() {
                         setPages(newPages);
                         if (status === "missed") setStatus("partial");
                       }}
-                      className="w-9 h-9 items-center justify-center active:bg-surface rounded-lg"
+                      className="w-9 h-9 items-center justify-center active:bg-surface-muted rounded-lg"
                     >
                       <Ionicons name="add" size={18} color="#276359" />
                     </Pressable>
@@ -480,7 +464,11 @@ export default function LogProgress() {
               <Text className="text-primary-foreground text-base mr-2">
                 {isLocked ? "Logging Locked" : "Save Progress"}
               </Text>
-              <Ionicons name="arrow-forward" size={18} color={isDark ? "#ecedee" : "#ffffff"} />
+              <Ionicons
+                name="arrow-forward"
+                size={18}
+                color={isDark ? "#ecedee" : "#ffffff"}
+              />
             </View>
           </Button>
         </ScreenFooter>

@@ -13,7 +13,7 @@ type EvaluationCase = "HIFZ_ONLY" | "MURAJA_ONLY" | "DUAL" | null;
 
 function computeMurajaEndDate(currentData: any, murajaTarget: number) {
   if (!currentData || !murajaTarget || murajaTarget <= 0) {
-    return currentData?.weekEndDate ?? currentData?.week_end_date ?? null;
+    return currentData?.endDate ?? currentData?.end_date ?? currentData?.weekEndDate ?? currentData?.week_end_date ?? null;
   }
 
   const endPage = currentData.endPage ?? currentData.end_page ?? 0;
@@ -141,8 +141,9 @@ export function useWeeklyEvaluation(type: "HIFZ" | "MURAJA", planId: number | un
         ...current,
         plannedPagesPerDay: report.suggestedMurajaTarget,
         planned_pages_per_day: report.suggestedMurajaTarget,
-        weekEndDate: optimisticEndDate,
-        week_end_date: optimisticEndDate,
+        endDate: optimisticEndDate,
+        end_date: optimisticEndDate,
+       
       };
     });
   }

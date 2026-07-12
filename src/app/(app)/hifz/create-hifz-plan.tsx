@@ -85,6 +85,7 @@ export default function CreateHifzPlan() {
         selectedDays: typeof existingPlan.selectedDays === "string" ? JSON.parse(existingPlan.selectedDays as any) : (existingPlan.selectedDays ?? []),
         pages_per_day: existingPlan.pagesPerDay,
         start_surah: items.find((s) => s.startingPage <= (existingPlan.startPage ?? 1) && s.endingPage >= (existingPlan.startPage ?? 1))?.number ?? existingPlan.startSurah,
+        // the start page not sync correclty always it show the first page of the surah
         start_page: existingPlan.startPage,
         direction: existingPlan.direction,
         evaluation_day: existingPlan.evaluationDay ?? 6,
@@ -114,7 +115,6 @@ export default function CreateHifzPlan() {
     if (!user?.id) return;
     try {
       const stats = calculatePlanStats(data, items);
-      
       const planData = {
         startDate: data.start_date,
         startSurah: data.start_surah,
@@ -169,7 +169,7 @@ export default function CreateHifzPlan() {
     <>
       <View className="h-16 px-4 flex-row items-center">
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => router.replace("/(app)/hifz")}
           className="w-10 h-10 items-center justify-center rounded-full active:bg-surface-muted"
         >
           <Ionicons

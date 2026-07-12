@@ -26,6 +26,7 @@ import { useMurajaAnalytics } from "@/src/features/muraja/hooks/useMurajaAnalyti
 import { useMurajaCardState } from "@/src/features/muraja/hooks/useMurajaCardState";
 import { useMemo, useRef, useCallback } from "react";
 import { useSession } from "@/src/hooks/useSession";
+import { useWeeklyMuraja } from "@/src/features/muraja/hooks/useWeeklyMuraja";
 
 export default function Dashboard() {
   const { push } = useNavigate();
@@ -34,6 +35,7 @@ export default function Dashboard() {
   const { items: surah } = useLoadSurahData();
 
   const { hifz: hifzPlan, isLoading: loadingHifz } = useHifzPlan();
+  const { data } = useWeeklyMuraja()
   const habitProgress = useHabitProgress();
   const { analytics } = habitProgress;
   const { data: badges = [] } = useUserBadges();
@@ -105,39 +107,39 @@ export default function Dashboard() {
   const lastMurajaHero = useRef(murajaHero);
   if (murajaHero) lastMurajaHero.current = murajaHero;
 
-  const dynamicGoalPages = useMemo(() => {
-    let goal = 0;
+const dynamicGoalPages = useMemo(() => {
+  let goal = 0;
 
-    const murajaTask =
-      (
-        murajaCardState.type === "PLANNED_DAY" ||
-        murajaCardState.type === "CATCHUP_DAY" ||
-        murajaCardState.type === "COMPLETED_TODAY"
-      ) ?
-        murajaCardState.task
-      : null;
+  const today = (new Date().getDay() + 6) % 7;
 
-    const hifzTask =
-      (
-        hifzCardState.type === "PLANNED_DAY" ||
-        hifzCardState.type === "CATCHUP_DAY" ||
-        hifzCardState.type === "COMPLETED_TODAY"
-      ) ?
-        hifzCardState.task
-      : null;
+  if (
+    hifzPlan?.selectedDays.includes(today) ||
+    hifzCardState.type === "CATCHUP_DAY"
+  ) {
+    goal += hifzPlan?.pagesPerDay ?? 0;
+  }
 
-    if (murajaTask) {
-      goal += Math.max(
-        0,
-        (murajaTask.quotaEnd ?? murajaTask.endPage) - murajaTask.startPage + 1,
-      );
-    }
-    if (hifzTask) {
-      goal += hifzTask.totalTarget ?? 0;
-    }
-    if (goal === 0) return Math.max(1, habitProgress.todayStats.completedPages);
-    return goal;
-  }, [murajaCardState, hifzCardState, habitProgress.todayStats.completedPages]);
+  if (
+    (data?.activeDays.includes(today) ||
+      murajaCardState.type === "CATCHUP_DAY") &&
+    murajaPlan
+  ) {
+    goal += murajaPlan.planned_pages_per_day;
+  }
+
+  if (goal === 0) {
+    return Math.max(1, habitProgress.todayStats.completedPages);
+  }
+
+  return goal;
+}, [
+  hifzPlan,
+  murajaPlan,
+  data,
+  hifzCardState.type,
+  murajaCardState.type,
+  habitProgress.todayStats.completedPages,
+]);
 
   const isFirstLoad =
     (loadingHifz && !hifzPlan) || (loadingMuraja && !murajaPlan);
@@ -147,7 +149,6 @@ export default function Dashboard() {
   if (hasSyncedOnce && !hifzPlan && !murajaPlan) {
     return <Redirect href="/onboarding" />;
   }
-
   if (!hifzPlan && !murajaPlan) return <DashboardSkeleton />;
 
   return (

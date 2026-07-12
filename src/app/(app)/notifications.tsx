@@ -5,6 +5,7 @@ import { useNotifications } from "@/src/hooks/useNotifications";
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, View } from "react-native";
 import { useRouter } from "expo-router";
+import { useColorScheme } from "nativewind";
 
 function formatTime(value: string) {
   try {
@@ -20,8 +21,11 @@ function formatTime(value: string) {
 }
 
 export default function NotificationsScreen() {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const router = useRouter();
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } =
+    useNotifications();
 
   return (
     <Screen>
@@ -30,29 +34,37 @@ export default function NotificationsScreen() {
           <View className="flex-row items-center">
             <Pressable
               onPress={() => router.back()}
-              className="w-10 h-10 rounded-full items-center justify-center bg-surface mr-3"
+              className="w-10 h-10 rounded-full items-center justify-center bg-surface dark:bg-surface-muted mr-3"
             >
-              <Ionicons name="arrow-back" size={18} color="#0f172a" />
+              <Ionicons
+                name="arrow-back"
+                size={18}
+                color={isDark ? "#fafafa" : "#000"}
+              />
             </Pressable>
             <View>
               <Text className="text-text text-xl">Notifications</Text>
-              <Text className="text-muted text-xs">
-                {unreadCount} unread
-              </Text>
+              <Text className="text-muted text-xs">{unreadCount} unread</Text>
             </View>
           </View>
-          <Pressable onPress={() => markAllAsRead()} className="px-3 py-2 rounded-xl bg-surface">
+          <Pressable
+            onPress={() => markAllAsRead()}
+            className="px-3 py-2 rounded-xl bg-surface-muted"
+          >
             <Text className="text-muted text-xs">Mark all as read</Text>
           </Pressable>
         </View>
 
-        {notifications.length === 0 ? (
+        {notifications.length === 0 ?
           <View className="flex-1 items-center justify-center py-20">
-            <Ionicons name="notifications-off-outline" size={28} color="#94a3b8" />
+            <Ionicons
+              name="notifications-off-outline"
+              size={28}
+              color="#94a3b8"
+            />
             <Text className="text-muted mt-3">No notifications yet</Text>
           </View>
-        ) : (
-          <View className="gap-y-3">
+        : <View className="gap-y-3">
             {notifications.map((item) => {
               const icon =
                 item.type === "xp" ? "sparkles"
@@ -68,31 +80,43 @@ export default function NotificationsScreen() {
                   key={item.id}
                   onPress={() => markAsRead(item.id)}
                   className={`rounded-2xl border p-4 ${
-                    item.isRead === 0
-                      ? "bg-surface border-border"
-                      : "bg-background border-border"
+                    item.isRead === 0 ?
+                      "bg-surface-muted border-border"
+                    : "bg-background border-border"
                   }`}
                 >
                   <View className="flex-row items-start">
-                    <View className="w-9 h-9 rounded-full bg-surface items-center justify-center mr-3 border border-border">
-                      <Ionicons name={icon as never} size={16} color={iconColor} />
+                    <View className="w-9 h-9 rounded-full bg-surface-muted items-center justify-center mr-3 border border-border">
+                      <Ionicons
+                        name={icon as never}
+                        size={16}
+                        color={iconColor}
+                      />
                     </View>
                     <View className="flex-1">
                       <View className="flex-row items-center justify-between">
-                        <Text className={`text-sm ${item.isRead === 0 ? "text-text" : "text-muted"}`}>
+                        <Text
+                          className={`text-sm ${item.isRead === 0 ? "text-text" : "text-muted"}`}
+                        >
                           {item.title}
                         </Text>
-                        {item.isRead === 0 && <View className="w-2.5 h-2.5 rounded-full bg-red-500" />}
+                        {item.isRead === 0 && (
+                          <View className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                        )}
                       </View>
-                      <Text className="text-xs text-muted mt-1">{item.message}</Text>
-                      <Text className="text-[10px] text-muted mt-2">{formatTime(item.createdAt)}</Text>
+                      <Text className="text-xs text-muted mt-1">
+                        {item.message}
+                      </Text>
+                      <Text className="text-[10px] text-muted mt-2">
+                        {formatTime(item.createdAt)}
+                      </Text>
                     </View>
                   </View>
                 </Pressable>
               );
             })}
           </View>
-        )}
+        }
       </ScreenContent>
     </Screen>
   );

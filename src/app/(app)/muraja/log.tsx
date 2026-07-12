@@ -360,10 +360,10 @@ export default function LogPage() {
           )}
 
           {hasExistingProgress && !isLocked && (
-            <View className="mb-8 p-4 bg-primary/5 border border-primary/10 rounded-2xl">
+            <View className="mb-8 p-4 bg-syrface-muted border border-border rounded-2xl">
               <View className="flex-row items-center gap-3 mb-3">
                 <Ionicons name="information-circle" size={20} color="#276359" />
-                <Text className="text-primary text-sm">
+                <Text className="text-text text-sm">
                   Today's Progress: {todayTask.completedPages} pages logged
                 </Text>
               </View>

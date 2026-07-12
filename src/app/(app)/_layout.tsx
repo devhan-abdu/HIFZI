@@ -47,7 +47,6 @@ export default function AppLayout() {
 
   const hideTabs =
     pathname.includes("/quran/reader") ||
-    pathname.includes("/onboarding") ||
     pathname.includes("/evaluation") ||
     pathname.includes("/plan-completion") ||
     pathname.includes("/journey");

@@ -7,7 +7,6 @@ export type ScaledAyahRegion = {
   ayah: number;
   verseKey: string;
   rects: Rect[];
-  /** Smallest rect area — used to resolve overlapping ayah hit targets */
   minArea: number;
 };
 
@@ -42,7 +41,6 @@ export function groupBboxesByAyah(
   return Array.from(groups.values());
 }
 
-/** Prefer the smallest matching region when rects overlap (nested ayah markers). */
 export function findAyahAtPoint(
   regions: ScaledAyahRegion[],
   x: number,

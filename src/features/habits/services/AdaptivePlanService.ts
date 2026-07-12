@@ -105,7 +105,7 @@ export const AdaptivePlanService = {
     };
 
     const murajaStartSearchDate = murajaPlan 
-      ? await getLastEvalDate(murajaActivityPlanId ?? murajaPlan.id, murajaPlan.weekStartDate || weekStartDate)
+      ? await getLastEvalDate(murajaActivityPlanId ?? murajaPlan.id, murajaPlan.startDate || weekStartDate)
       : weekStartDate;
 
     const hifzStartSearchDate = hifzPlan
@@ -572,7 +572,7 @@ export const AdaptivePlanService = {
           await tx.update(weeklyMurajaPlans)
             .set({ 
               plannedPagesPerDay: murajaTarget, 
-              weekEndDate: newEndDateStr,
+              endDate: newEndDateStr,
               syncStatus: 0 
             })
             .where(eq(weeklyMurajaPlans.userId, userId));

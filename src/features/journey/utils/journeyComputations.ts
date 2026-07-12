@@ -198,8 +198,8 @@ export function buildMurajaPlanCard(
     id: number;
     startPage: number | null;
     endPage: number | null;
-    weekStartDate: string | null;
-    weekEndDate: string | null;
+    startDate: string | null;
+    endDate: string | null;
     isActive: boolean | null;
   },
   completedPages: number,
@@ -225,11 +225,11 @@ export function buildMurajaPlanCard(
     pagesDone,
     pagesTotal: total,
     juzLabel: `Juz ${getJuzByPage(start)}–${getJuzByPage(end)}`,
-    startDate: activityPlan.startDate ?? murajaPlan.weekStartDate,
+    startDate: activityPlan.startDate ?? murajaPlan.startDate,
     endDate:
       activityPlan.status === "completed"
-        ? activityPlan.endDate ?? murajaPlan.weekEndDate
-        : murajaPlan.weekEndDate,
+        ? activityPlan.endDate ?? murajaPlan.endDate
+        : murajaPlan.endDate,
   };
 }
 

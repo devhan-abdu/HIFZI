@@ -16,18 +16,17 @@ type StatusTabProps = {
 const statusStyles = {
   completed: {
     active: "border-primary",
-    inactive: "border-primary/25",
+    inactive: "bg-emerald-800/15",
     icon: "#276359",
-
   },
   partial: {
     active: "border-amber-500",
-    inactive: "border-amber-500/25",
+    inactive: "border-amber-500/15",
     icon: "#f59e0b",
   },
   missed: {
     active: "border-red-500",
-    inactive: "border-red-500/25",
+    inactive: "border-red-500/15",
     icon: "#ef4444",
   },
 } as const;
@@ -39,9 +38,6 @@ export function StatusTab({
   variant,
   onPress,
 }: StatusTabProps) {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === "dark";
-
   const styles = statusStyles[variant];
 
   return (
