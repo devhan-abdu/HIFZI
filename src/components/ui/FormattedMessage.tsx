@@ -1,10 +1,7 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
-import {Text} from "../common/ui/Text"
+import { View } from "react-native";
+import { Text } from "../common/ui/Text";
 
-// ─────────────────────────────────────ura────────
-// PARSER
-// ─────────────────────────────────────────────
 
 type Block =
   | { type: "intro"; text: string }
@@ -37,18 +34,20 @@ function parseResponse(raw: string): Block[] {
 
   while (i < lines.length) {
     const line = lines[i].trim();
+    if (!line) {
+      i++;
+      continue;
+    }
 
-    if (!line) { i++; continue; }
-
-    // ── Arabic line (contains Arabic characters) ──
     const hasArabic = /[\u0600-\u06FF]/.test(line);
     if (hasArabic) {
-      // Look ahead for translation + ref
       let translation = "";
       let ref = "";
       if (i + 1 < lines.length) {
         const next = lines[i + 1].trim();
-        const refMatch = next.match(/^[""](.+)[""](\s*[\[(]([^\])\n]+)[\])])?$/);
+        const refMatch = next.match(
+          /^[""](.+)[""](\s*[\[(]([^\])\n]+)[\])])?$/,
+        );
         if (refMatch) {
           translation = refMatch[1];
           ref = refMatch[3] ?? "";
@@ -66,23 +65,23 @@ function parseResponse(raw: string): Block[] {
       continue;
     }
 
-    // ── Quote block "..." (Surah X:Y) ──
-    const quoteMatch = line.match(/^[""](.+?)[""][\s,]*(?:[\[(]([^\])\n]+)[\])])?$/);
+    const quoteMatch = line.match(
+      /^[""](.+?)[""][\s,]*(?:[\[(]([^\])\n]+)[\])])?$/,
+    );
     if (quoteMatch) {
       blocks.push({
         type: "ayah",
         translation: quoteMatch[1],
         ref: quoteMatch[2] ?? "",
       });
-      i++; continue;
+      i++;
+      continue;
     }
 
-    // ── Numbered item: "1. **Title:** body" OR "1. **Title**" ──
     const numMatch = line.match(/^(\d+)\.\s+\*\*(.+?)\*\*:?\s*(.*)/);
     if (numMatch) {
       let bodyRaw = numMatch[3] ?? "";
       i++;
-      // Collect continuation lines
       while (
         i < lines.length &&
         lines[i].trim() &&
@@ -102,65 +101,68 @@ function parseResponse(raw: string): Block[] {
       continue;
     }
 
-    // ── Section heading: "**Title**" alone ──
     const headingMatch = line.match(/^\*\*([^*]+)\*\*:?\s*$/);
     if (headingMatch) {
       blocks.push({ type: "section_title", text: headingMatch[1] });
-      i++; continue;
+      i++;
+      continue;
     }
 
-    // ── Bullet: "- text" or "• text" ──
     const bulletMatch = line.match(/^[-•*]\s+(.+)/);
     if (bulletMatch) {
       blocks.push({ type: "bullet", body: parseInline(bulletMatch[1]) });
-      i++; continue;
+      i++;
+      continue;
     }
 
-    // ── Intro (first paragraph heuristic) ──
     if (blocks.length === 0) {
-      blocks.push({ type: "intro", text: line.replace(/\*\*(.+?)\*\*/g, "$1") });
-      i++; continue;
+      blocks.push({
+        type: "intro",
+        text: line.replace(/\*\*(.+?)\*\*/g, "$1"),
+      });
+      i++;
+      continue;
     }
 
-    // ── Fallback: paragraph ──
     blocks.push({ type: "paragraph", spans: parseInline(line) });
     i++;
   }
-
   return blocks;
 }
 
-// ─────────────────────────────────────────────
-// INLINE TEXT RENDERER
-// ─────────────────────────────────────────────
 
-function InlineText({ spans, style }: { spans: InlineSpan[]; style?: any }) {
+function InlineText({
+  spans,
+  className,
+}: {
+  spans: InlineSpan[];
+  className?: string;
+}) {
   return (
-    <Text style={style}>
+    <Text className={className}>
       {spans.map((span, i) =>
-        span.bold ? (
-          <Text key={i} style={styles.bold}>{span.text}</Text>
-        ) : (
-          <Text key={i}>{span.text}</Text>
-        )
+        span.bold ?
+          <Text key={i} className=" text-[--text]">
+            {span.text}
+          </Text>
+        : <Text key={i}>{span.text}</Text>,
       )}
     </Text>
   );
 }
 
-// ─────────────────────────────────────────────
-// BLOCK RENDERERS
-// ─────────────────────────────────────────────
 
 function IntroBlock({ text }: { text: string }) {
-  return <Text style={styles.intro}>{text}</Text>;
+  return <Text className="text-sm leading-relaxed text-[--text]">{text}</Text>;
 }
 
 function SectionTitleBlock({ text }: { text: string }) {
   return (
-    <View style={styles.sectionRow}>
-      <View style={styles.sectionBar} />
-      <Text style={styles.sectionTitle}>{text}</Text>
+    <View className="flex-row items-center mt-1 mb-0.5 gap-2">
+      <View className="w-[3px] h-4 rounded-sm bg-[--primary]" />
+      <Text className="text-[13px] font-semibold tracking-wide text-[--primary] flex-1">
+        {text}
+      </Text>
     </View>
   );
 }
@@ -175,14 +177,20 @@ function NumberedBlock({
   body: InlineSpan[];
 }) {
   return (
-    <View style={styles.numberedRow}>
-      <View style={styles.numBadge}>
-        <Text style={styles.numText}>{num}</Text>
+    <View className="flex-row items-start gap-2.5">
+      {/* 10% opacity of primary for badge background */}
+      <View className="w-6 h-6 rounded-full bg-[--primary]/10 items-center justify-center mt-0.5 shrink-0">
+        <Text className="text-xs font-semibold text-[--primary]">{num}</Text>
       </View>
-      <View style={styles.numberedContent}>
-        <Text style={styles.numberedTitle}>{title}</Text>
+      <View className="flex-1 gap-1">
+        <Text className="text-sm font-semibold text-[--text] leading-5">
+          {title}
+        </Text>
         {body.length > 0 && (
-          <InlineText spans={body} style={styles.numberedBody} />
+          <InlineText
+            spans={body}
+            className="text-[13px] leading-5 text-[--muted]"
+          />
         )}
       </View>
     </View>
@@ -191,9 +199,13 @@ function NumberedBlock({
 
 function BulletBlock({ body }: { body: InlineSpan[] }) {
   return (
-    <View style={styles.bulletRow}>
-      <View style={styles.bulletDot} />
-      <InlineText spans={body} style={styles.bulletBody} />
+    <View className="flex-row items-start gap-2.5 pl-1">
+      {/* 40% opacity of primary for subtle bullet dot */}
+      <View className="w-1.5 h-1.5 rounded-full bg-[--primary]/40 mt-2 shrink-0" />
+      <InlineText
+        spans={body}
+        className="flex-1 text-[13px] leading-5 text-[--muted]"
+      />
     </View>
   );
 }
@@ -208,34 +220,43 @@ function AyahBlock({
   ref?: string;
 }) {
   return (
-    <View style={styles.ayahBlock}>
-      <View style={styles.ayahAccent} />
-      <View style={styles.ayahInner}>
-        {arabic ? (
-          <Text style={styles.ayahArabic}>{arabic}</Text>
-        ) : null}
-        {translation ? (
-          <Text style={styles.ayahTranslation}>"{translation}"</Text>
-        ) : null}
-        {ref ? <Text style={styles.ayahRef}>{ref}</Text> : null}
+    <View className="flex-row bg-[--surface] border border-[--border] rounded-xl overflow-hidden my-0.5">
+      <View className="w-[3px] bg-[--primary] shrink-0" />
+      <View className="flex-1 px-3 py-2.5 gap-1">
+        {arabic && (
+          <Text className="text-lg leading-7 text-[--primary] text-right">
+            {arabic}
+          </Text>
+        )}
+        {translation && (
+          <Text className="text-[13px] leading-5 text-[--text] italic opacity-90">
+            "{translation}"
+          </Text>
+        )}
+        {ref && (
+          <Text className="text-[11px] text-[--muted] font-medium tracking-wider mt-0.5">
+            {ref}
+          </Text>
+        )}
       </View>
     </View>
   );
 }
 
 function ParagraphBlock({ spans }: { spans: InlineSpan[] }) {
-  return <InlineText spans={spans} style={styles.paragraph} />;
+  return (
+    <InlineText
+      spans={spans}
+      className="text-sm leading-relaxed text-[--text]"
+    />
+  );
 }
-
-// ─────────────────────────────────────────────
-// MAIN COMPONENT
-// ─────────────────────────────────────────────
 
 export function FormattedMessage({ text }: { text: string }) {
   const blocks = parseResponse(text);
 
   return (
-    <View style={styles.container}>
+    <View className="gap-2.5">
       {blocks.map((block, i) => {
         switch (block.type) {
           case "intro":
@@ -271,152 +292,3 @@ export function FormattedMessage({ text }: { text: string }) {
     </View>
   );
 }
-
-// ─────────────────────────────────────────────
-// STYLES
-// ─────────────────────────────────────────────
-
-const GREEN = "#065f46";
-const GREEN_LIGHT = "#ecfdf5";
-const GREEN_MID = "#6ee7b7";
-
-const styles = StyleSheet.create({
-  container: {
-    gap: 10,
-  },
-
-  intro: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: "#1e293b",
-  },
-
-  sectionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 4,
-    marginBottom: 2,
-    gap: 8,
-  },
-  sectionBar: {
-    width: 3,
-    height: 16,
-    borderRadius: 2,
-    backgroundColor: GREEN,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: GREEN,
-    letterSpacing: 0.2,
-    flex: 1,
-  },
-
-  numberedRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-  },
-  numBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: GREEN_LIGHT,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 1,
-    flexShrink: 0,
-  },
-  numText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: GREEN,
-  },
-  numberedContent: {
-    flex: 1,
-    gap: 3,
-  },
-  numberedTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#0f172a",
-    lineHeight: 20,
-  },
-  numberedBody: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: "#475569",
-  },
-
-  bulletRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    paddingLeft: 4,
-  },
-  bulletDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: GREEN_MID,
-    marginTop: 8,
-    flexShrink: 0,
-  },
-  bulletBody: {
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 20,
-    color: "#475569",
-  },
-
-  // Ayah quote
-  ayahBlock: {
-    flexDirection: "row",
-    backgroundColor: "#f0fdf4",
-    borderRadius: 10,
-    overflow: "hidden",
-    marginVertical: 2,
-  },
-  ayahAccent: {
-    width: 3,
-    backgroundColor: GREEN,
-    borderRadius: 2,
-    flexShrink: 0,
-  },
-  ayahInner: {
-    flex: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 4,
-  },
-  ayahArabic: {
-    fontSize: 17,
-    lineHeight: 28,
-    color: GREEN,
-    textAlign: "right",
-    fontFamily: "System",
-  },
-  ayahTranslation: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: "#064e3b",
-    fontStyle: "italic",
-  },
-  ayahRef: {
-    fontSize: 11,
-    color: "#6b7280",
-    fontWeight: "500",
-    letterSpacing: 0.3,
-  },
-
-  paragraph: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: "#1e293b",
-  },
-
-  bold: {
-    fontWeight: "600",
-    color: "#0f172a",
-  },
-});
