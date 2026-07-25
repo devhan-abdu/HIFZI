@@ -1,7 +1,7 @@
 import { fetch as expoFetch } from "expo/fetch";
 import { File } from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { callQF, QF_ENV } from "./qfClient";
+import { callQF } from "./qfClient";
 
 export type Reciter = {
   id: number;
@@ -33,7 +33,7 @@ export async function getRecitationsCached(): Promise<Reciter[]> {
     const cached = await AsyncStorage.getItem(CACHE_KEY);
     if (cached) return JSON.parse(cached);
 
-    const response = await callQF(`/${QF_ENV}/content/api/v4/resources/chapter_reciters`, {
+    const response = await callQF(`/content/api/v4/resources/chapter_reciters`, {
       params: { language: "en" },
     });
 
@@ -86,7 +86,7 @@ export async function fetchChapterAudioMetadata(
     throw new Error(`INVALID_RECITER_ID: ${reciterId}. Expected a positive integer.`);
   }
 
-  const endpoint = `/${QF_ENV}/content/api/v4/chapter_recitations/${Number(String(reciterId))}/${String(chapterId)}`;
+  const endpoint = `/content/api/v4/chapter_recitations/${Number(String(reciterId))}/${String(chapterId)}`;
   return (await callQF(endpoint, {
     params: { segments: true },
   })) as ChapterAudioResponse;

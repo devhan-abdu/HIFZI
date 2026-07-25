@@ -3,7 +3,6 @@ import { supabase } from "@/src/lib/supabase";
 const BACKEND_BASE_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 
-export const QF_ENV: "prelive" | "production" = "prelive";
 
 export type QFOptions = {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
@@ -18,6 +17,7 @@ export class QFRequestError extends Error {
   bodyText: string;
   payload: unknown;
   params?: Record<string, any>;
+
 
   constructor({
     endpoint,

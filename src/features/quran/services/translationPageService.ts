@@ -2,7 +2,7 @@ import { Directory, File, Paths } from "expo-file-system";
 import { db } from "@/src/lib/db/local-client";
 import { eq } from "drizzle-orm";
 import { translationResources } from "../database/quranStateSchema";
-import { callQF, QF_ENV, QFRequestError } from "./qfClient";
+import { callQF, QFRequestError } from "./qfClient";
 import { getTranslationsCached, Translation } from "./quranContentService";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -77,7 +77,7 @@ async function fetchArabicPage(page: number): Promise<{ verse_key: string; text_
     }
   }
 
-  const endpoint = `/${QF_ENV}/content/api/v4/verses/by_page/${page}`;
+  const endpoint = `/content/api/v4/verses/by_page/${page}`;
   
   try {
     const response = await callQF(endpoint, {
@@ -136,7 +136,7 @@ async function fetchTranslationPage(
     }
   }
 
-  const endpoint = `/${QF_ENV}/content/api/v4/translations/${translationId}/by_page/${page}`;
+  const endpoint = `/content/api/v4/translations/${translationId}/by_page/${page}`;
   
   try {
     const response = await callQF(endpoint, { 

@@ -1,9 +1,9 @@
-import { callQF, QF_ENV } from "./qfClient";
+import { callQF } from "./qfClient";
 
 
 export async function getReflectionContextByPage(page: number) {
   try {
-    const response = await callQF(`/${QF_ENV}/content/api/v4/verses/by_page/${page}`, {
+    const response = await callQF(`/content/api/v4/verses/by_page/${page}`, {
       params: { words: false, per_page: 3 },
       silentErrorLog: true,
     });

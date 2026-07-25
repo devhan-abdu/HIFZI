@@ -1,5 +1,5 @@
 import { Directory, File, Paths } from "expo-file-system";
-import { callQF, QF_ENV } from "./qfClient";
+import { callQF } from "./qfClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export type TafsirPayload = {
@@ -57,7 +57,7 @@ export async function getTranslationsCached(): Promise<Translation[]> {
         return _translationsCache!;
       }
 
-      const response = await callQF(`/${QF_ENV}/content/api/v4/resources/translations`, { params: { language: "en" } });
+      const response = await callQF(`/content/api/v4/resources/translations`, { params: { language: "en" } });
       const raw: any[] = response?.translations ?? [];
       const translations: Translation[] = raw
         .map((item: any) => ({
@@ -101,7 +101,7 @@ export async function getAyahTafsirCached(tafsirId: number, sura: number, ayah: 
     } catch {}
   }
 
-  const response = await callQF(`/${QF_ENV}/content/api/v4/tafsirs/${tafsirId}/by_ayah/${verseKey}`, {
+  const response = await callQF(`/content/api/v4/tafsirs/${tafsirId}/by_ayah/${verseKey}`, {
     params: { fields: "resource_name,language_name,verse_key" }
   });
 
@@ -125,7 +125,7 @@ export async function getAyahTranslationCached(translationId: number, sura: numb
     } catch {}
   }
 
-  const response = await callQF(`/${QF_ENV}/content/api/v4/translations/${translationId}/by_ayah/${verseKey}`, {
+  const response = await callQF(`/content/api/v4/translations/${translationId}/by_ayah/${verseKey}`, {
     params: { fields: "resource_name,language_name,verse_key" }
   });
 
@@ -160,7 +160,7 @@ export async function getChapterVersesWithTranslation(
   }
 
   const response = await callQF(
-    `/${QF_ENV}/content/api/v4/translations/${translationId}/by_chapter/${chapterId}`,
+    `/content/api/v4/translations/${translationId}/by_chapter/${chapterId}`,
     { params: { fields: "text_uthmani,verse_key,verse_number" } },
   );
 
@@ -196,7 +196,7 @@ export async function getPageVersesWithTranslation(page: number, translationId: 
     } catch {}
   }
 
-  const response = await callQF(`/${QF_ENV}/content/api/v4/translations/${translationId}/by_page/${page}`, {
+  const response = await callQF(`/content/api/v4/translations/${translationId}/by_page/${page}`, {
     params: { fields: "text_uthmani,verse_key,verse_number" }
   });
 
