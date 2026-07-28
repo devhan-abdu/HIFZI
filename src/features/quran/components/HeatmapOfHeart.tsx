@@ -64,12 +64,27 @@ export const HeatmapOfHeart = () => {
       const surahName = getSurahByPage(page, surahs as any) ?? "—";
       const data = performanceData?.get(page);
 
+      // Brand teal scale — readable in light + dark (no amber/red fills)
+      const palette = isDark
+        ? {
+            notStarted: { color: "#9ba3a0", hex: "#272e2a", border: "#2a312d" },
+            weak: { color: "#8fa39c", hex: "#2c3833", border: "#3d4f47" },
+            partial: { color: "#6bb5a8", hex: "#334940", border: "#3f6b5f" },
+            strong: { color: "#4ecdb8", hex: "rgba(34, 87, 78, 0.55)", border: "rgba(78, 205, 184, 0.45)" },
+            mastered: { color: "#18ccb1", hex: "#18ccb1", border: "#0f766e" },
+          }
+        : {
+            notStarted: { color: "#64748b", hex: "#f1f5f9", border: "#e2e8f0" },
+            weak: { color: "#5a7169", hex: "#e8eeeb", border: "#c5d4ce" },
+            partial: { color: "#3d7a6e", hex: "#d7ebe5", border: "#9bc4b8" },
+            strong: { color: "#0f766e", hex: "rgba(24, 204, 177, 0.28)", border: "rgba(24, 204, 177, 0.55)" },
+            mastered: { color: "#0d9488", hex: "#18ccb1", border: "#0f766e" },
+          };
+
       if (!data || !data.lastReviewedAt) {
         return {
           label: "Not Started",
-          color: isDark ? "#cdd3d1" : "#64748b",
-          hex: isDark ? "#272e2a" : "#f1f5f9",
-          border: isDark ? "#2a312d" : "#e2e8f0",
+          ...palette.notStarted,
           percentage: 0,
           surahName,
         };
@@ -88,9 +103,7 @@ export const HeatmapOfHeart = () => {
       ) {
         return {
           label: "Weak",
-          color: "#ef4444",
-          hex: "#fee2e2",
-          border: "#ef4444",
+          ...palette.weak,
           percentage,
           surahName,
         };
@@ -99,9 +112,7 @@ export const HeatmapOfHeart = () => {
       if (data.lastSessionQuality === "medium" || retrievability < 0.85) {
         return {
           label: "Partial",
-          color: "#d97706",
-          hex: "#fef3c7",
-          border: "#f59e0b",
+          ...palette.partial,
           percentage,
           surahName,
         };
@@ -110,9 +121,7 @@ export const HeatmapOfHeart = () => {
       if (data.consecutivePerfects >= 3) {
         return {
           label: "Mastered",
-          color: "#0d9488",
-          hex: "#18ccb1",
-          border: "#0f766e",
+          ...palette.mastered,
           percentage: 100,
           surahName,
         };
@@ -120,9 +129,7 @@ export const HeatmapOfHeart = () => {
 
       return {
         label: "Strong",
-        color: "#0f766e",
-        hex: "rgba(24, 204, 177, 0.3)",
-        border: "rgba(24, 204, 177, 0.6)",
+        ...palette.strong,
         percentage,
         surahName,
       };
@@ -258,13 +265,25 @@ export const HeatmapOfHeart = () => {
             </Text>
 
             {/* Legend */}
-            <View className="flex-row justify-between items-center opacity-60 px-2">
-              <LegendItem color={isDark ? "#1a211d" : "#f1f5f9"} border={isDark ? "#2a312d" : "#e2e8f0"} label="Not Started" />
-              <LegendItem color="#fee2e2" border="#ef4444" label="Weak" />
-              <LegendItem color="#fef3c7" border="#f59e0b" label="Partial" />
+            <View className="flex-row justify-between items-center opacity-80 px-2">
               <LegendItem
-                color="rgba(24, 204, 177, 0.3)"
-                border="rgba(24, 204, 177, 0.6)"
+                color={isDark ? "#272e2a" : "#f1f5f9"}
+                border={isDark ? "#2a312d" : "#e2e8f0"}
+                label="Not Started"
+              />
+              <LegendItem
+                color={isDark ? "#2c3833" : "#e8eeeb"}
+                border={isDark ? "#3d4f47" : "#c5d4ce"}
+                label="Weak"
+              />
+              <LegendItem
+                color={isDark ? "#334940" : "#d7ebe5"}
+                border={isDark ? "#3f6b5f" : "#9bc4b8"}
+                label="Partial"
+              />
+              <LegendItem
+                color={isDark ? "rgba(34, 87, 78, 0.55)" : "rgba(24, 204, 177, 0.28)"}
+                border={isDark ? "rgba(78, 205, 184, 0.45)" : "rgba(24, 204, 177, 0.55)"}
                 label="Strong"
               />
               <LegendItem color="#18ccb1" border="#0f766e" label="Mastered" />
