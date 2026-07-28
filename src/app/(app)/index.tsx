@@ -24,7 +24,7 @@ import { AchievementSection } from "@/src/components/dashboard/AchievementSectio
 import { useSyncStore } from "@/src/services/sync/syncStore";
 import { useMurajaAnalytics } from "@/src/features/muraja/hooks/useMurajaAnalytics";
 import { useMurajaCardState } from "@/src/features/muraja/hooks/useMurajaCardState";
-import { useMemo, useRef, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { useSession } from "@/src/hooks/useSession";
 import { useWeeklyMuraja } from "@/src/features/muraja/hooks/useWeeklyMuraja";
 
@@ -102,11 +102,6 @@ export default function Dashboard() {
     };
   }, [murajaPlan, murajaStats]);
 
-  const lastHifzAnalytics = useRef(hifzAnalytics);
-  if (hifzAnalytics) lastHifzAnalytics.current = hifzAnalytics;
-  const lastMurajaHero = useRef(murajaHero);
-  if (murajaHero) lastMurajaHero.current = murajaHero;
-
 const dynamicGoalPages = useMemo(() => {
   let goal = 0;
 
@@ -158,8 +153,8 @@ const dynamicGoalPages = useMemo(() => {
         <ScreenContent>
           <View className="mb-8">
             <Card
-              hifzAnalytics={hifzAnalytics ?? lastHifzAnalytics.current}
-              murajaHero={murajaHero ?? lastMurajaHero.current}
+              hifzAnalytics={hifzAnalytics}
+              murajaHero={murajaHero}
               habitProgress={habitProgress}
               userStats={userStats ?? null}
             />
