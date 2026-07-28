@@ -53,7 +53,7 @@ export function MurajaOnlyEvaluation({
             <MetricTile
               label="Days Missed"
               value={`${report.murajaMissedDays}`}
-              accent={report.murajaMissedDays > 0 ? "amber" : "primary"}
+              accent={report.murajaMissedDays > 0 ? "muted" : "default"}
             />
           </View>
         </SectionCard>
@@ -68,7 +68,6 @@ export function MurajaOnlyEvaluation({
               : "Start Muraja Exam"
             }
             onPress={onTakeExam}
-            headerTone="amber"
             footerNote={
               report.murajaTestScore !== undefined && !examPassed ?
                 "A passing score is 75% or higher."

@@ -2,6 +2,7 @@ import { Text } from "@/src/components/common/ui/Text";
 import { Button } from "@/src/components/ui/Button";
 import { cn } from "@/src/lib/utils";
 import { Ionicons } from "@expo/vector-icons";
+import { useColorScheme } from "nativewind";
 import type { ReactNode } from "react";
 import { View } from "react-native";
 
@@ -32,27 +33,35 @@ export function SectionCard({
   children: ReactNode;
   className?: string;
 }) {
-  return <View className={cn("rounded-[32px] border border-border bg-surface p-6", className)}>{children}</View>;
+  return (
+    <View
+      className={cn(
+        "rounded-[32px] border border-border bg-surface p-6 dark:border-white/10",
+        className,
+      )}
+    >
+      {children}
+    </View>
+  );
 }
 
 export function MetricTile({
   label,
   value,
-  accent = "slate",
+  accent = "default",
 }: {
   label: string;
   value: string;
-  accent?: "slate" | "primary" | "amber" | "rose";
+  accent?: "default" | "primary" | "muted";
 }) {
   const accents = {
-    slate: "text-text",
+    default: "text-text",
     primary: "text-primary",
-    amber: "text-amber-700",
-    rose: "text-rose-700",
+    muted: "text-muted",
   } as const;
 
   return (
-    <View className="min-w-[46%] flex-1 rounded-3xl border border-border bg-background px-4 py-5">
+    <View className="min-w-[46%] flex-1 rounded-3xl border border-border bg-background px-4 py-5 dark:border-white/10">
       <Text className="text-[10px] uppercase tracking-[1.5px] text-muted">{label}</Text>
       <Text className={cn("mt-2 text-2xl", accents[accent])}>{value}</Text>
     </View>
@@ -64,7 +73,6 @@ export function ExamGateCard({
   description,
   buttonLabel,
   onPress,
-  headerTone = "rose",
   disabled = false,
   footerNote,
 }: {
@@ -72,64 +80,49 @@ export function ExamGateCard({
   description: string;
   buttonLabel: string;
   onPress: () => void;
-  headerTone?: "rose" | "amber" | "primary";
   disabled?: boolean;
   footerNote?: string;
 }) {
-  const tones = {
-    rose: {
-      wrap: "border-rose-100 bg-rose-50",
-      badge: "bg-rose-600",
-      icon: "#e11d48",
-      title: "text-rose-900",
-      body: "text-rose-700",
-    },
-    amber: {
-      wrap: "border-amber-100 bg-amber-50",
-      badge: "bg-amber-500",
-      icon: "#d97706",
-      title: "text-amber-900",
-      body: "text-amber-700",
-    },
-    primary: {
-      wrap: "border-primary/10 bg-primary/5",
-      badge: "bg-primary",
-      icon: "#276359",
-      title: "text-primary",
-      body: "text-muted",
-    },
-  } as const;
-
-  const tone = tones[headerTone];
-
   return (
-    <SectionCard className={tone.wrap}>
+    <SectionCard>
       <View className="mb-5 flex-row items-center justify-between">
         <View className="flex-1 pr-4">
-          <Text className={cn("text-[10px] uppercase tracking-[1.6px]", tone.body)}>Assessment Gate</Text>
-          <Text className={cn("mt-2 text-xl", tone.title)}>{title}</Text>
+          <Text className="text-[10px] uppercase tracking-[1.6px] text-muted">
+            Assessment Gate
+          </Text>
+          <Text className="mt-2 text-xl text-text">{title}</Text>
         </View>
-        <View className={cn("rounded-full px-3 py-1.5", tone.badge)}>
-          <Text className="text-[10px] uppercase tracking-[1.4px] text-white">Exam</Text>
+        <View className="rounded-full border border-border bg-background px-3 py-1.5 dark:border-white/10">
+          <Text className="text-[10px] uppercase tracking-[1.4px] text-muted">Exam</Text>
         </View>
       </View>
 
-      <Text className={cn("mb-5 text-sm leading-6", tone.body)}>{description}</Text>
+      <Text className="mb-5 text-sm leading-6 text-muted">{description}</Text>
 
-      <Button onPress={onPress} className="h-14 bg-surface" variant="outline" disabled={disabled}>
+      <Button
+        onPress={onPress}
+        className="h-14 bg-primary"
+        textClassName="text-white"
+        disabled={disabled}
+      >
         {buttonLabel}
       </Button>
 
-      {footerNote ? <Text className={cn("mt-4 text-xs leading-5", tone.body)}>{footerNote}</Text> : null}
+      {footerNote ? (
+        <Text className="mt-4 text-xs leading-5 text-muted">{footerNote}</Text>
+      ) : null}
     </SectionCard>
   );
 }
 
 export function LockedRecommendationCard({ message }: { message: string }) {
+  const { colorScheme } = useColorScheme();
+  const iconColor = colorScheme === "dark" ? "#9ba3a0" : "#6b7280";
+
   return (
     <SectionCard className="items-center border-dashed py-8">
-      <View className="mb-4 h-12 w-12 items-center justify-center rounded-full bg-background">
-        <Ionicons name="lock-closed" size={22} color="#94a3b8" />
+      <View className="mb-4 h-12 w-12 items-center justify-center rounded-full bg-background border border-border dark:border-white/10">
+        <Ionicons name="lock-closed" size={22} color={iconColor} />
       </View>
       <Text className="max-w-[280px] text-center text-sm leading-6 text-muted">{message}</Text>
     </SectionCard>
@@ -154,20 +147,26 @@ export function RecommendationCard({
   error?: string | null;
 }) {
   return (
-    <SectionCard className="border-emerald-100">
-      <Text className="text-[10px] uppercase tracking-[1.6px] text-emerald-700">Recommendation</Text>
+    <SectionCard>
+      <Text className="text-[10px] uppercase tracking-[1.6px] text-muted">Recommendation</Text>
       <Text className="mt-2 text-2xl text-text">{title}</Text>
       <Text className="mt-2 text-sm leading-6 text-muted">{description}</Text>
 
       <View className="mt-6 gap-4">{children}</View>
 
       {error ? (
-        <View className="mt-5 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3">
-          <Text className="text-sm leading-5 text-rose-700">{error}</Text>
+        <View className="mt-5 rounded-2xl border border-border bg-background px-4 py-3 dark:border-white/10">
+          <Text className="text-sm leading-5 text-muted">{error}</Text>
         </View>
       ) : null}
 
-      <Button onPress={onAction} className="mt-6 h-14 bg-primary" textClassName="text-white" loading={isLoading} disabled={isLoading}>
+      <Button
+        onPress={onAction}
+        className="mt-6 h-14 bg-primary"
+        textClassName="text-white"
+        loading={isLoading}
+        disabled={isLoading}
+      >
         {actionLabel}
       </Button>
     </SectionCard>
@@ -184,7 +183,7 @@ export function TargetRow({
   detail: string;
 }) {
   return (
-    <View className="flex-row items-center justify-between rounded-2xl border border-primary/10 px-4 py-4">
+    <View className="flex-row items-center justify-between rounded-2xl border border-border bg-background px-4 py-4 dark:border-white/10">
       <View className="pr-4">
         <Text className="text-lg text-text">{label}</Text>
         <Text className="text-xs text-muted">{detail}</Text>
@@ -205,16 +204,19 @@ export function SuggestionAlert({
   currentValue: string;
   suggestedValue: string;
 }) {
+  const { colorScheme } = useColorScheme();
+  const iconColor = colorScheme === "dark" ? "#4ade80" : "#276359";
+
   return (
-    <View className="rounded-3xl border border-amber-200 bg-amber-50 p-5">
+    <View className="rounded-3xl border border-border bg-background p-5 dark:border-white/10">
       <View className="mb-2 flex-row items-center gap-2">
-        <Ionicons name="warning" size={18} color="#d97706" />
-        <Text className="text-sm uppercase tracking-[1.4px] text-amber-800">{title}</Text>
+        <Ionicons name="information-circle-outline" size={18} color={iconColor} />
+        <Text className="text-sm uppercase tracking-[1.4px] text-muted">{title}</Text>
       </View>
-      <Text className="text-sm leading-6 text-amber-700">{message}</Text>
-      <View className="mt-4 rounded-2xl bg-amber-100/60 p-4">
-        <Text className="text-xs text-amber-800">Current Hifz target: {currentValue}</Text>
-        <Text className="mt-1 text-xs text-amber-900">Suggested Hifz target: {suggestedValue}</Text>
+      <Text className="text-sm leading-6 text-muted">{message}</Text>
+      <View className="mt-4 rounded-2xl border border-border bg-surface p-4 dark:border-white/10">
+        <Text className="text-xs text-muted">Current Hifz target: {currentValue}</Text>
+        <Text className="mt-1 text-xs text-text">Suggested Hifz target: {suggestedValue}</Text>
       </View>
     </View>
   );

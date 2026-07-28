@@ -42,7 +42,11 @@ export function HifzOnlyEvaluation({
           <View className="flex-row flex-wrap gap-4">
             <MetricTile label="Hifz Completion" value={`${report.hifzCompletion.toFixed(0)}%`} accent="primary" />
             <MetricTile label="Pages Completed" value={`${report.hifzTotalCompletedPages}`} />
-            <MetricTile label="Days Missed" value={`${report.hifzMissedDays}`} accent={report.hifzMissedDays > 0 ? "amber" : "primary"} />
+            <MetricTile
+              label="Days Missed"
+              value={`${report.hifzMissedDays}`}
+              accent={report.hifzMissedDays > 0 ? "muted" : "default"}
+            />
           </View>
         </SectionCard>
 
@@ -52,7 +56,6 @@ export function HifzOnlyEvaluation({
             description="This exam is scoped to the exact pages you memorized in this cycle. Pass the exam to unlock your next Hifz recommendation."
             buttonLabel={report.hifzTestScore !== undefined ? `Retake Hifz Exam (${report.hifzTestScore.toFixed(0)}%)` : "Start Hifz Exam"}
             onPress={onTakeExam}
-            headerTone="rose"
             footerNote={report.hifzTestScore !== undefined && !examPassed ? "A passing score is 75% or higher." : undefined}
           />
         ) : null}
