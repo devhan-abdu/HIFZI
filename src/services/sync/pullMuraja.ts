@@ -32,14 +32,6 @@ export async function pullMurajaPlans(
     if (local && local.syncStatus === 0) continue;
 
     const remoteAt = remoteUpdatedAt(row);
-    if (
-      local &&
-      local.syncStatus === 1 &&
-      !row.deleted_at &&
-      local.remoteId === String(row.id ?? "")
-    ) {
-      continue;
-    }
 
     const values = {
       userId,
@@ -49,13 +41,18 @@ export async function pullMurajaPlans(
       startPage: (row.start_page as number | null) ?? null,
       endPage: (row.end_page as number | null) ?? null,
       isActive: row.deleted_at ? false : Boolean(row.is_active ?? true),
-      selectedDays: (row.selected_days as string | null) ?? null,
+      selectedDays: Array.isArray(row.selected_days)
+        ? JSON.stringify(row.selected_days)
+        : (row.selected_days as string | null) ?? null,
       estimatedTimeMin: (row.estimated_time_min as number | null) ?? null,
       place: (row.place as string | null) ?? null,
       note: (row.note as string | null) ?? null,
       preferredTime: (row.preferred_time as string | null) ?? null,
       isCustomTime: Boolean(row.is_custom_time),
       evaluationDay: Number(row.evaluation_day ?? 6),
+      completedPages: Number(row.completed_pages ?? local?.completedPages ?? 0),
+      missedDaysCount: Number(row.missed_days_count ?? local?.missedDaysCount ?? 0),
+      perfectDaysCount: Number(row.perfect_days_count ?? local?.perfectDaysCount ?? 0),
       remoteId: row.id != null ? String(row.id) : local?.remoteId ?? null,
       syncStatus: 1,
     };
@@ -66,20 +63,33 @@ export async function pullMurajaPlans(
       await db.insert(weeklyMurajaPlans).values({ ...values, id: localId });
     }
 
-    await db
-      .update(activityPlans)
-      .set({
-        isSynced: 1,
-        updatedAt: remoteAt,
-        status: values.isActive ? "active" : "paused",
-      })
-      .where(
-        and(
-          eq(activityPlans.userId, userId),
-          eq(activityPlans.activityType, "MURAJA"),
-          eq(activityPlans.localRefId, localId),
-        ),
-      );
+    const existingActivityPlan = await db.query.activityPlans.findFirst({
+      where: and(
+        eq(activityPlans.userId, userId),
+        eq(activityPlans.activityType, "MURAJA"),
+        eq(activityPlans.localRefId, localId),
+      ),
+    });
+
+    const activityPlanValues = {
+      isSynced: 1,
+      updatedAt: remoteAt,
+      status: values.isActive ? "active" : "paused",
+    };
+
+    if (existingActivityPlan) {
+      await db
+        .update(activityPlans)
+        .set(activityPlanValues)
+        .where(eq(activityPlans.id, existingActivityPlan.id));
+    } else {
+      await db.insert(activityPlans).values({
+        userId,
+        activityType: "MURAJA",
+        localRefId: localId,
+        ...activityPlanValues,
+      });
+    }
 
     changed = true;
   }
@@ -120,7 +130,7 @@ export async function pullMurajaLogs(
       const localByDate = await db.query.dailyMurajaLogs.findFirst({
         where: and(
           eq(dailyMurajaLogs.planId, planId),
-          eq(dailyMurajaLogs.date, String(row.date))
+          eq(dailyMurajaLogs.date, String(row.date)),
         ),
       });
       if (localByDate) {
@@ -146,7 +156,7 @@ export async function pullMurajaLogs(
     };
 
     if (local) {
-      await db.update(dailyMurajaLogs).set(values).where(eq(dailyMurajaLogs.id, localId));
+      await db.update(dailyMurajaLogs).set(values).where(eq(dailyMurajaLogs.id, local.id));
     } else {
       await db.insert(dailyMurajaLogs).values({ ...values, id: localId });
     }

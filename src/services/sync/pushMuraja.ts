@@ -35,7 +35,16 @@ export async function pushMurajaPlans(userId: string): Promise<void> {
             start_page: plan.startPage,
             end_page: plan.endPage,
             is_active: plan.isActive,
-            selected_days: plan.selectedDays,
+            selected_days:
+              typeof plan.selectedDays === "string"
+                ? (() => {
+                    try {
+                      return JSON.parse(plan.selectedDays);
+                    } catch {
+                      return plan.selectedDays;
+                    }
+                  })()
+                : plan.selectedDays,
             estimated_time_min: plan.estimatedTimeMin,
             place: plan.place,
             note: plan.note,
@@ -91,8 +100,16 @@ export async function pushMurajaLogs(userId: string): Promise<void> {
 
       if (!plan || plan.userId !== userId) continue;
 
-      const remotePlanId = plan.remoteId ? Number(plan.remoteId) : null;
-      if (!remotePlanId) continue;
+      // Wait until the plan has a remote id — never invent one from local PK
+      if (!plan.remoteId) {
+        if (plan.syncStatus === 0) continue;
+        logPushError("muraja_logs", log.id, {
+          message: "Muraja plan missing remoteId; skipping log push",
+        });
+        continue;
+      }
+      const remotePlanId = Number(plan.remoteId);
+      if (!Number.isFinite(remotePlanId)) continue;
 
       const { data, error } = await supabase
         .from("daily_muraja_logs")
