@@ -1,7 +1,7 @@
 import * as React from "react";
 import { View, ActivityIndicator } from "react-native";
 import * as WebBrowser from "expo-web-browser";
-import { makeRedirectUri } from "expo-auth-session";
+import { WebBrowserPresentationStyle } from "expo-web-browser";
 import * as Linking from "expo-linking";
 import { Text, Button } from "./common/ui/Text";
 import { supabase } from "../lib/supabase";
@@ -40,6 +40,11 @@ export default function LoginButton() {
       const result = await WebBrowser.openAuthSessionAsync(
         data.url,
         redirectTo,
+        {
+          presentationStyle: WebBrowserPresentationStyle.FORM_SHEET,
+          showInRecents: false,
+          createTask: false,
+        },
       );
 
       if (result.type === "success" && result.url) {
