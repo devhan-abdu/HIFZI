@@ -88,17 +88,17 @@ export async function pushHifzLogs(userId: string): Promise<void> {
         where: eq(hifzPlans.id, log.hifzPlanId),
       });
 
-      const remotePlanId = Number(plan?.remoteId ?? log.hifzPlanId);
-      if (!plan?.remoteId && plan?.syncStatus === 0) {
-        continue;
-      }
+      // Never send the local plan PK as remote plan_id — wait until plan has remoteId
+      if (!plan?.remoteId) continue;
+      const remotePlanId = Number(plan.remoteId);
+      if (!Number.isFinite(remotePlanId)) continue;
 
       const { data, error } = await supabase
         .from("hifz_daily_logs")
         .upsert(
           {
             user_id: log.userId,
-            hifz_plan_id: remotePlanId,
+            plan_id: remotePlanId,
             actual_start_page: log.actualStartPage,
             actual_end_page: log.actualEndPage,
             actual_pages_completed: log.actualPagesCompleted,
@@ -113,7 +113,7 @@ export async function pushHifzLogs(userId: string): Promise<void> {
             local_id: log.id,
             updated_at: log.updatedAt,
           },
-          { onConflict: "user_id,hifz_plan_id,date" },
+          { onConflict: "user_id,plan_id,date" },
         )
         .select("id")
         .single();

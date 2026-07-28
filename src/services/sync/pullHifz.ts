@@ -113,7 +113,7 @@ export async function pullHifzLogs(
     });
 
     const localPlan = await db.query.hifzPlans.findFirst({
-      where: eq(hifzPlans.remoteId, String(row.hifz_plan_id ?? "")),
+      where: eq(hifzPlans.remoteId, String(row.plan_id ?? "")),
     });
     const hifzPlanId: number = localPlan?.id ?? local?.hifzPlanId ?? 0;
     if (!hifzPlanId) continue;
