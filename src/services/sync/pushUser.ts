@@ -1,7 +1,7 @@
 import { db } from "@/src/lib/db/local-client";
 import { supabase } from "@/src/lib/supabase";
-import { userStats, pagePerformance } from "@/src/features/user/database/userSchema";
-import { eq, sql } from "drizzle-orm";
+import { userStats, pagePerformance, userBadges } from "@/src/features/user/database/userSchema";
+import { eq } from "drizzle-orm";
 import { useSyncStore } from "./syncStore";
 import { isAuthError, isConstraintError } from "./utils";
 import type { SyncErrorDetail } from "./types";
@@ -24,9 +24,6 @@ export async function pushUserStats(userId: string): Promise<void> {
 
     if (!stats) return;
 
-    // We don't have a sync_status for user_stats locally, so we push it every time
-    // this function is called, relying on the fact that it is called when a mutation happens.
-    
     const payload = {
       user_id: stats.userId,
       muraja_last_page: stats.murajaLastPage,
@@ -41,7 +38,6 @@ export async function pushUserStats(userId: string): Promise<void> {
       has_recovery_shield: stats.hasRecoveryShield,
       last_test_date: stats.lastTestDate,
       consecutive_perfects: stats.consecutivePerfects,
-      // Let Supabase handle updated_at automatically or pass it if you added it locally.
     };
 
     const { error } = await supabase
@@ -63,10 +59,6 @@ export async function pushUserStats(userId: string): Promise<void> {
 }
 
 export async function pushPagePerformance(userId: string): Promise<void> {
-  // Since we do not have syncStatus on pagePerformance locally,
-  // we could push all rows (inefficient) or rely on a timestamp.
-  // For now, we will fetch all rows for the user. In a real app,
-  // adding `syncStatus` or `isSynced` to the local schema is highly recommended.
   try {
     const performances = await db.query.pagePerformance.findMany({
       where: eq(pagePerformance.userId, userId),
@@ -74,8 +66,7 @@ export async function pushPagePerformance(userId: string): Promise<void> {
 
     if (!performances.length) return;
 
-    // Batch upsert
-    const payload = performances.map(perf => ({
+    const payload = performances.map((perf) => ({
       user_id: perf.userId,
       page_number: perf.pageNumber,
       strength: perf.strength,
@@ -90,7 +81,6 @@ export async function pushPagePerformance(userId: string): Promise<void> {
       updated_at: perf.updatedAt,
     }));
 
-    // Chunk the payload to avoid massive requests
     const CHUNK_SIZE = 500;
     for (let i = 0; i < payload.length; i += CHUNK_SIZE) {
       const chunk = payload.slice(i, i + CHUNK_SIZE);
@@ -106,5 +96,39 @@ export async function pushPagePerformance(userId: string): Promise<void> {
   } catch (error) {
     if (isAuthError(error)) throw error;
     logPushError("page_performance", "all", error);
+  }
+}
+
+export async function pushUserBadges(userId: string): Promise<void> {
+  try {
+    const badges = await db.query.userBadges.findMany({
+      where: eq(userBadges.userId, userId),
+    });
+
+    if (!badges.length) return;
+
+    const payload = badges.map((badge) => ({
+      badge_id: badge.badgeId,
+      user_id: badge.userId,
+      badge_type: badge.badgeType,
+      achieved_at: badge.achievedAt,
+      metadata: badge.metadata,
+    }));
+
+    const CHUNK_SIZE = 100;
+    for (let i = 0; i < payload.length; i += CHUNK_SIZE) {
+      const chunk = payload.slice(i, i + CHUNK_SIZE);
+      const { error } = await supabase
+        .from("user_badges")
+        .upsert(chunk, { onConflict: "badge_id" });
+
+      if (error) {
+        if (isAuthError(error)) throw error;
+        logPushError("user_badges", `chunk_${i}`, error);
+      }
+    }
+  } catch (error) {
+    if (isAuthError(error)) throw error;
+    logPushError("user_badges", "all", error);
   }
 }

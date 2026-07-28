@@ -1,15 +1,17 @@
 import { useEffect, useRef } from "react";
 import { AppState, type AppStateStatus } from "react-native";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@/src/hooks/useSession";
 import { sync } from "@/src/services/sync";
 
 /**
- * Starts sync after auth, handles foreground + network reconnect.
- * NetInfo is optional — falls back to sync on foreground only if unavailable.
+ * Starts sync after auth.
+ * Pull runs once on login; foreground / reconnect only push.
  */
 export function SyncBootstrap() {
   const { user, session, loading } = useSession();
   const lastUserId = useRef<string | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (loading) return;
@@ -24,9 +26,15 @@ export function SyncBootstrap() {
 
     if (lastUserId.current !== user.id) {
       lastUserId.current = user.id;
-      void sync.onLogin(user.id);
+      void sync.onLogin(user.id).then(() => {
+        queryClient.invalidateQueries({ queryKey: ["hifz", user.id] });
+        queryClient.invalidateQueries({ queryKey: ["muraja-dashboard", user.id] });
+        queryClient.invalidateQueries({ queryKey: ["user-badges", user.id] });
+        queryClient.invalidateQueries({ queryKey: ["user-stats", user.id] });
+        queryClient.invalidateQueries({ queryKey: ["habit-progress", user.id] });
+      });
     }
-  }, [loading, session, user?.id]);
+  }, [loading, session, user?.id, queryClient]);
 
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state: AppStateStatus) => {
@@ -51,7 +59,7 @@ export function SyncBootstrap() {
         },
       );
     } catch {
-      // NetInfo not installed — foreground sync only
+      // NetInfo not installed — foreground push only
     }
 
     return () => unsubscribe?.();

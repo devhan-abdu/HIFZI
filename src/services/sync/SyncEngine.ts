@@ -6,8 +6,8 @@ import { pushHifzLogs, pushHifzPlans } from "./pushHifz";
 import { pushMurajaLogs, pushMurajaPlans } from "./pushMuraja";
 import { pullHifzLogs, pullHifzPlans } from "./pullHifz";
 import { pullMurajaLogs, pullMurajaPlans } from "./pullMuraja";
-import { pushUserStats, pushPagePerformance } from "./pushUser";
-import { pullUserStats, pullPagePerformance } from "./pullUser";
+import { pushUserStats, pushPagePerformance, pushUserBadges } from "./pushUser";
+import { pullUserStats, pullPagePerformance, pullUserBadges } from "./pullUser";
 import { pushPageActivityLogs } from "./pushHabits";
 import { pullHabitLogs, pullHabitEvents, pullPageActivityLogs } from "./pullHabits";
 import { pullNotifications } from "./pullNotifications";
@@ -40,18 +40,18 @@ class SyncEngine {
 
   async pull(table: SyncTableName = "all"): Promise<void> {
     if (!this.userId) return;
-    await this.runSyncCycle({ pullOnly: table });
+    await this.runSyncCycle({ pullOnly: table, full: true });
   }
 
   async fullSync(): Promise<void> {
     if (!this.userId) return;
-    await this.runSyncCycle({ full: true });
+    await this.runSyncCycle({ full: true, pullFirst: true });
   }
 
-  /** Login: pull first, then push */
+  /** Login / session start: pull once (full), then push pending local rows. */
   async onLogin(userId: string): Promise<void> {
     this.userId = userId;
-    await this.runSyncCycle({ pullFirst: true });
+    await this.runSyncCycle({ pullFirst: true, full: true });
     await this.subscribeRealtime(userId);
   }
 
@@ -109,11 +109,11 @@ class SyncEngine {
 
   private async handleRealtimeRow(table: SyncTableName, row: RemoteSyncRow | null) {
     if (!this.userId || !row) return;
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("[sync] Realtime DELETE should not occur; use soft deletes.", table);
-    }
+    // Single-device: flag remote changes but do not pull (pull is login-only).
     useSyncStore.getState().setPatch({ hasRemoteChanges: true });
-    await this.runSyncCycle({ pullOnly: table });
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[sync] realtime change noted (no pull)", table);
+    }
   }
 
   private async unsubscribeRealtime() {
@@ -128,13 +128,14 @@ class SyncEngine {
     }
   }
 
+  /** Foreground: push pending local mutations only. */
   onAppForeground() {
-    // Only pull incremental changes when returning to the app
-    void this.runSyncCycle({ full: false });
+    void this.runSyncCycle({ pushOnly: "all" });
   }
 
+  /** Reconnect: push pending local mutations only. */
   onNetworkReconnect() {
-    void this.runSyncCycle({ full: false });
+    void this.runSyncCycle({ pushOnly: "all" });
   }
 
   private async runSyncCycle(options: {
@@ -165,11 +166,12 @@ class SyncEngine {
     try {
       await withRetry(async () => {
         const sincePull = options.full ? null : await syncMeta.getLastPullAt();
-        const sincePush = options.full ? null : await syncMeta.getLastPushAt();
 
         const runPull = async () => {
           let remoteChanged = false;
-          if (!options.pushOnly || options.pushOnly === "all") {
+          const scoped = options.pullOnly && options.pullOnly !== "all";
+
+          if (!scoped) {
             remoteChanged =
               (await pullHifzPlans(userId, sincePull)) ||
               (await pullHifzLogs(userId, sincePull)) ||
@@ -177,6 +179,7 @@ class SyncEngine {
               (await pullMurajaLogs(userId, sincePull)) ||
               (await pullUserStats(userId, sincePull)) ||
               (await pullPagePerformance(userId, sincePull)) ||
+              (await pullUserBadges(userId, sincePull)) ||
               (await pullHabitLogs(userId, sincePull)) ||
               (await pullHabitEvents(userId, sincePull)) ||
               (await pullPageActivityLogs(userId, sincePull)) ||
@@ -194,6 +197,8 @@ class SyncEngine {
             remoteChanged = await pullUserStats(userId, sincePull);
           } else if (options.pullOnly === "page_performance") {
             remoteChanged = await pullPagePerformance(userId, sincePull);
+          } else if (options.pullOnly === "user_badges") {
+            remoteChanged = await pullUserBadges(userId, sincePull);
           } else if (options.pullOnly === "activity_logs") {
             remoteChanged = await pullHabitLogs(userId, sincePull);
           } else if (options.pullOnly === "habit_events") {
@@ -214,13 +219,16 @@ class SyncEngine {
         };
 
         const runPush = async () => {
-          if (!options.pullOnly || options.pullOnly === "all") {
+          const scoped = options.pushOnly && options.pushOnly !== "all";
+
+          if (!scoped) {
             await pushHifzPlans(userId);
             await pushHifzLogs(userId);
             await pushMurajaPlans(userId);
             await pushMurajaLogs(userId);
             await pushUserStats(userId);
             await pushPagePerformance(userId);
+            await pushUserBadges(userId);
             await pushPageActivityLogs(userId);
             await this.habitRepo.syncPendingLogs(userId);
             await notificationService.syncWithRemote(userId);
@@ -236,6 +244,8 @@ class SyncEngine {
             await pushUserStats(userId);
           } else if (options.pushOnly === "page_performance") {
             await pushPagePerformance(userId);
+          } else if (options.pushOnly === "user_badges") {
+            await pushUserBadges(userId);
           } else if (options.pushOnly === "activity_logs") {
             await this.habitRepo.syncPendingLogs(userId);
           } else if (options.pushOnly === "page_activity_logs") {
@@ -254,11 +264,10 @@ class SyncEngine {
           await runPush();
         } else if (options.pullOnly) {
           await runPull();
-        } else if (options.pushOnly && options.pushOnly !== "all") {
+        } else if (options.pushOnly) {
           await runPush();
         } else {
           await runPush();
-          await runPull();
         }
 
         const syncedAt = new Date().toISOString();

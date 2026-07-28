@@ -1,7 +1,7 @@
 import { db } from "@/src/lib/db/local-client";
 import { supabase } from "@/src/lib/supabase";
-import { userStats, pagePerformance } from "@/src/features/user/database/userSchema";
-import { eq } from "drizzle-orm";
+import { userStats, pagePerformance, userBadges } from "@/src/features/user/database/userSchema";
+import { and, eq } from "drizzle-orm";
 import type { RemoteSyncRow } from "./types";
 import { compareUpdatedAt, remoteUpdatedAt } from "./utils";
 
@@ -73,7 +73,10 @@ export async function pullPagePerformance(
     if (!pageNumber) continue;
 
     const local = await db.query.pagePerformance.findFirst({
-      where: eq(pagePerformance.pageNumber, pageNumber),
+      where: and(
+        eq(pagePerformance.userId, userId),
+        eq(pagePerformance.pageNumber, pageNumber),
+      ),
     });
 
     const remoteAt = remoteUpdatedAt(row);
@@ -95,11 +98,57 @@ export async function pullPagePerformance(
     };
 
     if (local) {
-      await db.update(pagePerformance).set(values).where(eq(pagePerformance.pageNumber, pageNumber));
+      await db
+        .update(pagePerformance)
+        .set(values)
+        .where(
+          and(
+            eq(pagePerformance.userId, userId),
+            eq(pagePerformance.pageNumber, pageNumber),
+          ),
+        );
     } else {
       await db.insert(pagePerformance).values(values);
     }
 
+    changed = true;
+  }
+
+  return changed;
+}
+
+export async function pullUserBadges(
+  userId: string,
+  since: string | null,
+): Promise<boolean> {
+  let query = supabase.from("user_badges").select("*").eq("user_id", userId);
+  if (since) {
+    query = query.gt("achieved_at", since);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  if (!data?.length) return false;
+
+  let changed = false;
+
+  for (const row of data as RemoteSyncRow[]) {
+    const badgeId = String(row.badge_id ?? "");
+    if (!badgeId) continue;
+
+    const local = await db.query.userBadges.findFirst({
+      where: eq(userBadges.badgeId, badgeId),
+    });
+
+    if (local) continue;
+
+    await db.insert(userBadges).values({
+      badgeId,
+      userId,
+      badgeType: String(row.badge_type ?? "UNKNOWN"),
+      achievedAt: String(row.achieved_at ?? new Date().toISOString()),
+      metadata: (row.metadata as string | null) ?? null,
+    });
     changed = true;
   }
 
