@@ -1,6 +1,7 @@
 import { ISurah } from "@/src/types";
 import { getJuzByPage ,getSurahForTraversal} from "../../muraja/utils/quranMapping";
 import { IHifzLog, IHifzPlan } from "../types";
+import { getLocalDateString } from "../../muraja/utils/murajaAnalytics";
 
 
 export const getNextTask = (
@@ -102,7 +103,7 @@ export const getTodayTask = (
 ) => {
   if (pages <= 0) return null;
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = getLocalDateString(new Date());
 
   const historicalLogs = (hifzPlan.hifzDailyLogs || [])
     .filter(log => log.date < todayStr)
@@ -160,7 +161,7 @@ export const getReinforcementRange = (
   surahData: ISurah[],
   count: number = 5
 ) => {
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = getLocalDateString(new Date());
   
   const logs = (hifzPlan.hifzDailyLogs || [])
     .filter(log => log.date < todayStr && (log.status === "completed" || log.status === "partial"))

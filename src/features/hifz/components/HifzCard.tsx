@@ -26,7 +26,7 @@ export const HifzCard = ({ onLog }: { onLog: () => void }) => {
           hifz={hifz!}
           task={state.task}
           title={state.task.displaySurah}
-          subTitle={`Target: ${state.task.totalTarget} pages · Pages ${state.task.startPage}–${state.task.endPage}`}
+          subTitle={`Target: ${state.task.totalTarget} pages · Pages ${state.task.startPage}–${state.task.quotaEnd ?? state.task.endPage}`}
           onDetails={onLog}
         />
       );

@@ -8,6 +8,7 @@ import { useNavigate } from "@/src/hooks/useNavigate";
 import { ActionTaskCard } from "@/src/components/common/ActionCard";
 import { QualityModal } from "@/src/components/common/QualityModal";
 import { Alert } from "@/src/components/common/Alert";
+import { getLocalDateString } from "@/src/features/muraja/utils/murajaAnalytics";
 
 export const HifzActionCard = ({
   hifz,
@@ -35,14 +36,14 @@ export const HifzActionCard = ({
   const [qualityModalVisible, setQualityModalVisible] = useState(false);
 
   const today = new Date();
-  const todayStr = today.toISOString().slice(0, 10);
+  const todayStr = getLocalDateString(today);
   
   const todaysLog = hifz.hifzDailyLogs?.find((log) => log.date === todayStr);
   const currentStatus = todaysLog?.status || "pending";
   const completedPages = todaysLog?.actualPagesCompleted ?? 0;
   const loggedStart = todaysLog?.actualStartPage ?? task.startPage;
   const loggedEnd = todaysLog?.actualEndPage ?? task.endPage;
-  const planTargetEnd = task.endPage;
+  const planTargetEnd = task.quotaEnd ?? task.endPage;
   const planTargetStart = task.startPage;
   const plannedCount = task.totalTarget ?? (planTargetEnd - planTargetStart + 1);
 

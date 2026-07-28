@@ -20,6 +20,8 @@ import { habitStackingService } from "@/src/features/habits/services/habitStacki
 import { PageMasteryService } from "@/src/services/PageMasteryService";
 import { useCatalogStore } from "../../quran/store/catalogStore";
 import { getPagesFromLog } from "../utils/quran-logic";
+import { computeEvaluationDue } from "@/src/features/habits/utils/evaluationDue";
+import { getLocalDateString } from "@/src/features/muraja/utils/murajaAnalytics";
 
 export const hifzService = {
   async createPlan(planData: Omit<IHifzPlan, "hifzDailyLogs" | "id"> & { userId: string }) {
@@ -148,7 +150,7 @@ export const hifzService = {
     });
 
 
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = getLocalDateString(new Date());
     const todayLog = logs.find(l => l.date === todayStr) ?? null;
 
 
@@ -160,29 +162,13 @@ export const hifzService = {
     )
   });
 
-  const todayDay = (new Date().getDay() + 6) % 7;
-  const isEvaluationDay = todayDay === (localPlan.evaluationDay ?? 5);
-  const alreadyEvaluatedThisWeek = activityPlan?.lastEvaluationDate === todayStr;
-
-  let evaluationDue = false;
-  if (isEvaluationDay && !alreadyEvaluatedThisWeek) {
-    const selectedDays: number[] = JSON.parse(localPlan.selectedDays ?? '[]');
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const startOfWeek = new Date(today);
-    const todayDayIdx = (today.getDay() + 6) % 7;
-    startOfWeek.setDate(today.getDate() - todayDayIdx);
-    const weekStartStr = startOfWeek.toISOString().slice(0, 10);
-
-    const weekLogs = logs.filter(
-      l => l.date >= weekStartStr && l.date <= todayStr &&
-           (l.status === 'completed' || l.status === 'partial')
-    );
-    const minRequired = Math.max(1, Math.ceil(selectedDays.length * 0.25));
-    if (weekLogs.length >= minRequired) {
-      evaluationDue = true;
-    }
-  }
+  const selectedDays: number[] = JSON.parse(localPlan.selectedDays ?? '[]');
+  const evaluationDue = computeEvaluationDue({
+    evaluationDay: localPlan.evaluationDay ?? 5,
+    lastEvaluationDate: activityPlan?.lastEvaluationDate,
+    selectedDays,
+    logs,
+  });
 
 
     const totalCompleted = localPlan.completedPages ?? 0;
@@ -213,7 +199,7 @@ export const hifzService = {
       startPage: localPlan.startPage,
       totalPages: localPlan.totalPages,
       pagesPerDay: localPlan.pagesPerDay,
-      selectedDays: JSON.parse(localPlan.selectedDays ?? "[]"),
+      selectedDays,
       daysPerWeek: localPlan.daysPerWeek,
       startDate: localPlan.startDate,
       estimatedEndDate: localPlan.estimatedEndDate,

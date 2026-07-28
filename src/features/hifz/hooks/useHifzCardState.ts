@@ -25,10 +25,8 @@ export const useHifzCardState = (): HifzCardState => {
 
     if (hifz.planFinished) return { type: 'PLAN_FINISHED' };
 
+    // Blocks all action cards until the user finishes the due evaluation.
     if (hifz.evaluationDue) return { type: 'EVALUATION_DUE' };
-
-    const todayLog = hifz.todayLog;
-    const loggedToday = todayLog?.status === 'completed' || todayLog?.status === 'partial';
 
     const analytics = hifzStatus(hifz, surah);
     if (!analytics || hifz.pagesPerDay <= 0) return { type: 'REST_DAY' };
@@ -37,31 +35,9 @@ export const useHifzCardState = (): HifzCardState => {
     const targetInfo = getTargetPage(
       hifz.selectedDays,
       analytics.plannedPages,
-      analytics.completedPages,
       hifz.pagesPerDay,
       dayNumber,
     );
-
-    if (loggedToday && todayLog) {
-      const sSurah = surah.find((s) => todayLog.actualStartPage >= s.startingPage && todayLog.actualStartPage <= s.endingPage);
-      const eSurah = surah.find((s) => todayLog.actualEndPage >= s.startingPage && todayLog.actualEndPage <= s.endingPage);
-      const displaySurah = sSurah?.number === eSurah?.number
-        ? sSurah?.englishName
-        : `${sSurah?.englishName} & ${eSurah?.englishName}`;
-
-      return {
-        type: 'COMPLETED_TODAY',
-        log: todayLog,
-        task: {
-          startPage: todayLog.actualStartPage,
-          endPage: todayLog.actualEndPage,
-          totalTarget: todayLog.actualPagesCompleted,
-          displaySurah: displaySurah || '',
-          isCatchup: false,
-          isPlannedDay: true,
-        },
-      };
-    }
 
     if (targetInfo.totalTarget <= 0) return { type: 'REST_DAY' };
 
@@ -71,9 +47,51 @@ export const useHifzCardState = (): HifzCardState => {
     const todayTask = {
       ...rawTask,
       ...targetInfo,
+      totalTarget: targetInfo.totalTarget,
+      quotaEnd: rawTask.endPage,
     };
 
-    if (todayTask.isCatchup) {
+    const todayLog = hifz.todayLog;
+    const loggedToday =
+      todayLog?.status === 'completed' || todayLog?.status === 'partial';
+
+    if (loggedToday && todayLog) {
+      const loggedStart = todayLog.actualStartPage;
+      const loggedEnd = todayLog.actualEndPage;
+      const completed = todayLog.actualPagesCompleted ?? 0;
+      const displayEnd = Math.max(todayTask.endPage, loggedEnd);
+      const sSurah = surah.find(
+        (s) => loggedStart >= s.startingPage && loggedStart <= s.endingPage,
+      );
+      const eSurah = surah.find(
+        (s) => displayEnd >= s.startingPage && displayEnd <= s.endingPage,
+      );
+      const displaySurah =
+        sSurah?.number === eSurah?.number
+          ? sSurah?.englishName
+          : `${sSurah?.englishName} & ${eSurah?.englishName}`;
+
+      return {
+        type: 'COMPLETED_TODAY',
+        log: todayLog,
+        task: {
+          ...todayTask,
+          startPage: loggedStart,
+          endPage: displayEnd,
+          quotaEnd: todayTask.endPage,
+          totalTarget: todayTask.totalTarget,
+          target: todayTask.totalTarget,
+          completedPages: completed,
+          displaySurah: displaySurah || todayTask.displaySurah || '',
+          // Stay catchup-marked when still behind the plan after today's work.
+          isCatchup: todayTask.isCatchup || todayTask.hasBacklog,
+          isPlannedDay: todayTask.isPlannedDay,
+        },
+      };
+    }
+
+    // Behind plan → catchup on planned or rest days until backlog is cleared.
+    if (todayTask.isCatchup || todayTask.hasBacklog) {
       return { type: 'CATCHUP_DAY', task: todayTask };
     }
 
