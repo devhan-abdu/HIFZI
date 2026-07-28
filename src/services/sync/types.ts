@@ -7,6 +7,7 @@ export type SyncTableName =
   | "notifications"
   | "habit_events"
   | "user_stats"
+  | "user_badges"
   | "page_performance"
   | "page_activity_logs"
   | "all";
@@ -34,6 +35,8 @@ export interface SyncStatusState {
 export interface RemoteSyncRow {
   id?: number | string;
   local_id?: number | null;
+  local_ref_id?: number | null;
+  plan_id?: number | null;
   user_id?: string;
   updated_at?: string | null;
   created_at?: string | null;

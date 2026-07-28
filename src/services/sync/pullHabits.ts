@@ -22,7 +22,7 @@ export async function pullHabitLogs(
   let changed = false;
 
   for (const row of data as RemoteSyncRow[]) {
-    const localId = Number(row.local_id);
+    const localId = Number(row.local_ref_id ?? row.local_id);
     if (!localId) continue;
 
     const local = await db.query.activityLogs.findFirst({
@@ -141,11 +141,21 @@ export async function pullPageActivityLogs(
     // There is no sync_status for page_activity_logs natively, 
     // it's an append-only log. We just insert if it doesn't exist locally.
     
+    const pageId = Number(row.page_id);
+    if (!pageId) continue;
+
+    const qualityRaw = row.session_quality;
+    const sessionQuality: "perfect" | "medium" | "low" =
+      qualityRaw === "perfect" || qualityRaw === "medium" || qualityRaw === "low"
+        ? qualityRaw
+        : "low";
+
     let local = await db.query.pageActivityLogs.findFirst({
       where: and(
         eq(pageActivityLogs.userId, userId),
         eq(pageActivityLogs.source, source as any),
-        eq(pageActivityLogs.localLogId, localLogId)
+        eq(pageActivityLogs.localLogId, localLogId),
+        eq(pageActivityLogs.pageId, pageId),
       ),
     });
 
@@ -153,11 +163,11 @@ export async function pullPageActivityLogs(
 
     const values = {
       userId,
-      pageId: Number(row.page_id),
+      pageId,
       source: source as "hifz" | "muraja",
       localLogId,
-      logDate: String(row.log_date),
-      sessionQuality: String(row.session_quality) as "perfect" | "medium" | "low",
+      logDate: String(row.log_date ?? ""),
+      sessionQuality,
       mistakesCount: Number(row.mistakes_count ?? 0),
       hesitationsCount: Number(row.hesitations_count ?? 0),
       createdAt: String(row.created_at ?? new Date().toISOString()),

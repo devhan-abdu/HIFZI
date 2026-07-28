@@ -63,7 +63,7 @@ export class HabitRepository {
 
   private async syncSingleLog(log: any) {
     const basePayload = {
-      local_id: log.id,
+      local_ref_id: log.id,
       user_id: log.userId,
       date: log.date,
       activity_type: log.activityType,
@@ -74,7 +74,7 @@ export class HabitRepository {
 
     const firstAttempt = await supabase
       .from("habit_logs")
-      .upsert(basePayload, { onConflict: "user_id,local_id" })
+      .upsert(basePayload, { onConflict: "user_id,local_ref_id" })
       .select("id")
       .single();
 
@@ -90,7 +90,7 @@ export class HabitRepository {
             ...basePayload,
             habit_type: log.activityType.toLowerCase(),
           },
-          { onConflict: "user_id,local_id" },
+          { onConflict: "user_id,local_ref_id" },
         )
         .select("id")
         .single();
