@@ -123,6 +123,13 @@ export function getPerformanceStatus(diff: number): 'ahead' | 'behind' | 'on-tra
 }
 
 
+export function parseLocalDate(dateStr: string): Date {
+    if (!dateStr) return new Date(NaN);
+    const [y, m, d] = dateStr.split("-").map(Number);
+    if (!y || !m || !d) return new Date(NaN);
+    return new Date(y, m - 1, d);
+}
+
 export function generateRolling7DayWindow(
     planStartDateStr: string,
     planEndDateStr: string,
@@ -131,40 +138,60 @@ export function generateRolling7DayWindow(
     today: Date = new Date(),
 ): IMurajaDayStatus[] {
     const todayStr = getLocalDateString(today);
-    const planStart = new Date(planStartDateStr);
-    const planEnd = new Date(planEndDateStr);
-    planStart.setHours(0, 0, 0, 0);
-    planEnd.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
+    const planStart = parseLocalDate(planStartDateStr);
+    const planEnd = parseLocalDate(planEndDateStr);
+    const todayLocal = parseLocalDate(todayStr);
 
-    const windowCenter = today < planStart ? planStart : today > planEnd ? planEnd : today;
+    const hasValidPlan =
+        !Number.isNaN(planStart.getTime()) && !Number.isNaN(planEnd.getTime());
+
+    const windowCenter =
+        hasValidPlan
+            ? todayLocal < planStart
+                ? planStart
+                : todayLocal > planEnd
+                  ? planEnd
+                  : todayLocal
+            : todayLocal;
 
     let windowStart = new Date(windowCenter);
     windowStart.setDate(windowCenter.getDate() - 3);
     let windowEnd = new Date(windowCenter);
     windowEnd.setDate(windowCenter.getDate() + 3);
 
-    if (windowStart < planStart) windowStart = new Date(planStart);
-    if (windowEnd > planEnd) windowEnd = new Date(planEnd);
+    if (hasValidPlan) {
+        if (windowStart < planStart) windowStart = new Date(planStart);
+        if (windowEnd > planEnd) windowEnd = new Date(planEnd);
 
-    const MS_PER_DAY = 1000 * 60 * 60 * 24;
-    let windowDays = Math.round((windowEnd.getTime() - windowStart.getTime()) / MS_PER_DAY) + 1;
+        const MS_PER_DAY = 1000 * 60 * 60 * 24;
+        let windowDays =
+            Math.round(
+                (windowEnd.getTime() - windowStart.getTime()) / MS_PER_DAY,
+            ) + 1;
 
-    if (windowDays < 7) {
-        const shortage = 7 - windowDays;
-        const potentialEnd = new Date(windowEnd);
-        potentialEnd.setDate(windowEnd.getDate() + shortage);
-        if (potentialEnd <= planEnd) {
-            windowEnd = potentialEnd;
-        } else {
-            const potentialStart = new Date(windowStart);
-            potentialStart.setDate(windowStart.getDate() - shortage);
-            windowStart = potentialStart < planStart ? planStart : potentialStart;
-            const newDays = Math.round((windowEnd.getTime() - windowStart.getTime()) / MS_PER_DAY) + 1;
-            if (newDays < 7) {
-                const potentialEnd2 = new Date(windowEnd);
-                potentialEnd2.setDate(windowEnd.getDate() + (7 - newDays));
-                if (potentialEnd2 <= planEnd) windowEnd = potentialEnd2;
+        if (windowDays < 7) {
+            const shortage = 7 - windowDays;
+            const potentialEnd = new Date(windowEnd);
+            potentialEnd.setDate(windowEnd.getDate() + shortage);
+            if (potentialEnd <= planEnd) {
+                windowEnd = potentialEnd;
+            } else {
+                const potentialStart = new Date(windowStart);
+                potentialStart.setDate(windowStart.getDate() - shortage);
+                windowStart =
+                    potentialStart < planStart ? planStart : potentialStart;
+                const newDays =
+                    Math.round(
+                        (windowEnd.getTime() - windowStart.getTime()) /
+                            MS_PER_DAY,
+                    ) + 1;
+                if (newDays < 7) {
+                    const potentialEnd2 = new Date(windowEnd);
+                    potentialEnd2.setDate(
+                        windowEnd.getDate() + (7 - newDays),
+                    );
+                    if (potentialEnd2 <= planEnd) windowEnd = potentialEnd2;
+                }
             }
         }
     }
@@ -178,34 +205,57 @@ export function generateRolling7DayWindow(
         const isPast = dateStr < todayStr;
         const isToday = dateStr === todayStr;
         const isFuture = dateStr > todayStr;
-        const isBeforePlan = cursor < planStart;
-        const log = logs.find((l: any) => l.date === dateStr);
+        const isBeforePlan =
+            hasValidPlan && !Number.isNaN(planStart.getTime())
+                ? cursor < planStart
+                : false;
+        const log =
+            logs.find((l: any) => l.date === dateStr) ??
+            // Legacy: some logs were saved with UTC toISOString dates.
+            (isToday
+                ? logs.find(
+                      (l: any) =>
+                          l.date === new Date().toISOString().slice(0, 10),
+                  )
+                : undefined);
+        const completed =
+            log?.completed_pages ?? log?.completedPages ?? 0;
 
-        let status: IMurajaDayStatus['status'] = 'pending';
+        let status: IMurajaDayStatus["status"] = "pending";
 
         if (log) {
-            if (isPast && (log.status === 'pending' || !log.status)) {
-                status = 'missed';
+            const raw = (log.status ?? "pending") as string;
+            if (raw === "completed" || raw === "partial") {
+                // Day strip treats any successful session as completed.
+                status = "completed";
+            } else if (raw === "missed") {
+                status = "missed";
+            } else if (isPast) {
+                // Pending/empty log left on a past scheduled day → missed.
+                status = "missed";
             } else {
-                status = log.status as IMurajaDayStatus['status'];
+                status = "pending";
             }
         } else if (isBeforePlan) {
-            status = 'pending';
+            status = "pending";
         } else if (!isSelected) {
-            status = 'rest';
+            status = "rest";
         } else if (isFuture) {
-            status = 'future';
+            status = "future";
+        } else if (isPast) {
+            // Scheduled past day with no log at all → missed.
+            status = "missed";
         } else {
-            status = isPast ? 'missed' : 'pending';
+            status = "pending";
         }
 
         result.push({
             date: dateStr,
-            dayName: cursor.toLocaleDateString('en-US', { weekday: 'short' }),
+            dayName: cursor.toLocaleDateString("en-US", { weekday: "short" }),
             isToday,
             isSelected: isBeforePlan ? false : isSelected,
             status,
-            completed: log?.completed_pages ?? 0,
+            completed,
         });
 
         cursor.setDate(cursor.getDate() + 1);

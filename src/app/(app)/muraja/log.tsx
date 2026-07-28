@@ -25,6 +25,7 @@ import SurahDropdown, {
 } from "@/src/features/muraja/components/SurahDropdown";
 import { useSession } from "@/src/hooks/useSession";
 import { LogStudyHero } from "@/src/features/muraja/components/log/LogStudyHero";
+import { getLocalDateString } from "@/src/features/muraja/utils/murajaAnalytics";
 
 type StatusType = "pending" | "completed" | "partial" | "missed";
 
@@ -141,7 +142,7 @@ export default function LogPage() {
     );
   }
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = getLocalDateString(new Date());
   const formattedDate = new Intl.DateTimeFormat("en-US", {
     weekday: "long",
     day: "numeric",

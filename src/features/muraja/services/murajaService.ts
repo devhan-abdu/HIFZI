@@ -13,6 +13,7 @@ import { userStats } from '../../user/database/userSchema';
 import { habitStackingService } from '../../habits/services/habitStackingService';
 import { getLocalDateString } from '../utils/murajaAnalytics';
 import { calculateMurajaFinishedDate } from '../utils/plan-calculations';
+import { computeEvaluationDue } from '@/src/features/habits/utils/evaluationDue';
 export type LocalMurajaLogWriteResult = {
   localLogId: number | null;
   changed: boolean;
@@ -179,7 +180,10 @@ export const murajaService = {
       orderBy: [dailyMurajaLogs.date],
     });
 
-    const todayLog = logs.find(l => l.date === todayStr) ?? null
+    const todayLog =
+      logs.find((l) => l.date === todayStr) ??
+      logs.find((l) => l.date === new Date().toISOString().slice(0, 10)) ??
+      null;
 
       const activityPlan = await db.query.activityPlans.findFirst({
       where: and(
@@ -188,32 +192,17 @@ export const murajaService = {
         eq(activityPlans.activityType, 'MURAJA')
       )
       });
-    
-    const todayDay = (new Date().getDay() + 6) % 7;
-    const isEvaluationDay = todayDay === plan.evaluationDay;
-    const alreadyEvaluatedThisWeek = activityPlan?.lastEvaluationDate === todayStr;
 
-    let evaluationDue = false;
-    if (isEvaluationDay && !alreadyEvaluatedThisWeek) {
-      const activeDaysArr: number[] = typeof plan.selectedDays === 'string'
-        ? JSON.parse(plan.selectedDays || '[]')
-        : plan.selectedDays ?? [];
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const startOfWeek = new Date(today);
-      const todayDayIdx = (today.getDay() + 6) % 7;
-      startOfWeek.setDate(today.getDate() - todayDayIdx);
-      const weekStartStr = startOfWeek.toISOString().slice(0, 10);
+    const activeDays: number[] = typeof plan.selectedDays === 'string'
+     ? JSON.parse(plan.selectedDays || '[]')
+      : plan.selectedDays ?? [];
 
-      const weekLogs = logs.filter(
-        l => !!l.date && l.date >= weekStartStr && l.date <= todayStr &&
-             (l.status === 'completed' || l.status === 'partial')
-      );
-      const minRequired = Math.max(1, Math.ceil(activeDaysArr.length * 0.25));
-      if (weekLogs.length >= minRequired) {
-        evaluationDue = true;
-      }
-    }
+    const evaluationDue = computeEvaluationDue({
+      evaluationDay: plan.evaluationDay ?? 5,
+      lastEvaluationDate: activityPlan?.lastEvaluationDate,
+      selectedDays: activeDays,
+      logs,
+    });
 
 
     const totalCompleted = plan.completedPages ?? 0;
@@ -245,10 +234,6 @@ export const murajaService = {
       ),
       orderBy: [asc(dailyMurajaLogs.id)],
     });
-
-    const activeDays: number[] = typeof plan.selectedDays === 'string'
-     ? JSON.parse(plan.selectedDays || '[]')
-      : plan.selectedDays ?? [];
 
     return {
       ...plan,
@@ -311,7 +296,7 @@ export const murajaService = {
 
     
     let calculatedStreak = 0;
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = getLocalDateString(new Date());
     for (const entry of allLogs) {
       if (!entry.date) continue;
       if (entry.status === "completed" || entry.status === "partial") {

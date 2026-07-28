@@ -6,6 +6,7 @@ import { useCelebrationStore } from "@/src/hooks/useCelebrationStore";
 import { ActionTaskCard } from "@/src/components/common/ActionCard";
 import { QualityModal } from "@/src/components/common/QualityModal";
 import { Alert } from "@/src/components/common/Alert";
+import { getLocalDateString } from "@/src/features/muraja/utils/murajaAnalytics";
 
 export const MurajaActionCard = ({
   todayPlan,
@@ -24,7 +25,7 @@ export const MurajaActionCard = ({
 
 
   const updateStatus = async (newStatus: "completed" | "pending" | "missed", quality?: number) => {
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = getLocalDateString(new Date());
     const isCompleted = newStatus === "completed";
     const duration = weeklyPlan.estimated_time_min || 0;
     const actualEnd = todayPlan.endPage;
